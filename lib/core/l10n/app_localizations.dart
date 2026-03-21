@@ -307,6 +307,174 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'خارج الخدمة'**
   String get offDuty;
+
+  /// No description provided for @newOrder.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلب جديد'**
+  String get newOrder;
+
+  /// No description provided for @createOrder.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنشاء طلب'**
+  String get createOrder;
+
+  /// No description provided for @orderCreated.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إنشاء الطلب'**
+  String get orderCreated;
+
+  /// No description provided for @selectStore.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر المتجر'**
+  String get selectStore;
+
+  /// No description provided for @addProduct.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة منتج'**
+  String get addProduct;
+
+  /// No description provided for @quantity.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية'**
+  String get quantity;
+
+  /// No description provided for @unitPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعر الوحدة'**
+  String get unitPrice;
+
+  /// No description provided for @lineTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإجمالي'**
+  String get lineTotal;
+
+  /// No description provided for @subtotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'المجموع الفرعي'**
+  String get subtotal;
+
+  /// No description provided for @tax.
+  ///
+  /// In ar, this message translates to:
+  /// **'الضريبة'**
+  String get tax;
+
+  /// No description provided for @total.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإجمالي الكلي'**
+  String get total;
+
+  /// No description provided for @receipt.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيصال'**
+  String get receipt;
+
+  /// No description provided for @noOrders.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد طلبات'**
+  String get noOrders;
+
+  /// No description provided for @orderDetails.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل الطلب'**
+  String get orderDetails;
+
+  /// No description provided for @confirmOrder.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد الطلب'**
+  String get confirmOrder;
+
+  /// No description provided for @orderDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الطلب'**
+  String get orderDate;
+
+  /// No description provided for @status.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحالة'**
+  String get status;
+
+  /// No description provided for @statusCreated.
+  ///
+  /// In ar, this message translates to:
+  /// **'جديد'**
+  String get statusCreated;
+
+  /// No description provided for @statusDelivered.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم التسليم'**
+  String get statusDelivered;
+
+  /// No description provided for @statusCancelled.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملغي'**
+  String get statusCancelled;
+
+  /// No description provided for @removeItem.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة'**
+  String get removeItem;
+
+  /// No description provided for @done.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم'**
+  String get done;
+
+  /// No description provided for @emptyOrderMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تقم بإنشاء أي طلبات بعد'**
+  String get emptyOrderMessage;
+
+  /// No description provided for @confirmOrderTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد الطلب'**
+  String get confirmOrderTitle;
+
+  /// No description provided for @confirmOrderMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل تريد إنشاء هذا الطلب؟'**
+  String get confirmOrderMessage;
+
+  /// No description provided for @networkError.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد اتصال بالإنترنت'**
+  String get networkError;
+
+  /// No description provided for @saveError.
+  ///
+  /// In ar, this message translates to:
+  /// **'فشل حفظ الطلب'**
+  String get saveError;
+
+  /// No description provided for @items.
+  ///
+  /// In ar, this message translates to:
+  /// **'عناصر'**
+  String get items;
 }
 
 class _AppLocalizationsDelegate

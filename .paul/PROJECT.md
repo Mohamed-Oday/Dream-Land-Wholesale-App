@@ -20,15 +20,13 @@ Owner gets real-time visibility into wholesale distribution field operations —
 
 ### Validated (Shipped)
 
-None yet.
+- [x] Phase 1: Core Loop — Auth, product catalog, store registry, order creation, receipt preview
 
 ### Active (In Progress)
 
-- [ ] Phase 1: Core Loop — Auth, product catalog, store registry, order creation, offline-first sync
+- [ ] Phase 2: Money & Packaging — Payment collection, per-product package tracking, Bluetooth printing
 
 ### Planned (Next)
-
-- [ ] Phase 2: Money & Packaging — Payment collection, per-product package tracking, Bluetooth printing
 - [ ] Phase 3: Visibility & Control — Owner dashboard, GPS tracking, live map, discount approval
 - [ ] Phase 4: Polish & Hardening — In-app updates, filters, alerts, edge cases
 

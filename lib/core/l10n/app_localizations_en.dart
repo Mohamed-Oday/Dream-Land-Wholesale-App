@@ -112,4 +112,88 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offDuty => 'Off Duty';
+
+  @override
+  String get newOrder => 'New Order';
+
+  @override
+  String get createOrder => 'Create Order';
+
+  @override
+  String get orderCreated => 'Order Created';
+
+  @override
+  String get selectStore => 'Select Store';
+
+  @override
+  String get addProduct => 'Add Product';
+
+  @override
+  String get quantity => 'Quantity';
+
+  @override
+  String get unitPrice => 'Unit Price';
+
+  @override
+  String get lineTotal => 'Total';
+
+  @override
+  String get subtotal => 'Subtotal';
+
+  @override
+  String get tax => 'Tax';
+
+  @override
+  String get total => 'Total';
+
+  @override
+  String get receipt => 'Receipt';
+
+  @override
+  String get noOrders => 'No orders';
+
+  @override
+  String get orderDetails => 'Order Details';
+
+  @override
+  String get confirmOrder => 'Confirm Order';
+
+  @override
+  String get orderDate => 'Order Date';
+
+  @override
+  String get status => 'Status';
+
+  @override
+  String get statusCreated => 'Created';
+
+  @override
+  String get statusDelivered => 'Delivered';
+
+  @override
+  String get statusCancelled => 'Cancelled';
+
+  @override
+  String get removeItem => 'Remove';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get emptyOrderMessage => 'You haven\'t created any orders yet';
+
+  @override
+  String get confirmOrderTitle => 'Confirm Order';
+
+  @override
+  String get confirmOrderMessage => 'Do you want to create this order?';
+
+  @override
+  String get networkError => 'No internet connection';
+
+  @override
+  String get saveError => 'Failed to save order';
+
+  @override
+  String get items => 'items';
 }
