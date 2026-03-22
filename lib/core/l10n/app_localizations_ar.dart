@@ -135,7 +135,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get unitPrice => 'سعر الوحدة';
 
   @override
-  String get lineTotal => 'الإجمالي';
+  String get lineTotal => 'المجموع';
 
   @override
   String get subtotal => 'المجموع الفرعي';
@@ -608,4 +608,37 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get sellPrice => 'سعر البيع';
+
+  @override
+  String get purchaseOrders => 'المشتريات';
+
+  @override
+  String get createPurchaseOrder => 'إضافة مشتريات';
+
+  @override
+  String get noPurchaseOrders => 'لا توجد مشتريات';
+
+  @override
+  String get selectSupplier => 'اختر المورد';
+
+  @override
+  String get addProducts => 'إضافة منتجات';
+
+  @override
+  String get totalCost => 'إجمالي التكلفة';
+
+  @override
+  String get purchaseNotes => 'ملاحظات';
+
+  @override
+  String get unitCost => 'سعر الوحدة';
+
+  @override
+  String get confirmPurchase => 'تأكيد المشتريات';
+
+  @override
+  String get purchaseCreated => 'تم تسجيل المشتريات';
+
+  @override
+  String get purchaseDetails => 'تفاصيل المشتريات';
 }

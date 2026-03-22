@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
+import 'package:tawzii/features/purchase_orders/screens/purchase_order_list_screen.dart';
 import 'package:tawzii/features/suppliers/screens/supplier_list_screen.dart';
 import '../providers/product_provider.dart';
 import 'product_form_screen.dart';
@@ -26,6 +27,15 @@ class ProductListScreen extends ConsumerWidget {
               context,
               MaterialPageRoute(
                   builder: (_) => const SupplierListScreen()),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.shopping_cart_outlined),
+            tooltip: l10n.purchaseOrders,
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const PurchaseOrderListScreen()),
             ),
           ),
         ],

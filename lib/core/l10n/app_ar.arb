@@ -209,5 +209,19 @@
   "supplierName": "اسم المورد",
   "noSuppliers": "لا يوجد موردين",
   "costPrice": "سعر التكلفة",
-  "sellPrice": "سعر البيع"
+  "sellPrice": "سعر البيع",
+  "purchaseOrders": "المشتريات",
+  "createPurchaseOrder": "إضافة مشتريات",
+  "noPurchaseOrders": "لا توجد مشتريات",
+  "selectSupplier": "اختر المورد",
+  "addProducts": "إضافة منتجات",
+  "totalCost": "إجمالي التكلفة",
+  "purchaseNotes": "ملاحظات",
+  "quantity": "الكمية",
+  "unitCost": "سعر الوحدة",
+  "lineTotal": "المجموع",
+  "confirmPurchase": "تأكيد المشتريات",
+  "purchaseCreated": "تم تسجيل المشتريات",
+  "purchaseDetails": "تفاصيل المشتريات",
+  "items": "عناصر"
 }

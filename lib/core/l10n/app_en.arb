@@ -209,5 +209,19 @@
   "supplierName": "Supplier Name",
   "noSuppliers": "No suppliers yet",
   "costPrice": "Cost Price",
-  "sellPrice": "Sell Price"
+  "sellPrice": "Sell Price",
+  "purchaseOrders": "Purchases",
+  "createPurchaseOrder": "Add Purchase",
+  "noPurchaseOrders": "No purchases yet",
+  "selectSupplier": "Select Supplier",
+  "addProducts": "Add Products",
+  "totalCost": "Total Cost",
+  "purchaseNotes": "Notes",
+  "quantity": "Quantity",
+  "unitCost": "Unit Cost",
+  "lineTotal": "Total",
+  "confirmPurchase": "Confirm Purchase",
+  "purchaseCreated": "Purchase recorded",
+  "purchaseDetails": "Purchase Details",
+  "items": "items"
 }

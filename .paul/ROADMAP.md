@@ -108,7 +108,7 @@ Phases: 1 of 3 complete (Phases 5-7)
 
 **Plans:**
 - [x] 06-01: Suppliers + Product Cost Price (data foundation)
-- [ ] 06-02: Purchase Orders (create, list, detail) (TBD)
+- [x] 06-02: Purchase Orders (create, list, detail with package pricing)
 - [ ] 06-03: Profit Margins + Dashboard KPIs (TBD)
 
 ### Phase 7: Stock & Inventory

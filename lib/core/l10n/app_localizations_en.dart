@@ -610,4 +610,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sellPrice => 'Sell Price';
+
+  @override
+  String get purchaseOrders => 'Purchases';
+
+  @override
+  String get createPurchaseOrder => 'Add Purchase';
+
+  @override
+  String get noPurchaseOrders => 'No purchases yet';
+
+  @override
+  String get selectSupplier => 'Select Supplier';
+
+  @override
+  String get addProducts => 'Add Products';
+
+  @override
+  String get totalCost => 'Total Cost';
+
+  @override
+  String get purchaseNotes => 'Notes';
+
+  @override
+  String get unitCost => 'Unit Cost';
+
+  @override
+  String get confirmPurchase => 'Confirm Purchase';
+
+  @override
+  String get purchaseCreated => 'Purchase recorded';
+
+  @override
+  String get purchaseDetails => 'Purchase Details';
 }

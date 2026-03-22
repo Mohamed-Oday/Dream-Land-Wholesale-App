@@ -353,7 +353,7 @@ abstract class AppLocalizations {
   /// No description provided for @lineTotal.
   ///
   /// In ar, this message translates to:
-  /// **'الإجمالي'**
+  /// **'المجموع'**
   String get lineTotal;
 
   /// No description provided for @subtotal.
@@ -1279,6 +1279,72 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'سعر البيع'**
   String get sellPrice;
+
+  /// No description provided for @purchaseOrders.
+  ///
+  /// In ar, this message translates to:
+  /// **'المشتريات'**
+  String get purchaseOrders;
+
+  /// No description provided for @createPurchaseOrder.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة مشتريات'**
+  String get createPurchaseOrder;
+
+  /// No description provided for @noPurchaseOrders.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مشتريات'**
+  String get noPurchaseOrders;
+
+  /// No description provided for @selectSupplier.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر المورد'**
+  String get selectSupplier;
+
+  /// No description provided for @addProducts.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة منتجات'**
+  String get addProducts;
+
+  /// No description provided for @totalCost.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي التكلفة'**
+  String get totalCost;
+
+  /// No description provided for @purchaseNotes.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظات'**
+  String get purchaseNotes;
+
+  /// No description provided for @unitCost.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعر الوحدة'**
+  String get unitCost;
+
+  /// No description provided for @confirmPurchase.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد المشتريات'**
+  String get confirmPurchase;
+
+  /// No description provided for @purchaseCreated.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تسجيل المشتريات'**
+  String get purchaseCreated;
+
+  /// No description provided for @purchaseDetails.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل المشتريات'**
+  String get purchaseDetails;
 }
 
 class _AppLocalizationsDelegate

@@ -11,15 +11,15 @@ See: .paul/PROJECT.md (updated 2026-03-21)
 
 Milestone: v0.2 Business Intelligence & Procurement (v0.2.0)
 Phase: 6 of 7 (Procurement & Cost Tracking) — Planning
-Plan: 06-01 complete, 06-02 not started
-Status: Ready for next PLAN (06-02)
-Last activity: 2026-03-22 — Completed 06-01 (Suppliers + Product Cost Price)
+Plan: 06-02 complete, 06-03 not started
+Status: Ready for next PLAN (06-03)
+Last activity: 2026-03-22 — Completed 06-02 (Purchase Orders)
 
 Progress:
 - Milestone v0.1: [██████████] 100% COMPLETE
-- Milestone v0.2: [████░░░░░░] 44%
+- Milestone v0.2: [█████░░░░░] 55%
 - Phase 5: [██████████] 100% COMPLETE
-- Phase 6: [███░░░░░░░] 33% (1/3 plans)
+- Phase 6: [██████░░░░] 66% (2/3 plans)
 
 ## Loop Position
 
@@ -56,6 +56,7 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | Enterprise audit on 05-01: Applied 1 must-have + 3 strongly-recommended | 05-01 | Plan strengthened: ReceiptPreviewScreen fix (compile-blocking), order join pattern, status indicator, RefreshIndicator async |
 | Enterprise audit on 05-02: Applied 1 must-have + 1 strongly-recommended | 05-02 | Plan strengthened: SimpleAttributionWidget (matches existing pattern), map tap guard during save |
 | Enterprise audit on 06-01: Applied 1 must-have + 1 strongly-recommended | 06-01 | Plan strengthened: cost_price CHECK >= 0 constraint, flutter gen-l10n step |
+| Enterprise audit on 06-02: Applied 1 must-have + 0 strongly-recommended | 06-02 | Plan strengthened: created_by FK to users(id) for PostgREST join |
 
 ### Deferred Issues
 | Issue | Origin | Effort | Revisit |
@@ -76,15 +77,14 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-22
-Stopped at: Session paused — 06-01 complete, ready to plan 06-02
-Next action: /paul:plan for 06-02 (Purchase Orders)
-Resume file: .paul/HANDOFF-2026-03-22-phase6.md
+Stopped at: Session paused — 06-02 complete, ready to plan 06-03
+Next action: /paul:plan for 06-03 (Profit Margins + Dashboard KPIs)
+Resume file: .paul/HANDOFF-2026-03-22-phase6-po.md
 Resume context:
-- 06-01 COMPLETE: Suppliers CRUD + product cost_price
-- 06-02 next: Purchase orders (create, list, detail with supplier + product lines)
-- 06-03 after: Profit margins + dashboard KPIs
-- Suppliers table ready for FK reference from purchase_orders
-- Migration 012 needed for purchase_orders + purchase_order_lines
+- 06-02 COMPLETE: Purchase orders with supplier picker, package pricing, date filters
+- 06-03 next: Profit margins per product + dashboard KPI cards
+- Product cost_price + purchase order data available for profit calc
+- This is the last plan in Phase 6
 
 ---
 *STATE.md — Updated after every significant action*
