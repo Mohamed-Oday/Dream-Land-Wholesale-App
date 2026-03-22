@@ -12,30 +12,35 @@ Owner gets real-time visibility into wholesale distribution field operations —
 
 | Attribute | Value |
 |-----------|-------|
-| Version | 0.0.0 |
-| Status | Prototype |
-| Last Updated | 2026-03-21 |
+| Version | 0.2.0 |
+| Status | Pre-production |
+| Last Updated | 2026-03-22 |
 
 ## Requirements
 
 ### Validated (Shipped)
 
-- [x] Phase 1: Core Loop — Auth, product catalog, store registry, order creation, receipt preview
+- [x] Phase 1: Core Loop — Auth, product catalog, store registry, order creation, receipt preview — v0.1
+- [x] Phase 2: Money & Packaging — Payment collection, per-product package tracking, Bluetooth printing — v0.1
+- [x] Phase 3: Visibility & Control — Owner dashboard, GPS tracking, live map, discount approval — v0.1
+- [x] Phase 4: Polish & Hardening — In-app updates, filters, alerts, edge cases — v0.1
+- [x] Phase 5: Admin Expansion — Admin dashboard, store location picker, driver store creation — v0.2
+- [x] Phase 6: Procurement — Suppliers, purchase orders, profit margins — v0.2
+- [x] Phase 7: Stock & Inventory — Stock tracking, low stock alerts, adjustment, movement history — v0.2
 
 ### Active (In Progress)
 
-- [ ] Phase 2: Money & Packaging — Payment collection, per-product package tracking, Bluetooth printing
+None — milestone v0.2 complete
 
 ### Planned (Next)
-- [ ] Phase 3: Visibility & Control — Owner dashboard, GPS tracking, live map, discount approval
-- [ ] Phase 4: Polish & Hardening — In-app updates, filters, alerts, edge cases
+
+To be defined via /paul:discuss-milestone
 
 ### Out of Scope
 
 - Store-facing portal or app — not needed for MVP
 - Multi-language support — Arabic only
 - Route optimization — manual routes for now
-- Inventory management — no warehouse stock tracking
 - Advanced analytics / Excel export — basic dashboard only
 - Multiple payment methods — cash only
 - Product images — text catalog sufficient
@@ -129,7 +134,7 @@ Owner gets real-time visibility into wholesale distribution field operations —
 | Local DB | Drift (SQLite) | Offline-first, type-safe, reactive queries |
 | Maps | OpenStreetMap + flutter_map | Free, no API key |
 | Bluetooth | esc_pos_bluetooth / flutter_blue_plus | TBD based on printer model |
-| State Mgmt | Riverpod or Bloc | TBD during Phase 1 |
+| State Mgmt | Riverpod | Validated in Phase 1, used throughout |
 
 ## Links
 
@@ -140,4 +145,4 @@ Owner gets real-time visibility into wholesale distribution field operations —
 
 ---
 *PROJECT.md — Updated when requirements or context change*
-*Last updated: 2026-03-21*
+*Last updated: 2026-03-22 after v0.2 Business Intelligence & Procurement*

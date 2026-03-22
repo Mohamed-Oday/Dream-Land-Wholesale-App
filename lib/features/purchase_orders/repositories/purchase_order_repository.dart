@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PurchaseOrderRepository {
@@ -72,6 +73,15 @@ class PurchaseOrderRepository {
               })
           .toList();
       await _client.from('purchase_order_lines').insert(lines);
+    }
+
+    // Replenish stock (fire-and-forget — PO is the primary business event)
+    try {
+      await _client.rpc('replenish_stock_from_purchase', params: {
+        'p_purchase_order_id': poId,
+      });
+    } catch (e) {
+      debugPrint('Warning: stock replenishment failed (PO saved): $e');
     }
 
     return poRows.first;

@@ -10,23 +10,22 @@ See: .paul/PROJECT.md (updated 2026-03-21)
 ## Current Position
 
 Milestone: v0.2 Business Intelligence & Procurement (v0.2.0)
-Phase: 6 of 7 (Procurement & Cost Tracking) — Planning
-Plan: 06-03 complete (Phase 6 done)
-Status: Phase 6 complete, ready for Phase 7
-Last activity: 2026-03-22 — Completed Phase 6 (3 plans)
+Milestone: Awaiting next milestone
+Phase: None active
+Plan: None
+Status: Milestone v0.2 complete — ready for next
+Last activity: 2026-03-22 — Milestone v0.2 completed
 
 Progress:
 - Milestone v0.1: [██████████] 100% COMPLETE
-- Milestone v0.2: [██████░░░░] 66%
-- Phase 5: [██████████] 100% COMPLETE
-- Phase 6: [██████████] 100% COMPLETE
+- Milestone v0.2: [██████████] 100% COMPLETE
 
 ## Loop Position
 
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ✓     [Loop complete — Phase 6 done, ready for Phase 7]
+  ○        ○        ○     [Milestone complete — ready for next]
 ```
 
 ## Accumulated Context
@@ -58,6 +57,8 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | Enterprise audit on 06-01: Applied 1 must-have + 1 strongly-recommended | 06-01 | Plan strengthened: cost_price CHECK >= 0 constraint, flutter gen-l10n step |
 | Enterprise audit on 06-02: Applied 1 must-have + 0 strongly-recommended | 06-02 | Plan strengthened: created_by FK to users(id) for PostgREST join |
 | Enterprise audit on 06-03: Applied 1 must-have + 1 strongly-recommended | 06-03 | Plan strengthened: collection spread compile fix, KpiCard valueColor for green/red profit |
+| Enterprise audit on 07-01: Applied 2 must-have + 2 strongly-recommended | 07-01 | Plan strengthened: RPC idempotency guards (prevent double-deduction), RPC business_id auth check, driver SELECT-only on stock_movements, flutter gen-l10n step |
+| Enterprise audit on 07-02: Applied 1 must-have + 1 strongly-recommended | 07-02 | Plan strengthened: adjust_stock zero rejection + negative stock prevention with projected result display, flutter gen-l10n step |
 
 ### Deferred Issues
 | Issue | Origin | Effort | Revisit |
@@ -78,14 +79,14 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-22
-Stopped at: Session paused — Phase 6 complete, ready for Phase 7
-Next action: /paul:plan for Phase 7 (Stock & Inventory)
-Resume file: .paul/HANDOFF-2026-03-22-phase7.md
+Stopped at: Milestone v0.2 complete, session paused
+Next action: /paul:discuss-milestone for v0.3
+Resume file: .paul/HANDOFF-2026-03-22-v02-complete.md
 Resume context:
-- Phase 6 COMPLETE: Suppliers, purchase orders, profit margins
-- Phase 7 next: Stock & Inventory (stock levels, deduction on orders, replenishment from purchases, low stock alerts)
-- Phase 7 is the LAST phase in v0.2 milestone
-- All navigation shells at 5-tab max
+- v0.1 COMPLETE: Core loop, money, visibility, hardening (4 phases, 16 plans)
+- v0.2 COMPLETE: Admin expansion, procurement, stock & inventory (3 phases, 7 plans)
+- Total: 7 phases, 23 plans delivered across 2 milestones
+- Next: Define v0.3 milestone scope
 
 ---
 *STATE.md — Updated after every significant action*

@@ -225,5 +225,34 @@
   "purchaseDetails": "Purchase Details",
   "items": "items",
   "todayPurchases": "Today's Purchases",
-  "todayProfit": "Today's Profit"
+  "todayProfit": "Today's Profit",
+  "stockOnHand": "Stock",
+  "outOfStock": "Out of stock",
+  "stockLevel": "Stock: {count}",
+  "@stockLevel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lowStockAlerts": "Low Stock Alerts",
+  "noLowStock": "No low stock products",
+  "adjustStock": "Adjust Stock",
+  "stockMovements": "Movement History",
+  "stockAdjusted": "Stock adjusted",
+  "noStockMovements": "No stock movements",
+  "movementOrderOut": "Order (out)",
+  "movementPurchaseIn": "Purchase (in)",
+  "movementCancellationRestore": "Cancellation (restore)",
+  "movementAdjustment": "Manual adjustment",
+  "projectedResult": "Result: {count}",
+  "@projectedResult": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resultCannotBeNegative": "Result cannot be negative"
 }

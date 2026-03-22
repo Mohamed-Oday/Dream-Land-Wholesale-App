@@ -1357,6 +1357,96 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'ربح اليوم'**
   String get todayProfit;
+
+  /// No description provided for @stockOnHand.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخزون'**
+  String get stockOnHand;
+
+  /// No description provided for @outOfStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'نفذ المخزون'**
+  String get outOfStock;
+
+  /// No description provided for @stockLevel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخزون: {count}'**
+  String stockLevel(int count);
+
+  /// No description provided for @lowStockAlerts.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات المخزون'**
+  String get lowStockAlerts;
+
+  /// No description provided for @noLowStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد منتجات منخفضة المخزون'**
+  String get noLowStock;
+
+  /// No description provided for @adjustStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل المخزون'**
+  String get adjustStock;
+
+  /// No description provided for @stockMovements.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل الحركات'**
+  String get stockMovements;
+
+  /// No description provided for @stockAdjusted.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تعديل المخزون'**
+  String get stockAdjusted;
+
+  /// No description provided for @noStockMovements.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد حركات مخزون'**
+  String get noStockMovements;
+
+  /// No description provided for @movementOrderOut.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلب (خروج)'**
+  String get movementOrderOut;
+
+  /// No description provided for @movementPurchaseIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشتريات (دخول)'**
+  String get movementPurchaseIn;
+
+  /// No description provided for @movementCancellationRestore.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء (إرجاع)'**
+  String get movementCancellationRestore;
+
+  /// No description provided for @movementAdjustment.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل يدوي'**
+  String get movementAdjustment;
+
+  /// No description provided for @projectedResult.
+  ///
+  /// In ar, this message translates to:
+  /// **'النتيجة: {count}'**
+  String projectedResult(int count);
+
+  /// No description provided for @resultCannotBeNegative.
+  ///
+  /// In ar, this message translates to:
+  /// **'النتيجة لا يمكن أن تكون سالبة'**
+  String get resultCannotBeNegative;
 }
 
 class _AppLocalizationsDelegate

@@ -103,6 +103,24 @@ class DashboardRepository {
     return List<Map<String, dynamic>>.from(result);
   }
 
+  /// Products where stock_on_hand <= low_stock_threshold (threshold > 0).
+  Future<List<Map<String, dynamic>>> getLowStockProducts() async {
+    final result = await _client
+        .from('products')
+        .select('id, name, stock_on_hand, low_stock_threshold')
+        .eq('business_id', _businessId)
+        .eq('active', true)
+        .gt('low_stock_threshold', 0);
+
+    final rows = List<Map<String, dynamic>>.from(result);
+    // PostgREST can't compare columns — filter in Dart
+    return rows
+        .where((p) =>
+            (p['stock_on_hand'] as num? ?? 0) <=
+            (p['low_stock_threshold'] as num? ?? 0))
+        .toList();
+  }
+
   /// Stores with outstanding unreturned packages via RPC.
   Future<List<Map<String, dynamic>>> getPackageAlerts() async {
     final result = await _client.rpc('get_package_alerts', params: {

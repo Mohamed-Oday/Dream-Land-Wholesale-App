@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -112,6 +113,15 @@ class OrderRepository {
       rethrow;
     }
 
+    // Deduct stock (fire-and-forget — order is the primary business event)
+    try {
+      await _client.rpc('deduct_stock_for_order', params: {
+        'p_order_id': orderId,
+      });
+    } catch (e) {
+      debugPrint('Warning: stock deduction failed (order saved): $e');
+    }
+
     return Map<String, dynamic>.from(orderData);
   }
 
@@ -150,6 +160,16 @@ class OrderRepository {
       'p_order_id': orderId,
       'p_business_id': _businessId,
     });
+
+    // Restore stock (fire-and-forget — cancellation is the primary event)
+    try {
+      await _client.rpc('restore_stock_for_cancellation', params: {
+        'p_order_id': orderId,
+      });
+    } catch (e) {
+      debugPrint('Warning: stock restoration failed (order cancelled): $e');
+    }
+
     return Map<String, dynamic>.from(result as Map);
   }
 

@@ -647,4 +647,53 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get todayProfit => 'ربح اليوم';
+
+  @override
+  String get stockOnHand => 'المخزون';
+
+  @override
+  String get outOfStock => 'نفذ المخزون';
+
+  @override
+  String stockLevel(int count) {
+    return 'المخزون: $count';
+  }
+
+  @override
+  String get lowStockAlerts => 'تنبيهات المخزون';
+
+  @override
+  String get noLowStock => 'لا توجد منتجات منخفضة المخزون';
+
+  @override
+  String get adjustStock => 'تعديل المخزون';
+
+  @override
+  String get stockMovements => 'سجل الحركات';
+
+  @override
+  String get stockAdjusted => 'تم تعديل المخزون';
+
+  @override
+  String get noStockMovements => 'لا توجد حركات مخزون';
+
+  @override
+  String get movementOrderOut => 'طلب (خروج)';
+
+  @override
+  String get movementPurchaseIn => 'مشتريات (دخول)';
+
+  @override
+  String get movementCancellationRestore => 'إلغاء (إرجاع)';
+
+  @override
+  String get movementAdjustment => 'تعديل يدوي';
+
+  @override
+  String projectedResult(int count) {
+    return 'النتيجة: $count';
+  }
+
+  @override
+  String get resultCannotBeNegative => 'النتيجة لا يمكن أن تكون سالبة';
 }

@@ -13,6 +13,8 @@ import 'package:tawzii/features/orders/providers/order_provider.dart';
 import 'package:tawzii/features/orders/screens/order_list_screen.dart';
 import 'package:tawzii/features/stores/screens/store_detail_screen.dart';
 import 'package:tawzii/features/payments/screens/payment_list_screen.dart';
+import 'package:tawzii/features/products/providers/product_provider.dart';
+import 'package:tawzii/features/products/screens/product_form_screen.dart';
 import 'package:tawzii/features/products/screens/product_list_screen.dart';
 
 class OwnerDashboardScreen extends ConsumerWidget {
@@ -31,6 +33,7 @@ class OwnerDashboardScreen extends ConsumerWidget {
     final debtors = ref.watch(topDebtorsProvider);
     final alerts = ref.watch(packageAlertsProvider);
     final pendingDiscounts = ref.watch(pendingDiscountsProvider);
+    final lowStockProducts = ref.watch(lowStockProductsProvider);
 
     final numberFormat = NumberFormat('#,##0', 'ar');
     final currencyFormat = NumberFormat('#,##0.00', 'ar');
@@ -78,6 +81,7 @@ class OwnerDashboardScreen extends ConsumerWidget {
           ref.invalidate(topDebtorsProvider);
           ref.invalidate(packageAlertsProvider);
           ref.invalidate(pendingDiscountsProvider);
+          ref.invalidate(lowStockProductsProvider);
           await Future.wait([
             ref.read(todayRevenueProvider.future),
             ref.read(todayOrderCountProvider.future),
@@ -86,6 +90,7 @@ class OwnerDashboardScreen extends ConsumerWidget {
             ref.read(topDebtorsProvider.future),
             ref.read(packageAlertsProvider.future),
             ref.read(pendingDiscountsProvider.future),
+            ref.read(lowStockProductsProvider.future),
           ]);
         },
         child: ListView(
@@ -370,6 +375,85 @@ class OwnerDashboardScreen extends ConsumerWidget {
               loading: () => _buildShimmerList(context, 3),
               error: (error, _) => _buildErrorSection(context, l10n.retry, () {
                 ref.invalidate(packageAlertsProvider);
+              }),
+            ),
+
+            const SizedBox(height: 24),
+
+            // --- Low Stock Alerts Section ---
+            _SectionHeader(
+              title: l10n.lowStockAlerts,
+              icon: Icons.warning_amber,
+              iconColor: colorScheme.error,
+            ),
+            const SizedBox(height: 8),
+            lowStockProducts.when(
+              data: (products) {
+                if (products.isEmpty) {
+                  return _EmptyState(
+                    icon: Icons.check_circle_outline,
+                    message: l10n.noLowStock,
+                    color: Colors.green,
+                  );
+                }
+                return Card(
+                  elevation: 0,
+                  color: colorScheme.surfaceContainerLow,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    children: [
+                      for (int i = 0; i < products.length; i++) ...[
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          leading: CircleAvatar(
+                            backgroundColor: colorScheme.errorContainer,
+                            radius: 20,
+                            child: Icon(
+                              Icons.inventory_outlined,
+                              color: colorScheme.onErrorContainer,
+                              size: 20,
+                            ),
+                          ),
+                          title: Text(
+                            products[i]['name'] as String? ?? '',
+                            style: theme.textTheme.titleSmall,
+                          ),
+                          trailing: Text(
+                            '${numberFormat.format(_toInt(products[i]['stock_on_hand']))} وحدة',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: colorScheme.error,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          onTap: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ProductFormScreen(
+                                  product: products[i],
+                                ),
+                              ),
+                            );
+                            ref.invalidate(lowStockProductsProvider);
+                            ref.invalidate(productListProvider);
+                          },
+                        ),
+                        if (i < products.length - 1)
+                          Divider(height: 1, indent: 72, color: colorScheme.outlineVariant),
+                      ],
+                    ],
+                  ),
+                );
+              },
+              loading: () => _buildShimmerList(context, 2),
+              error: (_, _) => _buildErrorSection(context, l10n.retry, () {
+                ref.invalidate(lowStockProductsProvider);
               }),
             ),
 

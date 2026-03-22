@@ -6,6 +6,7 @@ import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/core/theme/app_colors.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../printing/providers/printer_provider.dart';
+import '../../products/providers/product_provider.dart';
 import '../providers/order_provider.dart';
 
 class ReceiptPreviewScreen extends ConsumerWidget {
@@ -137,6 +138,7 @@ class _ReceiptScaffoldState extends ConsumerState<_ReceiptScaffold> {
       // Update local order state to reflect cancellation
       widget.order['status'] = 'cancelled';
       widget.order['discount_status'] = 'none';
+      ref.invalidate(productListProvider);
 
       setState(() {});
 

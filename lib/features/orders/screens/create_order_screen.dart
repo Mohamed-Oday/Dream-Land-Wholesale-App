@@ -145,28 +145,48 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                           itemCount: products.length,
                           itemBuilder: (_, index) {
                             final p = products[index];
+                            final stock = (p['stock_on_hand'] as num?)?.toInt() ?? 0;
+                            final isOutOfStock = stock <= 0;
                             return ListTile(
                               leading: CircleAvatar(
-                                backgroundColor:
-                                    Theme.of(ctx).colorScheme.primaryContainer,
+                                backgroundColor: isOutOfStock
+                                    ? Theme.of(ctx).colorScheme.errorContainer
+                                    : Theme.of(ctx).colorScheme.primaryContainer,
                                 child: Icon(Icons.shopping_bag,
-                                    color: Theme.of(ctx)
-                                        .colorScheme
-                                        .onPrimaryContainer),
+                                    color: isOutOfStock
+                                        ? Theme.of(ctx).colorScheme.onErrorContainer
+                                        : Theme.of(ctx).colorScheme.onPrimaryContainer),
                               ),
-                              title: Text(p['name'] ?? ''),
+                              title: Text(
+                                p['name'] ?? '',
+                                style: isOutOfStock
+                                    ? TextStyle(color: Theme.of(ctx).colorScheme.onSurfaceVariant)
+                                    : null,
+                              ),
                               subtitle: Text(() {
                                 final price = (p['unit_price'] as num).toDouble();
                                 final upkg = p['units_per_package'] as int?;
+                                final stockLabel = 'المخزون: $stock';
                                 if (upkg != null) {
-                                  return '${(price * upkg).toStringAsFixed(2)} د.ج/عبوة · $upkg وحدة · ${price.toStringAsFixed(2)} د.ج/وحدة';
+                                  return '${(price * upkg).toStringAsFixed(2)} د.ج/عبوة · $stockLabel';
                                 }
-                                return '${price.toStringAsFixed(2)} د.ج';
+                                return '${price.toStringAsFixed(2)} د.ج · $stockLabel';
                               }()),
-                              onTap: () {
-                                _addProduct(p);
-                                Navigator.pop(ctx);
-                              },
+                              trailing: isOutOfStock
+                                  ? Text('نفذ',
+                                      style: TextStyle(
+                                        color: Theme.of(ctx).colorScheme.error,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 12,
+                                      ))
+                                  : null,
+                              enabled: !isOutOfStock,
+                              onTap: isOutOfStock
+                                  ? null
+                                  : () {
+                                      _addProduct(p);
+                                      Navigator.pop(ctx);
+                                    },
                             );
                           },
                         ),
@@ -183,10 +203,33 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
   }
 
   void _addProduct(Map<String, dynamic> product) {
+    final stock = (product['stock_on_hand'] as num?)?.toInt() ?? 0;
+
+    // Block if out of stock
+    if (stock <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('نفذ المخزون'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       final existingIndex = _lineItems
           .indexWhere((item) => item.productId == product['id']);
       if (existingIndex >= 0) {
+        // Block if already at stock limit
+        if (_lineItems[existingIndex].quantity >= stock) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('الكمية المتاحة: $stock فقط'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          return;
+        }
         _lineItems[existingIndex].quantity++;
       } else {
         _lineItems.add(_LineItem(
@@ -197,6 +240,7 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
           unitsPerPackage: product['units_per_package'] as int?,
           hasReturnablePackaging:
               product['has_returnable_packaging'] == true,
+          stockOnHand: stock,
         ));
       }
     });
@@ -214,9 +258,17 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
 
   void _updateQuantity(int index, int delta) {
     setState(() {
-      final newQty = _lineItems[index].quantity + delta;
-      if (newQty >= 1) {
-        _lineItems[index].quantity = newQty;
+      final item = _lineItems[index];
+      final newQty = item.quantity + delta;
+      if (newQty >= 1 && newQty <= item.stockOnHand) {
+        item.quantity = newQty;
+      } else if (newQty > item.stockOnHand) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('الكمية المتاحة: ${item.stockOnHand} فقط'),
+            backgroundColor: Colors.orange,
+          ),
+        );
       }
     });
   }
@@ -338,6 +390,8 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                 'line_total': item.lineTotal,
               })
           .toList();
+
+      ref.invalidate(productListProvider);
 
       Navigator.pushReplacement(
         context,
@@ -589,8 +643,9 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                                           IconButton(
                                             icon: const Icon(Icons.add,
                                                 size: 18),
-                                            onPressed: () =>
-                                                _updateQuantity(i, 1),
+                                            onPressed: item.quantity < item.stockOnHand
+                                                ? () => _updateQuantity(i, 1)
+                                                : null,
                                             constraints:
                                                 const BoxConstraints(
                                                     minWidth: 40,
@@ -850,6 +905,7 @@ class _LineItem {
   final double unitPrice;
   final int? unitsPerPackage;
   final bool hasReturnablePackaging;
+  final int stockOnHand;
   int quantity;
 
   _LineItem({
@@ -859,6 +915,7 @@ class _LineItem {
     required this.quantity,
     this.unitsPerPackage,
     this.hasReturnablePackaging = false,
+    this.stockOnHand = 0,
   });
 
   /// Price per package (or per unit if no package).

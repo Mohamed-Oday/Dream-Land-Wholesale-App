@@ -284,6 +284,7 @@ class _CreatePurchaseOrderScreenState
       );
 
       ref.invalidate(purchaseOrderListProvider);
+      ref.invalidate(productListProvider);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

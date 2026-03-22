@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import '../providers/product_provider.dart';
+import 'stock_adjustment_screen.dart';
+import 'stock_movement_history_screen.dart';
 
 class ProductFormScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic>? product;
@@ -21,6 +23,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   late final TextEditingController _priceController;
   late final TextEditingController _unitsPerPkgController;
   late final TextEditingController _costPriceController;
+  late final TextEditingController _stockController;
+  late final TextEditingController _lowStockThresholdController;
   late bool _hasReturnablePackaging;
   bool _isLoading = false;
   String? _errorMessage;
@@ -36,6 +40,10 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         TextEditingController(text: p?['units_per_package']?.toString() ?? '');
     _costPriceController =
         TextEditingController(text: p?['cost_price']?.toString() ?? '');
+    _stockController =
+        TextEditingController(text: p?['stock_on_hand']?.toString() ?? '0');
+    _lowStockThresholdController =
+        TextEditingController(text: p?['low_stock_threshold']?.toString() ?? '0');
     _hasReturnablePackaging = p?['has_returnable_packaging'] ?? false;
   }
 
@@ -45,6 +53,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     _priceController.dispose();
     _unitsPerPkgController.dispose();
     _costPriceController.dispose();
+    _stockController.dispose();
+    _lowStockThresholdController.dispose();
     super.dispose();
   }
 
@@ -68,12 +78,16 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
           : null;
 
       if (widget.isEditing) {
+        final stockOnHand = int.tryParse(_stockController.text.trim()) ?? 0;
+        final lowStockThreshold = int.tryParse(_lowStockThresholdController.text.trim()) ?? 0;
         await repo.update(widget.product!['id'], {
           'name': _nameController.text.trim(),
           'unit_price': price,
           'units_per_package': unitsPerPkg,
           'has_returnable_packaging': _hasReturnablePackaging,
           'cost_price': costPrice,
+          'stock_on_hand': stockOnHand,
+          'low_stock_threshold': lowStockThreshold,
         });
       } else {
         await repo.create(
@@ -164,6 +178,47 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                   return null;
                 },
               ),
+              if (widget.isEditing) ...[
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _stockController,
+                  enabled: !_isLoading,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
+                  decoration: InputDecoration(
+                    labelText: l10n.stockOnHand,
+                    prefixIcon: const Icon(Icons.inventory_outlined),
+                    suffixText: 'وحدة',
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return null;
+                    final n = int.tryParse(v.trim());
+                    if (n == null) return 'أدخل رقماً صحيحاً';
+                    if (n < 0) return 'لا يمكن أن يكون سالباً';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _lowStockThresholdController,
+                  enabled: !_isLoading,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
+                  decoration: InputDecoration(
+                    labelText: l10n.alertThreshold,
+                    prefixIcon: const Icon(Icons.warning_amber_outlined),
+                    suffixText: 'وحدة',
+                    hintText: '0 = بدون تنبيه',
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return null;
+                    final n = int.tryParse(v.trim());
+                    if (n == null) return 'أدخل رقماً صحيحاً';
+                    if (n < 0) return 'لا يمكن أن يكون سالباً';
+                    return null;
+                  },
+                ),
+              ],
               const SizedBox(height: 16),
               TextFormField(
                 controller: _unitsPerPkgController,
@@ -182,6 +237,55 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                   return null;
                 },
               ),
+              if (widget.isEditing) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _isLoading
+                            ? null
+                            : () async {
+                                final result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => StockAdjustmentScreen(
+                                        product: widget.product!),
+                                  ),
+                                );
+                                if (result == true) {
+                                  ref.invalidate(productListProvider);
+                                }
+                              },
+                        icon: const Icon(Icons.tune, size: 18),
+                        label: Text(l10n.adjustStock),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _isLoading
+                            ? null
+                            : () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        StockMovementHistoryScreen(
+                                      productId:
+                                          widget.product!['id'] as String,
+                                      productName:
+                                          widget.product!['name'] as String? ??
+                                              '',
+                                    ),
+                                  ),
+                                ),
+                        icon: const Icon(Icons.history, size: 18),
+                        label: Text(l10n.stockMovements),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 16),
               SwitchListTile(
                 title: const Text('تغليف قابل للإرجاع'),

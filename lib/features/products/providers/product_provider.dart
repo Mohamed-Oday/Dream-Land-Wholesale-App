@@ -16,3 +16,12 @@ final productListProvider =
   if (repo == null) return [];
   return repo.getAll();
 });
+
+/// Stock movements for a specific product.
+final stockMovementsProvider =
+    FutureProvider.family<List<Map<String, dynamic>>, String>(
+        (ref, productId) async {
+  final repo = ref.watch(productRepositoryProvider);
+  if (repo == null) return [];
+  return repo.getStockMovements(productId);
+});

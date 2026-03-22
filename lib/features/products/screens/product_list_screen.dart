@@ -105,6 +105,11 @@ class ProductListScreen extends ConsumerWidget {
                 final marginPct = (costPrice != null && costPrice > 0)
                     ? (margin! / costPrice * 100).toStringAsFixed(0)
                     : null;
+                final stockOnHand = (p['stock_on_hand'] as num?)?.toInt() ?? 0;
+                final lowStockThreshold =
+                    (p['low_stock_threshold'] as num?)?.toInt() ?? 0;
+                final isLowStock =
+                    lowStockThreshold > 0 && stockOnHand <= lowStockThreshold;
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
@@ -127,6 +132,39 @@ class ProductListScreen extends ConsumerWidget {
                       direction: Axis.vertical,
                       crossAxisAlignment: WrapCrossAlignment.end,
                       children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: isLowStock
+                                ? AppColors.error.withValues(alpha: 0.12)
+                                : AppColors.success.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.inventory_outlined,
+                                size: 12,
+                                color: isLowStock
+                                    ? AppColors.error
+                                    : AppColors.success,
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                '$stockOnHand',
+                                style: TextStyle(
+                                  color: isLowStock
+                                      ? AppColors.error
+                                      : AppColors.success,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                         if (marginPct != null)
                           Container(
                             padding: const EdgeInsets.symmetric(

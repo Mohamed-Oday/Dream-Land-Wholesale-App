@@ -649,4 +649,53 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get todayProfit => 'Today\'s Profit';
+
+  @override
+  String get stockOnHand => 'Stock';
+
+  @override
+  String get outOfStock => 'Out of stock';
+
+  @override
+  String stockLevel(int count) {
+    return 'Stock: $count';
+  }
+
+  @override
+  String get lowStockAlerts => 'Low Stock Alerts';
+
+  @override
+  String get noLowStock => 'No low stock products';
+
+  @override
+  String get adjustStock => 'Adjust Stock';
+
+  @override
+  String get stockMovements => 'Movement History';
+
+  @override
+  String get stockAdjusted => 'Stock adjusted';
+
+  @override
+  String get noStockMovements => 'No stock movements';
+
+  @override
+  String get movementOrderOut => 'Order (out)';
+
+  @override
+  String get movementPurchaseIn => 'Purchase (in)';
+
+  @override
+  String get movementCancellationRestore => 'Cancellation (restore)';
+
+  @override
+  String get movementAdjustment => 'Manual adjustment';
+
+  @override
+  String projectedResult(int count) {
+    return 'Result: $count';
+  }
+
+  @override
+  String get resultCannotBeNegative => 'Result cannot be negative';
 }

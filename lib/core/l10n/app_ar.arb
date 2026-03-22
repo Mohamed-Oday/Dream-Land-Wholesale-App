@@ -225,5 +225,34 @@
   "purchaseDetails": "تفاصيل المشتريات",
   "items": "عناصر",
   "todayPurchases": "مشتريات اليوم",
-  "todayProfit": "ربح اليوم"
+  "todayProfit": "ربح اليوم",
+  "stockOnHand": "المخزون",
+  "outOfStock": "نفذ المخزون",
+  "stockLevel": "المخزون: {count}",
+  "@stockLevel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lowStockAlerts": "تنبيهات المخزون",
+  "noLowStock": "لا توجد منتجات منخفضة المخزون",
+  "adjustStock": "تعديل المخزون",
+  "stockMovements": "سجل الحركات",
+  "stockAdjusted": "تم تعديل المخزون",
+  "noStockMovements": "لا توجد حركات مخزون",
+  "movementOrderOut": "طلب (خروج)",
+  "movementPurchaseIn": "مشتريات (دخول)",
+  "movementCancellationRestore": "إلغاء (إرجاع)",
+  "movementAdjustment": "تعديل يدوي",
+  "projectedResult": "النتيجة: {count}",
+  "@projectedResult": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resultCannotBeNegative": "النتيجة لا يمكن أن تكون سالبة"
 }

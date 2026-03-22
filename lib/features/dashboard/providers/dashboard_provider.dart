@@ -40,6 +40,14 @@ final packageAlertsProvider =
   return repo.getPackageAlerts();
 });
 
+/// Products with stock below their low_stock_threshold.
+final lowStockProductsProvider =
+    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final repo = ref.watch(dashboardRepositoryProvider);
+  if (repo == null) return [];
+  return repo.getLowStockProducts();
+});
+
 /// Today's purchase order costs.
 final todayPurchasesProvider = FutureProvider<double>((ref) async {
   final repo = ref.watch(dashboardRepositoryProvider);

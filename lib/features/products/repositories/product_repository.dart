@@ -54,4 +54,15 @@ class ProductRepository {
   Future<void> deactivate(String id) async {
     await _client.from('products').update({'active': false}).eq('id', id);
   }
+
+  /// Stock movements for a product, newest first.
+  Future<List<Map<String, dynamic>>> getStockMovements(String productId) async {
+    final result = await _client
+        .from('stock_movements')
+        .select('*, users!stock_movements_created_by_fkey(name)')
+        .eq('product_id', productId)
+        .order('created_at', ascending: false)
+        .limit(100);
+    return List<Map<String, dynamic>>.from(result);
+  }
 }

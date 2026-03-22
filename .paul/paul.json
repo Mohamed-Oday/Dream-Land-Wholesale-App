@@ -4,11 +4,11 @@
   "milestone": {
     "name": "v0.2 Business Intelligence & Procurement",
     "version": "0.2.0",
-    "status": "in_progress"
+    "status": "complete"
   },
   "phase": {
-    "number": 6,
-    "name": "Procurement & Cost Tracking",
+    "number": 7,
+    "name": "Stock & Inventory",
     "status": "complete"
   },
   "loop": {

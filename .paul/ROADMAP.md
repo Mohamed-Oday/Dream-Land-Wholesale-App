@@ -11,9 +11,10 @@ Status: Complete
 Phases: 4 of 4 complete (Phases 1-4)
 Completed: 2026-03-22
 
-### v0.2 Business Intelligence & Procurement (v0.2.0) — IN PROGRESS
-Status: In progress
-Phases: 2 of 3 complete (Phases 5-7)
+### v0.2 Business Intelligence & Procurement (v0.2.0) — COMPLETE
+Status: Complete
+Phases: 3 of 3 complete (Phases 5-7)
+Completed: 2026-03-22
 
 ## Phases
 
@@ -25,7 +26,7 @@ Phases: 2 of 3 complete (Phases 5-7)
 | 4 | Polish & Hardening | 5 | Complete | 2026-03-22 |
 | 5 | Admin Expansion + Store Creation | 2 | Complete | 2026-03-22 |
 | 6 | Procurement & Cost Tracking | 3 | Complete | 2026-03-22 |
-| 7 | Stock & Inventory | TBD | Not started | - |
+| 7 | Stock & Inventory | 2 | Complete | 2026-03-22 |
 
 ## Phase Details
 
@@ -127,7 +128,8 @@ Phases: 2 of 3 complete (Phases 5-7)
 - Stock adjustment screen (manual corrections with reason)
 
 **Plans:**
-- [ ] 07-01: TBD during /paul:plan
+- [x] 07-01: Stock Data Model + Automatic Stock Flow (migration, RPCs, product stock display, order deduction, PO replenishment)
+- [x] 07-02: Low Stock Alerts + Manual Stock Management (dashboard alerts, stock adjustment screen, movement history)
 
 ---
 *Roadmap created: 2026-03-21*
