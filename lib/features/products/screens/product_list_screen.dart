@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
+import 'package:tawzii/core/theme/app_colors.dart';
 import 'package:tawzii/features/purchase_orders/screens/purchase_order_list_screen.dart';
 import 'package:tawzii/features/suppliers/screens/supplier_list_screen.dart';
 import '../providers/product_provider.dart';
@@ -98,6 +99,12 @@ class ProductListScreen extends ConsumerWidget {
                 final p = products[index];
                 final hasPackaging = p['has_returnable_packaging'] == true;
                 final unitsPerPkg = p['units_per_package'];
+                final costPrice = (p['cost_price'] as num?)?.toDouble();
+                final sellPrice = (p['unit_price'] as num?)?.toDouble() ?? 0;
+                final margin = costPrice != null ? sellPrice - costPrice : null;
+                final marginPct = (costPrice != null && costPrice > 0)
+                    ? (margin! / costPrice * 100).toStringAsFixed(0)
+                    : null;
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
@@ -111,17 +118,46 @@ class ProductListScreen extends ConsumerWidget {
                     ),
                     title: Text(p['name'] ?? ''),
                     subtitle: Text(
-                      p['cost_price'] != null
-                          ? '${l10n.sellPrice}: ${p['unit_price']} د.ج · ${l10n.costPrice}: ${p['cost_price']} د.ج'
+                      costPrice != null
+                          ? '${l10n.sellPrice}: $sellPrice د.ج · ${l10n.costPrice}: $costPrice د.ج'
                           : '${p['unit_price']} د.ج${unitsPerPkg != null ? ' · $unitsPerPkg وحدة/عبوة' : ''}',
                     ),
-                    trailing: hasPackaging
-                        ? Chip(
+                    trailing: Wrap(
+                      spacing: 4,
+                      direction: Axis.vertical,
+                      crossAxisAlignment: WrapCrossAlignment.end,
+                      children: [
+                        if (marginPct != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: margin! >= 0
+                                  ? AppColors.success
+                                      .withValues(alpha: 0.12)
+                                  : AppColors.error
+                                      .withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              '$marginPct%',
+                              style: TextStyle(
+                                color: margin >= 0
+                                    ? AppColors.success
+                                    : AppColors.error,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        if (hasPackaging)
+                          Chip(
                             label: const Text('قابل للإرجاع'),
                             labelStyle: theme.textTheme.labelSmall,
                             visualDensity: VisualDensity.compact,
-                          )
-                        : null,
+                          ),
+                      ],
+                    ),
                     onTap: () async {
                       await Navigator.push(
                         context,

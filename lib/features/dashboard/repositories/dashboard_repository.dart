@@ -57,6 +57,28 @@ class DashboardRepository {
     return result.count;
   }
 
+  /// Sum of all purchase order costs today (Algeria local time).
+  Future<double> getTodayPurchases() async {
+    final todayStart = _todayStartUtc();
+    final result = await _client
+        .from('purchase_orders')
+        .select('total_cost')
+        .eq('business_id', _businessId)
+        .gte('created_at', todayStart);
+
+    final rows = List<Map<String, dynamic>>.from(result);
+    if (rows.isEmpty) return 0.0;
+
+    double total = 0.0;
+    for (final row in rows) {
+      final cost = row['total_cost'];
+      if (cost is num) {
+        total += cost.toDouble();
+      }
+    }
+    return total;
+  }
+
   /// Stores with credit_balance > 0, sorted by balance descending.
   Future<List<Map<String, dynamic>>> getTopDebtors({int limit = 5}) async {
     final result = await _client

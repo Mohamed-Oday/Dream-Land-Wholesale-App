@@ -5,28 +5,28 @@
 See: .paul/PROJECT.md (updated 2026-03-21)
 
 **Core value:** Owner gets real-time visibility into wholesale distribution field operations — orders, payments, returnable packaging, and driver locations — replacing paper-based tracking that causes cash leakage and packaging loss.
-**Current focus:** Phase 6 — Procurement & Cost Tracking
+**Current focus:** Phase 7 — Stock & Inventory
 
 ## Current Position
 
 Milestone: v0.2 Business Intelligence & Procurement (v0.2.0)
 Phase: 6 of 7 (Procurement & Cost Tracking) — Planning
-Plan: 06-02 complete, 06-03 not started
-Status: Ready for next PLAN (06-03)
-Last activity: 2026-03-22 — Completed 06-02 (Purchase Orders)
+Plan: 06-03 complete (Phase 6 done)
+Status: Phase 6 complete, ready for Phase 7
+Last activity: 2026-03-22 — Completed Phase 6 (3 plans)
 
 Progress:
 - Milestone v0.1: [██████████] 100% COMPLETE
-- Milestone v0.2: [█████░░░░░] 55%
+- Milestone v0.2: [██████░░░░] 66%
 - Phase 5: [██████████] 100% COMPLETE
-- Phase 6: [██████░░░░] 66% (2/3 plans)
+- Phase 6: [██████████] 100% COMPLETE
 
 ## Loop Position
 
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ✓     [Loop complete — ready for next PLAN]
+  ✓        ✓        ✓     [Loop complete — Phase 6 done, ready for Phase 7]
 ```
 
 ## Accumulated Context
@@ -57,6 +57,7 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | Enterprise audit on 05-02: Applied 1 must-have + 1 strongly-recommended | 05-02 | Plan strengthened: SimpleAttributionWidget (matches existing pattern), map tap guard during save |
 | Enterprise audit on 06-01: Applied 1 must-have + 1 strongly-recommended | 06-01 | Plan strengthened: cost_price CHECK >= 0 constraint, flutter gen-l10n step |
 | Enterprise audit on 06-02: Applied 1 must-have + 0 strongly-recommended | 06-02 | Plan strengthened: created_by FK to users(id) for PostgREST join |
+| Enterprise audit on 06-03: Applied 1 must-have + 1 strongly-recommended | 06-03 | Plan strengthened: collection spread compile fix, KpiCard valueColor for green/red profit |
 
 ### Deferred Issues
 | Issue | Origin | Effort | Revisit |
@@ -77,14 +78,14 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-22
-Stopped at: Session paused — 06-02 complete, ready to plan 06-03
-Next action: /paul:plan for 06-03 (Profit Margins + Dashboard KPIs)
-Resume file: .paul/HANDOFF-2026-03-22-phase6-po.md
+Stopped at: Session paused — Phase 6 complete, ready for Phase 7
+Next action: /paul:plan for Phase 7 (Stock & Inventory)
+Resume file: .paul/HANDOFF-2026-03-22-phase7.md
 Resume context:
-- 06-02 COMPLETE: Purchase orders with supplier picker, package pricing, date filters
-- 06-03 next: Profit margins per product + dashboard KPI cards
-- Product cost_price + purchase order data available for profit calc
-- This is the last plan in Phase 6
+- Phase 6 COMPLETE: Suppliers, purchase orders, profit margins
+- Phase 7 next: Stock & Inventory (stock levels, deduction on orders, replenishment from purchases, low stock alerts)
+- Phase 7 is the LAST phase in v0.2 milestone
+- All navigation shells at 5-tab max
 
 ---
 *STATE.md — Updated after every significant action*

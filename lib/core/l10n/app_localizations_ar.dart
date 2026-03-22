@@ -641,4 +641,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get purchaseDetails => 'تفاصيل المشتريات';
+
+  @override
+  String get todayPurchases => 'مشتريات اليوم';
+
+  @override
+  String get todayProfit => 'ربح اليوم';
 }

@@ -223,5 +223,7 @@
   "confirmPurchase": "تأكيد المشتريات",
   "purchaseCreated": "تم تسجيل المشتريات",
   "purchaseDetails": "تفاصيل المشتريات",
-  "items": "عناصر"
+  "items": "عناصر",
+  "todayPurchases": "مشتريات اليوم",
+  "todayProfit": "ربح اليوم"
 }

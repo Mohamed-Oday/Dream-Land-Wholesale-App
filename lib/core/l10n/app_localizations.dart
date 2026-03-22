@@ -1345,6 +1345,18 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تفاصيل المشتريات'**
   String get purchaseDetails;
+
+  /// No description provided for @todayPurchases.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشتريات اليوم'**
+  String get todayPurchases;
+
+  /// No description provided for @todayProfit.
+  ///
+  /// In ar, this message translates to:
+  /// **'ربح اليوم'**
+  String get todayProfit;
 }
 
 class _AppLocalizationsDelegate

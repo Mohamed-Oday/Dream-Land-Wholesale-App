@@ -643,4 +643,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get purchaseDetails => 'Purchase Details';
+
+  @override
+  String get todayPurchases => 'Today\'s Purchases';
+
+  @override
+  String get todayProfit => 'Today\'s Profit';
 }

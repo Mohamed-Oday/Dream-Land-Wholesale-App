@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
+import 'package:tawzii/core/theme/app_colors.dart';
 import 'package:tawzii/features/auth/providers/auth_provider.dart';
 import 'package:tawzii/features/dashboard/providers/dashboard_provider.dart';
 import 'package:tawzii/features/dashboard/widgets/kpi_card.dart';
@@ -25,6 +26,8 @@ class OwnerDashboardScreen extends ConsumerWidget {
 
     final revenue = ref.watch(todayRevenueProvider);
     final orderCount = ref.watch(todayOrderCountProvider);
+    final purchases = ref.watch(todayPurchasesProvider);
+    final profit = ref.watch(todayProfitProvider);
     final debtors = ref.watch(topDebtorsProvider);
     final alerts = ref.watch(packageAlertsProvider);
     final pendingDiscounts = ref.watch(pendingDiscountsProvider);
@@ -70,13 +73,16 @@ class OwnerDashboardScreen extends ConsumerWidget {
         onRefresh: () async {
           ref.invalidate(todayRevenueProvider);
           ref.invalidate(todayOrderCountProvider);
+          ref.invalidate(todayPurchasesProvider);
+          ref.invalidate(todayProfitProvider);
           ref.invalidate(topDebtorsProvider);
           ref.invalidate(packageAlertsProvider);
           ref.invalidate(pendingDiscountsProvider);
-          // Wait for all providers to resolve before hiding indicator
           await Future.wait([
             ref.read(todayRevenueProvider.future),
             ref.read(todayOrderCountProvider.future),
+            ref.read(todayPurchasesProvider.future),
+            ref.read(todayProfitProvider.future),
             ref.read(topDebtorsProvider.future),
             ref.read(packageAlertsProvider.future),
             ref.read(pendingDiscountsProvider.future),
@@ -116,6 +122,46 @@ class OwnerDashboardScreen extends ConsumerWidget {
                       context,
                       l10n.todayOrders,
                       Icons.receipt_long_outlined,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // --- KPI Cards Row 2 (Purchases + Profit) ---
+            Row(
+              children: [
+                Expanded(
+                  child: purchases.when(
+                    data: (value) => KpiCard(
+                      label: l10n.todayPurchases,
+                      value: '${currencyFormat.format(value)} ${l10n.currencyUnit}',
+                      icon: Icons.shopping_cart_outlined,
+                    ),
+                    loading: () => _buildShimmerCard(context),
+                    error: (_, _) => _buildErrorCard(
+                      context,
+                      l10n.todayPurchases,
+                      Icons.shopping_cart_outlined,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: profit.when(
+                    data: (value) => KpiCard(
+                      label: l10n.todayProfit,
+                      value: '${currencyFormat.format(value)} ${l10n.currencyUnit}',
+                      icon: Icons.trending_up_outlined,
+                      valueColor: value >= 0 ? AppColors.success : AppColors.error,
+                    ),
+                    loading: () => _buildShimmerCard(context),
+                    error: (_, _) => _buildErrorCard(
+                      context,
+                      l10n.todayProfit,
+                      Icons.trending_up_outlined,
                     ),
                   ),
                 ),

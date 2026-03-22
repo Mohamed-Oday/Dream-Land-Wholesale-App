@@ -13,7 +13,7 @@ Completed: 2026-03-22
 
 ### v0.2 Business Intelligence & Procurement (v0.2.0) — IN PROGRESS
 Status: In progress
-Phases: 1 of 3 complete (Phases 5-7)
+Phases: 2 of 3 complete (Phases 5-7)
 
 ## Phases
 
@@ -24,7 +24,7 @@ Phases: 1 of 3 complete (Phases 5-7)
 | 3 | Visibility & Control | 4 | Complete | 2026-03-22 |
 | 4 | Polish & Hardening | 5 | Complete | 2026-03-22 |
 | 5 | Admin Expansion + Store Creation | 2 | Complete | 2026-03-22 |
-| 6 | Procurement & Cost Tracking | 3 | Planning | - |
+| 6 | Procurement & Cost Tracking | 3 | Complete | 2026-03-22 |
 | 7 | Stock & Inventory | TBD | Not started | - |
 
 ## Phase Details
@@ -109,7 +109,7 @@ Phases: 1 of 3 complete (Phases 5-7)
 **Plans:**
 - [x] 06-01: Suppliers + Product Cost Price (data foundation)
 - [x] 06-02: Purchase Orders (create, list, detail with package pricing)
-- [ ] 06-03: Profit Margins + Dashboard KPIs (TBD)
+- [x] 06-03: Profit Margins + Dashboard KPIs
 
 ### Phase 7: Stock & Inventory
 

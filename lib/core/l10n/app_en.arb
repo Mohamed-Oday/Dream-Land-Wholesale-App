@@ -223,5 +223,7 @@
   "confirmPurchase": "Confirm Purchase",
   "purchaseCreated": "Purchase recorded",
   "purchaseDetails": "Purchase Details",
-  "items": "items"
+  "items": "items",
+  "todayPurchases": "Today's Purchases",
+  "todayProfit": "Today's Profit"
 }

@@ -40,6 +40,20 @@ final packageAlertsProvider =
   return repo.getPackageAlerts();
 });
 
+/// Today's purchase order costs.
+final todayPurchasesProvider = FutureProvider<double>((ref) async {
+  final repo = ref.watch(dashboardRepositoryProvider);
+  if (repo == null) return 0.0;
+  return repo.getTodayPurchases();
+});
+
+/// Today's profit = revenue - purchases.
+final todayProfitProvider = FutureProvider<double>((ref) async {
+  final revenue = await ref.watch(todayRevenueProvider.future);
+  final purchases = await ref.watch(todayPurchasesProvider.future);
+  return revenue - purchases;
+});
+
 /// Recent orders for admin dashboard (last 10).
 final recentOrdersProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
