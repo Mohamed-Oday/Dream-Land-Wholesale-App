@@ -244,4 +244,49 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get overpaymentWarning => 'المبلغ أكبر من الرصيد المستحق';
+
+  @override
+  String get packageLog => 'سجل التغليف';
+
+  @override
+  String get collectPackages => 'تحصيل العبوات';
+
+  @override
+  String get packagesCollected => 'تم تحصيل العبوات';
+
+  @override
+  String get givenPackages => 'مُعطاة';
+
+  @override
+  String get collectedPackages => 'مُسترجعة';
+
+  @override
+  String get packageBalance => 'رصيد العبوات';
+
+  @override
+  String get noPackageLogs => 'لا توجد سجلات تغليف';
+
+  @override
+  String get emptyPackageMessage => 'لا توجد حركة عبوات بعد';
+
+  @override
+  String get enterCollected => 'أدخل العدد المسترجع';
+
+  @override
+  String get confirmCollection => 'تأكيد التحصيل';
+
+  @override
+  String get confirmCollectionMessage => 'هل تريد تسجيل هذا التحصيل؟';
+
+  @override
+  String get packagesGiven => 'عبوات مُسلّمة';
+
+  @override
+  String get packagesReturned => 'عبوات مُسترجعة';
+
+  @override
+  String get currentPackageBalance => 'رصيد العبوات الحالي';
+
+  @override
+  String get overCollectionWarning => 'العدد المسترجع أكبر من الرصيد الحالي';
 }

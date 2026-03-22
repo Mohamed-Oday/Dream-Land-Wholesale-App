@@ -244,4 +244,51 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get overpaymentWarning => 'Amount exceeds owed balance';
+
+  @override
+  String get packageLog => 'Package Log';
+
+  @override
+  String get collectPackages => 'Collect Packages';
+
+  @override
+  String get packagesCollected => 'Packages Collected';
+
+  @override
+  String get givenPackages => 'Given';
+
+  @override
+  String get collectedPackages => 'Collected';
+
+  @override
+  String get packageBalance => 'Package Balance';
+
+  @override
+  String get noPackageLogs => 'No package logs';
+
+  @override
+  String get emptyPackageMessage => 'No package activity yet';
+
+  @override
+  String get enterCollected => 'Enter collected amount';
+
+  @override
+  String get confirmCollection => 'Confirm Collection';
+
+  @override
+  String get confirmCollectionMessage =>
+      'Do you want to record this collection?';
+
+  @override
+  String get packagesGiven => 'Packages Given';
+
+  @override
+  String get packagesReturned => 'Packages Returned';
+
+  @override
+  String get currentPackageBalance => 'Current Package Balance';
+
+  @override
+  String get overCollectionWarning =>
+      'Collected amount exceeds current balance';
 }

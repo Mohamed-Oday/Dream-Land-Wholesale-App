@@ -134,6 +134,8 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
           unitPrice: (product['unit_price'] as num).toDouble(),
           quantity: 1,
           unitsPerPackage: product['units_per_package'] as int?,
+          hasReturnablePackaging:
+              product['has_returnable_packaging'] == true,
         ));
       }
     });
@@ -231,6 +233,27 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
         });
       } catch (e) {
         debugPrint('Warning: balance update failed (order saved): $e');
+      }
+
+      if (!mounted) return;
+
+      // Auto-log packages for returnable products (fire-and-forget)
+      final orderId = orderData['id'] as String?;
+      for (final item in _lineItems) {
+        if (item.hasReturnablePackaging && orderId != null) {
+          try {
+            await Supabase.instance.client.rpc('create_package_log', params: {
+              'p_store_id': _selectedStoreId!,
+              'p_product_id': item.productId,
+              'p_business_id': user.businessId,
+              'p_given': item.quantity,
+              'p_collected': 0,
+              'p_order_id': orderId,
+            });
+          } catch (e) {
+            debugPrint('Warning: package log failed (order saved): $e');
+          }
+        }
       }
 
       if (!mounted) return;
@@ -646,6 +669,7 @@ class _LineItem {
   final String productName;
   final double unitPrice;
   final int? unitsPerPackage;
+  final bool hasReturnablePackaging;
   int quantity;
 
   _LineItem({
@@ -654,6 +678,7 @@ class _LineItem {
     required this.unitPrice,
     required this.quantity,
     this.unitsPerPackage,
+    this.hasReturnablePackaging = false,
   });
 
   /// Price per package (or per unit if no package).

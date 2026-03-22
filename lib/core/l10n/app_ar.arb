@@ -78,5 +78,20 @@
   "confirmPaymentMessage": "هل تريد تسجيل هذه الدفعة؟",
   "balanceChange": "تغيير الرصيد",
   "recordPayment": "تسجيل الدفعة",
-  "overpaymentWarning": "المبلغ أكبر من الرصيد المستحق"
+  "overpaymentWarning": "المبلغ أكبر من الرصيد المستحق",
+  "packageLog": "سجل التغليف",
+  "collectPackages": "تحصيل العبوات",
+  "packagesCollected": "تم تحصيل العبوات",
+  "givenPackages": "مُعطاة",
+  "collectedPackages": "مُسترجعة",
+  "packageBalance": "رصيد العبوات",
+  "noPackageLogs": "لا توجد سجلات تغليف",
+  "emptyPackageMessage": "لا توجد حركة عبوات بعد",
+  "enterCollected": "أدخل العدد المسترجع",
+  "confirmCollection": "تأكيد التحصيل",
+  "confirmCollectionMessage": "هل تريد تسجيل هذا التحصيل؟",
+  "packagesGiven": "عبوات مُسلّمة",
+  "packagesReturned": "عبوات مُسترجعة",
+  "currentPackageBalance": "رصيد العبوات الحالي",
+  "overCollectionWarning": "العدد المسترجع أكبر من الرصيد الحالي"
 }

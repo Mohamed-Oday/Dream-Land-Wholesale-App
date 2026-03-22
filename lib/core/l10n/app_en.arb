@@ -78,5 +78,20 @@
   "confirmPaymentMessage": "Do you want to record this payment?",
   "balanceChange": "Balance Change",
   "recordPayment": "Record Payment",
-  "overpaymentWarning": "Amount exceeds owed balance"
+  "overpaymentWarning": "Amount exceeds owed balance",
+  "packageLog": "Package Log",
+  "collectPackages": "Collect Packages",
+  "packagesCollected": "Packages Collected",
+  "givenPackages": "Given",
+  "collectedPackages": "Collected",
+  "packageBalance": "Package Balance",
+  "noPackageLogs": "No package logs",
+  "emptyPackageMessage": "No package activity yet",
+  "enterCollected": "Enter collected amount",
+  "confirmCollection": "Confirm Collection",
+  "confirmCollectionMessage": "Do you want to record this collection?",
+  "packagesGiven": "Packages Given",
+  "packagesReturned": "Packages Returned",
+  "currentPackageBalance": "Current Package Balance",
+  "overCollectionWarning": "Collected amount exceeds current balance"
 }

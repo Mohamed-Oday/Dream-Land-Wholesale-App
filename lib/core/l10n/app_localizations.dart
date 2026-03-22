@@ -571,6 +571,96 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'المبلغ أكبر من الرصيد المستحق'**
   String get overpaymentWarning;
+
+  /// No description provided for @packageLog.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل التغليف'**
+  String get packageLog;
+
+  /// No description provided for @collectPackages.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحصيل العبوات'**
+  String get collectPackages;
+
+  /// No description provided for @packagesCollected.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تحصيل العبوات'**
+  String get packagesCollected;
+
+  /// No description provided for @givenPackages.
+  ///
+  /// In ar, this message translates to:
+  /// **'مُعطاة'**
+  String get givenPackages;
+
+  /// No description provided for @collectedPackages.
+  ///
+  /// In ar, this message translates to:
+  /// **'مُسترجعة'**
+  String get collectedPackages;
+
+  /// No description provided for @packageBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيد العبوات'**
+  String get packageBalance;
+
+  /// No description provided for @noPackageLogs.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد سجلات تغليف'**
+  String get noPackageLogs;
+
+  /// No description provided for @emptyPackageMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد حركة عبوات بعد'**
+  String get emptyPackageMessage;
+
+  /// No description provided for @enterCollected.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل العدد المسترجع'**
+  String get enterCollected;
+
+  /// No description provided for @confirmCollection.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد التحصيل'**
+  String get confirmCollection;
+
+  /// No description provided for @confirmCollectionMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل تريد تسجيل هذا التحصيل؟'**
+  String get confirmCollectionMessage;
+
+  /// No description provided for @packagesGiven.
+  ///
+  /// In ar, this message translates to:
+  /// **'عبوات مُسلّمة'**
+  String get packagesGiven;
+
+  /// No description provided for @packagesReturned.
+  ///
+  /// In ar, this message translates to:
+  /// **'عبوات مُسترجعة'**
+  String get packagesReturned;
+
+  /// No description provided for @currentPackageBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيد العبوات الحالي'**
+  String get currentPackageBalance;
+
+  /// No description provided for @overCollectionWarning.
+  ///
+  /// In ar, this message translates to:
+  /// **'العدد المسترجع أكبر من الرصيد الحالي'**
+  String get overCollectionWarning;
 }
 
 class _AppLocalizationsDelegate

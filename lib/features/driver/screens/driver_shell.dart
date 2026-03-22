@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/features/auth/screens/settings_placeholder.dart';
 import 'package:tawzii/features/orders/screens/order_list_screen.dart';
+import 'package:tawzii/features/packages/screens/package_list_screen.dart';
 import 'package:tawzii/features/payments/screens/payment_list_screen.dart';
 
 class DriverShell extends StatefulWidget {
@@ -20,7 +21,7 @@ class _DriverShellState extends State<DriverShell> {
 
     final screens = [
       const OrderListScreen(isOwner: false),
-      _PlaceholderScreen(title: l10n.packages, icon: Icons.inventory_2),
+      const PackageListScreen(),
       const PaymentListScreen(isOwner: false),
       const SettingsPlaceholder(roleName: 'سائق'),
     ];
@@ -54,40 +55,6 @@ class _DriverShellState extends State<DriverShell> {
             label: l10n.settings,
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _PlaceholderScreen extends StatelessWidget {
-  final String title;
-  final IconData icon;
-
-  const _PlaceholderScreen({required this.title, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 64, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'سائق',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          ],
-        ),
       ),
     );
   }

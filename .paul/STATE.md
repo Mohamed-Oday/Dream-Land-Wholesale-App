@@ -11,13 +11,13 @@ See: .paul/PROJECT.md (updated 2026-03-21)
 
 Milestone: v0.1 Initial Release (v0.1.0)
 Phase: 2 of 4 (Money & Packaging) — Planning
-Plan: 02-01 unified, ready for next plan
+Plan: 02-02 unified, ready for next plan
 Status: Loop closed, ready for next PLAN
-Last activity: 2026-03-22 — Plan 02-01 unified
+Last activity: 2026-03-22 — Plan 02-02 unified
 
 Progress:
-- Milestone: [███░░░░░░░] 30%
-- Phase 2: [███░░░░░░░] 33% (1 of 3 plans)
+- Milestone: [████░░░░░░] 40%
+- Phase 2: [██████░░░░] 66% (2 of 3 plans)
 
 ## Loop Position
 
@@ -58,15 +58,15 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-22
-Stopped at: Plan 02-01 loop closed
-Next action: Run /paul:plan for Plan 02-02 (Per-product package tracking)
-Resume file: .paul/phases/02-money-packaging/02-01-SUMMARY.md
+Stopped at: Plan 02-02 loop closed
+Next action: Run /paul:plan for Plan 02-03 (Bluetooth receipt printing)
+Resume file: .paul/phases/02-money-packaging/02-02-SUMMARY.md
 Resume context:
-- Plan 02-01 complete: payment collection + credit balance
-- Plan 02-02 next: per-product package tracking + standalone collection
-- Plan 02-03 after: Bluetooth receipt printing
-- Supabase RPC pattern established for future atomic operations
-- has_users() init screen bug fixed
+- Plan 02-01 complete: payments + credit balance
+- Plan 02-02 complete: package tracking
+- Plan 02-03 next: Bluetooth receipt printing (final Phase 2 plan)
+- All driver shell tabs fully wired (no more placeholders)
+- Deferred issues: printer model selection, Arabic thermal encoding
 
 ---
 *STATE.md — Updated after every significant action*
