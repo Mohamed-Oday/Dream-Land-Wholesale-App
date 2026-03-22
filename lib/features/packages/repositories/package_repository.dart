@@ -6,7 +6,11 @@ class PackageRepository {
 
   PackageRepository(this._client, this._businessId);
 
-  Future<List<Map<String, dynamic>>> getAll({String? driverId}) async {
+  Future<List<Map<String, dynamic>>> getAll({
+    String? driverId,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     var query = _client
         .from('package_logs')
         .select(
@@ -15,6 +19,12 @@ class PackageRepository {
 
     if (driverId != null) {
       query = query.eq('driver_id', driverId);
+    }
+    if (startDate != null) {
+      query = query.gte('created_at', startDate.toUtc().toIso8601String());
+    }
+    if (endDate != null) {
+      query = query.lte('created_at', endDate.toUtc().toIso8601String());
     }
 
     final result = await query.order('created_at', ascending: false);

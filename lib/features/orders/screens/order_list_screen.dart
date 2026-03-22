@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/core/theme/app_colors.dart';
+import 'package:tawzii/core/widgets/date_range_filter_bar.dart';
 import '../providers/order_provider.dart';
 import 'create_order_screen.dart';
 import 'receipt_preview_screen.dart';
@@ -36,7 +39,10 @@ class OrderListScreen extends ConsumerWidget {
               },
               child: const Icon(Icons.add),
             ),
-      body: ordersAsync.when(
+      body: Column(
+        children: [
+          const DateRangeFilterBar(),
+          Expanded(child: ordersAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Column(
@@ -86,6 +92,8 @@ class OrderListScreen extends ConsumerWidget {
                 return _OrderCard(
                   order: order,
                   isOwner: isOwner,
+                  onExpired: () => ref.invalidate(
+                      isOwner ? allOrdersProvider : orderListProvider),
                   onTap: () async {
                     await Navigator.push(
                       context,
@@ -102,6 +110,8 @@ class OrderListScreen extends ConsumerWidget {
             ),
           );
         },
+      )),
+        ],
       ),
     );
   }
@@ -111,11 +121,13 @@ class _OrderCard extends StatelessWidget {
   final Map<String, dynamic> order;
   final bool isOwner;
   final VoidCallback onTap;
+  final VoidCallback? onExpired;
 
   const _OrderCard({
     required this.order,
     required this.isOwner,
     required this.onTap,
+    this.onExpired,
   });
 
   @override
@@ -141,7 +153,8 @@ class _OrderCard extends StatelessWidget {
       }
     }
 
-    return Card(
+    return RepaintBoundary(
+      child: Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
         onTap: onTap,
@@ -205,6 +218,8 @@ class _OrderCard extends StatelessWidget {
                     _DiscountStatusChip(
                       discountStatus: order['discount_status'] as String,
                       l10n: l10n,
+                      createdAt: order['created_at'] as String?,
+                      onExpired: onExpired,
                     ),
                   ],
                 ],
@@ -213,7 +228,7 @@ class _OrderCard extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ));
   }
 }
 
@@ -262,34 +277,94 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
-class _DiscountStatusChip extends StatelessWidget {
+class _DiscountStatusChip extends StatefulWidget {
   final String discountStatus;
   final AppLocalizations l10n;
+  final String? createdAt;
+  final VoidCallback? onExpired;
 
   const _DiscountStatusChip({
     required this.discountStatus,
     required this.l10n,
+    this.createdAt,
+    this.onExpired,
   });
 
   @override
+  State<_DiscountStatusChip> createState() => _DiscountStatusChipState();
+}
+
+class _DiscountStatusChipState extends State<_DiscountStatusChip> {
+  Timer? _timer;
+  int _remainingSeconds = 0;
+  bool _expired = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.discountStatus == 'pending' && widget.createdAt != null) {
+      _startCountdown();
+    }
+  }
+
+  void _startCountdown() {
+    _updateRemaining();
+    _timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _updateRemaining(),
+    );
+  }
+
+  void _updateRemaining() {
+    try {
+      final created = DateTime.parse(widget.createdAt!).toLocal();
+      final expiresAt = created.add(const Duration(minutes: 3));
+      final remaining = expiresAt.difference(DateTime.now());
+
+      if (remaining.isNegative || remaining.inSeconds <= 0) {
+        _timer?.cancel();
+        if (!_expired) {
+          _expired = true;
+          widget.onExpired?.call();
+        }
+      } else {
+        _remainingSeconds = remaining.inSeconds;
+      }
+    } catch (_) {
+      _timer?.cancel();
+    }
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final effectiveStatus = _expired ? 'rejected' : widget.discountStatus;
+
     final Color bgColor;
     final Color fgColor;
     final String label;
 
-    switch (discountStatus) {
+    switch (effectiveStatus) {
       case 'pending':
         bgColor = AppColors.warning.withValues(alpha: 0.12);
         fgColor = AppColors.warning;
-        label = l10n.discountPending;
+        final mins = _remainingSeconds ~/ 60;
+        final secs = _remainingSeconds % 60;
+        label = '$mins:${secs.toString().padLeft(2, '0')} ${widget.l10n.discountPending}';
       case 'approved':
         bgColor = AppColors.success.withValues(alpha: 0.12);
         fgColor = AppColors.success;
-        label = l10n.discountApproved;
+        label = widget.l10n.discountApproved;
       case 'rejected':
         bgColor = AppColors.error.withValues(alpha: 0.12);
         fgColor = AppColors.error;
-        label = l10n.discountRejected;
+        label = widget.l10n.discountRejected;
       default:
         return const SizedBox.shrink();
     }
@@ -311,6 +386,7 @@ class _DiscountStatusChip extends StatelessWidget {
               color: fgColor,
               fontSize: 10,
               fontWeight: FontWeight.w600,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
         ],

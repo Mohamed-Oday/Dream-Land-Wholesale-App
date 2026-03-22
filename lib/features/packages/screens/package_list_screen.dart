@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/core/theme/app_colors.dart';
+import 'package:tawzii/core/widgets/date_range_filter_bar.dart';
 import '../providers/package_provider.dart';
 import 'package_collection_screen.dart';
 
@@ -30,7 +31,10 @@ class PackageListScreen extends ConsumerWidget {
         },
         child: const Icon(Icons.add),
       ),
-      body: logsAsync.when(
+      body: Column(
+        children: [
+          const DateRangeFilterBar(),
+          Expanded(child: logsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Column(
@@ -82,6 +86,8 @@ class PackageListScreen extends ConsumerWidget {
             ),
           );
         },
+      )),
+        ],
       ),
     );
   }
@@ -123,7 +129,8 @@ class _PackageLogCard extends StatelessWidget {
     final isGiven = given > 0;
     final isCollected = collected > 0;
 
-    return Card(
+    return RepaintBoundary(
+      child: Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -211,7 +218,7 @@ class _PackageLogCard extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ));
   }
 }
 

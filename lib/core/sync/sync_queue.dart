@@ -57,6 +57,13 @@ class SyncQueueManager {
     );
   }
 
+  /// Delete all synced items to keep the queue lean.
+  Future<int> cleanupSynced() async {
+    return (_db.delete(_db.syncQueue)
+          ..where((t) => t.synced.equals(true)))
+        .go();
+  }
+
   /// Get count of pending items.
   Future<int> pendingCount() async {
     final count = _db.syncQueue.id.count();

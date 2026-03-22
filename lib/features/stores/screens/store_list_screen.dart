@@ -69,7 +69,9 @@ class StoreListScreen extends ConsumerWidget {
                 final s = stores[index];
                 final balance = (s['credit_balance'] ?? 0).toDouble();
 
-                return ListTile(
+                return Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  child: ListTile(
                   leading: CircleAvatar(
                     backgroundColor: theme.colorScheme.primaryContainer,
                     child: Icon(Icons.store,
@@ -106,7 +108,7 @@ class StoreListScreen extends ConsumerWidget {
                       ),
                     );
                   },
-                );
+                ));
               },
             ),
           );

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/core/theme/app_colors.dart';
+import 'package:tawzii/features/auth/providers/auth_provider.dart';
 import 'package:tawzii/features/orders/providers/order_provider.dart';
 import 'package:tawzii/features/packages/providers/package_provider.dart';
 import 'package:tawzii/features/payments/providers/payment_provider.dart';
@@ -133,6 +134,21 @@ class StoreDetailScreen extends ConsumerWidget {
                                       ),
                                     ],
                                   ),
+                                  // Adjust Balance button (owner/admin only)
+                                  if (ref.watch(currentUserProvider)?.isOwner == true ||
+                                      ref.watch(currentUserProvider)?.isAdmin == true) ...[
+                                    const SizedBox(height: 12),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: OutlinedButton.icon(
+                                        onPressed: () => _showAdjustBalanceDialog(
+                                          context, ref, storeId, store,
+                                        ),
+                                        icon: const Icon(Icons.account_balance_wallet, size: 18),
+                                        label: Text(l10n.adjustBalance),
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
@@ -390,6 +406,118 @@ class StoreDetailScreen extends ConsumerWidget {
                     ),
         );
       },
+    );
+  }
+
+  void _showAdjustBalanceDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String storeId,
+    Map<String, dynamic> store,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+    final amountCtrl = TextEditingController();
+    final reasonCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.adjustBalance),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.positiveAddsCredit,
+                style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: amountCtrl,
+                keyboardType: const TextInputType.numberWithOptions(
+                    signed: true, decimal: true),
+                decoration: InputDecoration(
+                  labelText: l10n.adjustmentAmount,
+                  suffixText: l10n.currencyUnit,
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return l10n.error;
+                  final val = double.tryParse(v.trim());
+                  if (val == null || val == 0) return l10n.error;
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: reasonCtrl,
+                decoration: InputDecoration(
+                  labelText: l10n.adjustmentReason,
+                ),
+                maxLines: 2,
+                validator: (v) {
+                  if (v == null || v.trim().length < 3) {
+                    return l10n.adjustmentReasonRequired;
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () async {
+              if (!formKey.currentState!.validate()) return;
+              Navigator.pop(ctx);
+
+              final amount = double.parse(amountCtrl.text.trim());
+              final reason = reasonCtrl.text.trim();
+
+              try {
+                final storeRepo = ref.read(storeRepositoryProvider)!;
+                final result = await storeRepo.adjustBalance(
+                  storeId: storeId,
+                  amount: amount,
+                  reason: reason,
+                );
+
+                if (context.mounted) {
+                  final prev = result['previous_balance'];
+                  final next = result['new_balance'];
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                          '${l10n.adjustmentSuccess}: $prev → $next'),
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                  // Force rebuild to show new balance
+                  (context as Element).markNeedsBuild();
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${l10n.error}: $e'),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                }
+              }
+            },
+            child: Text(l10n.confirmAdjustment),
+          ),
+        ],
+      ),
     );
   }
 }

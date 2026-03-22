@@ -7,7 +7,11 @@ class OrderRepository {
 
   OrderRepository(this._client, this._businessId);
 
-  Future<List<Map<String, dynamic>>> getAll({String? driverId}) async {
+  Future<List<Map<String, dynamic>>> getAll({
+    String? driverId,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     var query = _client
         .from('orders')
         .select('*, stores(name, address), users!orders_driver_id_fkey(name)')
@@ -15,6 +19,12 @@ class OrderRepository {
 
     if (driverId != null) {
       query = query.eq('driver_id', driverId);
+    }
+    if (startDate != null) {
+      query = query.gte('created_at', startDate.toUtc().toIso8601String());
+    }
+    if (endDate != null) {
+      query = query.lte('created_at', endDate.toUtc().toIso8601String());
     }
 
     final result = await query.order('created_at', ascending: false);
@@ -132,6 +142,15 @@ class OrderRepository {
     });
     final data = Map<String, dynamic>.from(result as Map);
     return (data['rejected_count'] as num?)?.toInt() ?? 0;
+  }
+
+  /// Cancel a 'created' order and reverse the store balance.
+  Future<Map<String, dynamic>> cancelOrder(String orderId) async {
+    final result = await _client.rpc('cancel_order', params: {
+      'p_order_id': orderId,
+      'p_business_id': _businessId,
+    });
+    return Map<String, dynamic>.from(result as Map);
   }
 
   /// Get orders with pending discount status for owner dashboard.

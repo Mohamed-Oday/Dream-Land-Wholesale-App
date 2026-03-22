@@ -486,4 +486,93 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get usernameNoSpaces => 'بدون مسافات';
+
+  @override
+  String get discountPendingPrintBlocked =>
+      'لا يمكن الطباعة أثناء انتظار الموافقة على الخصم';
+
+  @override
+  String get cancelOrder => 'إلغاء الطلب';
+
+  @override
+  String get cancelOrderConfirm =>
+      'هل أنت متأكد من إلغاء هذا الطلب؟ سيتم عكس الرصيد.';
+
+  @override
+  String get orderCancelled => 'تم إلغاء الطلب';
+
+  @override
+  String get today => 'اليوم';
+
+  @override
+  String get thisWeek => 'هذا الأسبوع';
+
+  @override
+  String get thisMonth => 'هذا الشهر';
+
+  @override
+  String get allTime => 'الكل';
+
+  @override
+  String get driverPerformance => 'أداء السائق';
+
+  @override
+  String get totalCollected => 'إجمالي المحصّل';
+
+  @override
+  String get totalOrders => 'إجمالي الطلبات';
+
+  @override
+  String get totalPayments => 'إجمالي المدفوعات';
+
+  @override
+  String get recentActivity => 'النشاط الأخير';
+
+  @override
+  String get noActivity => 'لا يوجد نشاط';
+
+  @override
+  String get adjustBalance => 'تعديل الرصيد';
+
+  @override
+  String get adjustmentAmount => 'مبلغ التعديل';
+
+  @override
+  String get adjustmentReason => 'سبب التعديل';
+
+  @override
+  String get adjustmentReasonRequired => 'يجب إدخال السبب';
+
+  @override
+  String get adjustmentSuccess => 'تم تعديل الرصيد';
+
+  @override
+  String get confirmAdjustment => 'تأكيد التعديل';
+
+  @override
+  String get positiveAddsCredit => 'موجب = إضافة دين، سالب = خصم';
+
+  @override
+  String get alertThreshold => 'حد التنبيه';
+
+  @override
+  String get appVersion => 'إصدار التطبيق';
+
+  @override
+  String get updateAvailable => 'تحديث متاح';
+
+  @override
+  String get downloadUpdate => 'تحميل التحديث';
+
+  @override
+  String get latestVersion => 'لديك أحدث إصدار';
+
+  @override
+  String get syncStatus => 'حالة المزامنة';
+
+  @override
+  String get syncAutomatic => 'البيانات تُزامن تلقائياً عند الاتصال';
+
+  @override
+  String get printerReconnecting => 'جاري إعادة الاتصال بالطابعة...';
 }

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/core/theme/app_colors.dart';
 import 'package:tawzii/features/driver/providers/user_management_provider.dart';
+import 'package:tawzii/features/driver/screens/driver_performance_screen.dart';
 
 class UserManagementScreen extends ConsumerWidget {
   final bool isOwner;
@@ -77,7 +78,20 @@ class UserManagementScreen extends ConsumerWidget {
 
                 final isAdmin = role == 'admin';
 
-                return ListTile(
+                return Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  child: ListTile(
+                  onTap: role == 'driver'
+                      ? () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DriverPerformanceScreen(
+                                driverId: user['id'] as String,
+                                driverName: name,
+                              ),
+                            ),
+                          )
+                      : null,
                   leading: CircleAvatar(
                     backgroundColor: isAdmin
                         ? colorScheme.tertiaryContainer
@@ -187,7 +201,7 @@ class UserManagementScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
-                );
+                ));
               },
             ),
           );
@@ -220,6 +234,7 @@ class UserManagementScreen extends ConsumerWidget {
                   if (isOwner) ...[
                     DropdownButtonFormField<String>(
                       initialValue: selectedRole,
+                      dropdownColor: Colors.white,
                       decoration: InputDecoration(
                         labelText: l10n.selectRole,
                         prefixIcon: const Icon(Icons.badge_outlined),

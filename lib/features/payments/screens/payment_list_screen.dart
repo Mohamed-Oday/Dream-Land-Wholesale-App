@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/core/theme/app_colors.dart';
+import 'package:tawzii/core/widgets/date_range_filter_bar.dart';
 import '../providers/payment_provider.dart';
 import 'payment_form_screen.dart';
 
@@ -35,7 +36,10 @@ class PaymentListScreen extends ConsumerWidget {
               },
               child: const Icon(Icons.add),
             ),
-      body: paymentsAsync.when(
+      body: Column(
+        children: [
+          const DateRangeFilterBar(),
+          Expanded(child: paymentsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Column(
@@ -93,6 +97,8 @@ class PaymentListScreen extends ConsumerWidget {
             ),
           );
         },
+      )),
+        ],
       ),
     );
   }
@@ -133,7 +139,8 @@ class _PaymentCard extends StatelessWidget {
       }
     }
 
-    return Card(
+    return RepaintBoundary(
+      child: Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -200,6 +207,6 @@ class _PaymentCard extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ));
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/providers/date_range_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../repositories/order_repository.dart';
 
@@ -10,21 +11,30 @@ final orderRepositoryProvider = Provider<OrderRepository?>((ref) {
   return OrderRepository(Supabase.instance.client, user.businessId);
 });
 
-/// Driver's own orders (filtered by driver_id).
+/// Driver's own orders (filtered by driver_id + date range).
 final orderListProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final repo = ref.watch(orderRepositoryProvider);
   final user = ref.watch(currentUserProvider);
+  final dateRange = ref.watch(dateRangeProvider);
   if (repo == null || user == null) return [];
-  return repo.getAll(driverId: user.id);
+  return repo.getAll(
+    driverId: user.id,
+    startDate: dateRange?.start,
+    endDate: dateRange?.end,
+  );
 });
 
-/// All orders in the business (for owner view).
+/// All orders in the business (for owner view + date range).
 final allOrdersProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final repo = ref.watch(orderRepositoryProvider);
+  final dateRange = ref.watch(dateRangeProvider);
   if (repo == null) return [];
-  return repo.getAll();
+  return repo.getAll(
+    startDate: dateRange?.start,
+    endDate: dateRange?.end,
+  );
 });
 
 /// Orders for a specific store (for store detail screen).

@@ -40,6 +40,9 @@ class SyncService {
       }
     }
 
+    // Clean up synced items to keep the queue lean
+    await _queueManager.cleanupSynced();
+
     return SyncResult(synced: synced, failed: failed, total: pending.length);
   }
 

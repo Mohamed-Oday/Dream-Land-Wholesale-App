@@ -1039,6 +1039,180 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'بدون مسافات'**
   String get usernameNoSpaces;
+
+  /// No description provided for @discountPendingPrintBlocked.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكن الطباعة أثناء انتظار الموافقة على الخصم'**
+  String get discountPendingPrintBlocked;
+
+  /// No description provided for @cancelOrder.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء الطلب'**
+  String get cancelOrder;
+
+  /// No description provided for @cancelOrderConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل أنت متأكد من إلغاء هذا الطلب؟ سيتم عكس الرصيد.'**
+  String get cancelOrderConfirm;
+
+  /// No description provided for @orderCancelled.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إلغاء الطلب'**
+  String get orderCancelled;
+
+  /// No description provided for @today.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم'**
+  String get today;
+
+  /// No description provided for @thisWeek.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الأسبوع'**
+  String get thisWeek;
+
+  /// No description provided for @thisMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الشهر'**
+  String get thisMonth;
+
+  /// No description provided for @allTime.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get allTime;
+
+  /// No description provided for @driverPerformance.
+  ///
+  /// In ar, this message translates to:
+  /// **'أداء السائق'**
+  String get driverPerformance;
+
+  /// No description provided for @totalCollected.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي المحصّل'**
+  String get totalCollected;
+
+  /// No description provided for @totalOrders.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي الطلبات'**
+  String get totalOrders;
+
+  /// No description provided for @totalPayments.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي المدفوعات'**
+  String get totalPayments;
+
+  /// No description provided for @recentActivity.
+  ///
+  /// In ar, this message translates to:
+  /// **'النشاط الأخير'**
+  String get recentActivity;
+
+  /// No description provided for @noActivity.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد نشاط'**
+  String get noActivity;
+
+  /// No description provided for @adjustBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الرصيد'**
+  String get adjustBalance;
+
+  /// No description provided for @adjustmentAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'مبلغ التعديل'**
+  String get adjustmentAmount;
+
+  /// No description provided for @adjustmentReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'سبب التعديل'**
+  String get adjustmentReason;
+
+  /// No description provided for @adjustmentReasonRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'يجب إدخال السبب'**
+  String get adjustmentReasonRequired;
+
+  /// No description provided for @adjustmentSuccess.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تعديل الرصيد'**
+  String get adjustmentSuccess;
+
+  /// No description provided for @confirmAdjustment.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد التعديل'**
+  String get confirmAdjustment;
+
+  /// No description provided for @positiveAddsCredit.
+  ///
+  /// In ar, this message translates to:
+  /// **'موجب = إضافة دين، سالب = خصم'**
+  String get positiveAddsCredit;
+
+  /// No description provided for @alertThreshold.
+  ///
+  /// In ar, this message translates to:
+  /// **'حد التنبيه'**
+  String get alertThreshold;
+
+  /// No description provided for @appVersion.
+  ///
+  /// In ar, this message translates to:
+  /// **'إصدار التطبيق'**
+  String get appVersion;
+
+  /// No description provided for @updateAvailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديث متاح'**
+  String get updateAvailable;
+
+  /// No description provided for @downloadUpdate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحميل التحديث'**
+  String get downloadUpdate;
+
+  /// No description provided for @latestVersion.
+  ///
+  /// In ar, this message translates to:
+  /// **'لديك أحدث إصدار'**
+  String get latestVersion;
+
+  /// No description provided for @syncStatus.
+  ///
+  /// In ar, this message translates to:
+  /// **'حالة المزامنة'**
+  String get syncStatus;
+
+  /// No description provided for @syncAutomatic.
+  ///
+  /// In ar, this message translates to:
+  /// **'البيانات تُزامن تلقائياً عند الاتصال'**
+  String get syncAutomatic;
+
+  /// No description provided for @printerReconnecting.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري إعادة الاتصال بالطابعة...'**
+  String get printerReconnecting;
 }
 
 class _AppLocalizationsDelegate

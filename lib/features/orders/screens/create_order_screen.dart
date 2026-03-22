@@ -47,6 +47,57 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
   bool get _canSubmit =>
       _selectedStoreId != null && _lineItems.isNotEmpty && !_isLoading;
 
+  Future<Map<String, dynamic>?> _showStorePicker(
+      BuildContext context, List<Map<String, dynamic>> stores) {
+    return showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(context)!;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(ctx).colorScheme.onSurfaceVariant
+                    .withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(l10n.selectStore,
+                  style: Theme.of(ctx).textTheme.titleMedium),
+            ),
+            const Divider(),
+            ...stores.map((s) => ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor:
+                        Theme.of(ctx).colorScheme.primaryContainer,
+                    child: Icon(Icons.store,
+                        color: Theme.of(ctx)
+                            .colorScheme
+                            .onPrimaryContainer),
+                  ),
+                  title: Text(s['name'] ?? ''),
+                  subtitle: (s['address'] ?? '').toString().isNotEmpty
+                      ? Text(s['address'] as String)
+                      : null,
+                  onTap: () => Navigator.pop(ctx, s),
+                )),
+            const SizedBox(height: 16),
+          ],
+        );
+      },
+    );
+  }
+
   void _showProductPicker() {
     final l10n = AppLocalizations.of(context)!;
 
@@ -346,34 +397,49 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Store selector
+                    // Store selector — tap to pick from bottom sheet
                     storesAsync.when(
                       loading: () => const LinearProgressIndicator(),
                       error: (e, st) => Text(l10n.error),
-                      data: (stores) => DropdownButtonFormField<String>(
+                      data: (stores) => FormField<String>(
                         initialValue: _selectedStoreId,
-                        decoration: InputDecoration(
-                          labelText: l10n.selectStore,
-                          prefixIcon: const Icon(Icons.store),
-                        ),
-                        items: stores.map((s) {
-                          return DropdownMenuItem(
-                            value: s['id'] as String,
-                            child: Text(s['name'] ?? ''),
-                          );
-                        }).toList(),
-                        onChanged: _isLoading
-                            ? null
-                            : (value) {
-                                setState(() {
-                                  _selectedStoreId = value;
-                                  final store = stores.firstWhere(
-                                      (s) => s['id'] == value);
-                                  _selectedStoreName =
-                                      store['name'] ?? '';
-                                });
-                              },
                         validator: (v) => v == null ? 'مطلوب' : null,
+                        builder: (field) {
+                          return InkWell(
+                            onTap: _isLoading
+                                ? null
+                                : () async {
+                                    final selected =
+                                        await _showStorePicker(context, stores);
+                                    if (selected != null) {
+                                      setState(() {
+                                        _selectedStoreId =
+                                            selected['id'] as String;
+                                        _selectedStoreName =
+                                            selected['name'] ?? '';
+                                      });
+                                      field.didChange(
+                                          selected['id'] as String);
+                                    }
+                                  },
+                            borderRadius: BorderRadius.circular(12),
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                labelText: l10n.selectStore,
+                                prefixIcon: const Icon(Icons.store),
+                                suffixIcon:
+                                    const Icon(Icons.arrow_drop_down),
+                                errorText: field.errorText,
+                              ),
+                              child: Text(
+                                _selectedStoreName.isEmpty
+                                    ? ''
+                                    : _selectedStoreName,
+                                style: theme.textTheme.bodyLarge,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(height: 24),

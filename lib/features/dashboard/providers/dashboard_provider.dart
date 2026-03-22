@@ -5,6 +5,9 @@ import '../../auth/providers/auth_provider.dart';
 import '../../orders/providers/order_provider.dart';
 import '../repositories/dashboard_repository.dart';
 
+/// Package alert threshold — only show stores with >= this many outstanding packages.
+final packageAlertThresholdProvider = StateProvider<int>((ref) => 10);
+
 final dashboardRepositoryProvider = Provider<DashboardRepository?>((ref) {
   final user = ref.watch(currentUserProvider);
   if (user == null) return null;

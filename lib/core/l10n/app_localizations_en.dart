@@ -488,4 +488,93 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get usernameNoSpaces => 'No spaces';
+
+  @override
+  String get discountPendingPrintBlocked =>
+      'Cannot print while discount is pending approval';
+
+  @override
+  String get cancelOrder => 'Cancel Order';
+
+  @override
+  String get cancelOrderConfirm =>
+      'Are you sure you want to cancel this order? The balance will be reversed.';
+
+  @override
+  String get orderCancelled => 'Order cancelled';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get thisWeek => 'This Week';
+
+  @override
+  String get thisMonth => 'This Month';
+
+  @override
+  String get allTime => 'All';
+
+  @override
+  String get driverPerformance => 'Driver Performance';
+
+  @override
+  String get totalCollected => 'Total Collected';
+
+  @override
+  String get totalOrders => 'Total Orders';
+
+  @override
+  String get totalPayments => 'Total Payments';
+
+  @override
+  String get recentActivity => 'Recent Activity';
+
+  @override
+  String get noActivity => 'No activity';
+
+  @override
+  String get adjustBalance => 'Adjust Balance';
+
+  @override
+  String get adjustmentAmount => 'Adjustment Amount';
+
+  @override
+  String get adjustmentReason => 'Reason';
+
+  @override
+  String get adjustmentReasonRequired => 'Reason is required';
+
+  @override
+  String get adjustmentSuccess => 'Balance adjusted';
+
+  @override
+  String get confirmAdjustment => 'Confirm Adjustment';
+
+  @override
+  String get positiveAddsCredit => 'Positive = add credit, Negative = deduct';
+
+  @override
+  String get alertThreshold => 'Alert Threshold';
+
+  @override
+  String get appVersion => 'App Version';
+
+  @override
+  String get updateAvailable => 'Update Available';
+
+  @override
+  String get downloadUpdate => 'Download Update';
+
+  @override
+  String get latestVersion => 'You have the latest version';
+
+  @override
+  String get syncStatus => 'Sync Status';
+
+  @override
+  String get syncAutomatic => 'Data syncs automatically when connected';
+
+  @override
+  String get printerReconnecting => 'Reconnecting to printer...';
 }

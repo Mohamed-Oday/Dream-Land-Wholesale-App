@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/core/theme/app_colors.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../printing/providers/printer_provider.dart';
 import '../providers/order_provider.dart';
 
@@ -99,6 +100,65 @@ class _ReceiptScaffold extends ConsumerStatefulWidget {
 class _ReceiptScaffoldState extends ConsumerState<_ReceiptScaffold> {
   final _receiptKey = GlobalKey();
   bool _isPrinting = false;
+  bool _isCancelling = false;
+
+  Future<void> _cancelOrder() async {
+    final l10n = widget.l10n;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.cancelOrder),
+        content: Text(l10n.cancelOrderConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.error,
+            ),
+            child: Text(l10n.confirm),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isCancelling = true);
+    try {
+      final repo = ref.read(orderRepositoryProvider)!;
+      await repo.cancelOrder(widget.order['id'] as String);
+      if (!mounted) return;
+
+      // Update local order state to reflect cancellation
+      widget.order['status'] = 'cancelled';
+      widget.order['discount_status'] = 'none';
+
+      setState(() {});
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.orderCancelled),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.error}: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isCancelling = false);
+    }
+  }
 
   Future<void> _print() async {
     setState(() => _isPrinting = true);
@@ -142,45 +202,119 @@ class _ReceiptScaffoldState extends ConsumerState<_ReceiptScaffold> {
   @override
   Widget build(BuildContext context) {
     final isConnected = ref.watch(printerConnectedProvider);
+    final currentUser = ref.watch(currentUserProvider);
+    final l10n = widget.l10n;
+    final theme = widget.theme;
+
+    final status = widget.order['status'] as String? ?? 'created';
+    final discountStatus =
+        widget.order['discount_status'] as String? ?? 'none';
+    final isDiscountPending = discountStatus == 'pending';
+    final canPrint = isConnected && !_isPrinting && !isDiscountPending;
+
+    // Only owner/admin can cancel orders (drivers cannot cancel without approval)
+    final canCancel = status == 'created' &&
+        currentUser != null &&
+        (currentUser.isOwner || currentUser.isAdmin);
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.l10n.receipt)),
+      appBar: AppBar(title: Text(l10n.receipt)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: RepaintBoundary(
           key: _receiptKey,
           child: _ReceiptCard(
-              order: widget.order, l10n: widget.l10n, theme: widget.theme),
+              order: widget.order, l10n: l10n, theme: theme),
         ),
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: isConnected && !_isPrinting ? _print : null,
-                  icon: _isPrinting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.print),
-                  label: Text(_isPrinting
-                      ? widget.l10n.printing
-                      : widget.l10n.print),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(0, 48),
+              // Info banner when discount is pending
+              if (isDiscountPending) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppColors.warning.withValues(alpha: 0.3),
+                    ),
                   ),
-                  child: Text(widget.l10n.done),
+                  child: Row(
+                    children: [
+                      Icon(Icons.hourglass_top,
+                          size: 18, color: AppColors.warning),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          l10n.discountPendingPrintBlocked,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.warning,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(height: 12),
+              ],
+              // Cancel button (full width, above print/done)
+              if (canCancel) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: _isCancelling ? null : _cancelOrder,
+                    icon: _isCancelling
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2))
+                        : const Icon(Icons.cancel_outlined),
+                    label: Text(_isCancelling
+                        ? l10n.loading
+                        : l10n.cancelOrder),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+              // Print + Done row
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: canPrint ? _print : null,
+                      icon: _isPrinting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2))
+                          : const Icon(Icons.print),
+                      label: Text(
+                          _isPrinting ? l10n.printing : l10n.print),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, 48),
+                      ),
+                      child: Text(l10n.done),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -246,15 +248,29 @@ class OwnerDashboardScreen extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // --- Package Alerts Section ---
-            _SectionHeader(
-              title: l10n.packageAlerts,
-              icon: Icons.inventory_2_outlined,
-              iconColor: colorScheme.tertiary,
+            Row(
+              children: [
+                Expanded(
+                  child: _SectionHeader(
+                    title: '${l10n.packageAlerts} (>${ref.watch(packageAlertThresholdProvider)})',
+                    icon: Icons.inventory_2_outlined,
+                    iconColor: colorScheme.tertiary,
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.tune, size: 20, color: colorScheme.onSurfaceVariant),
+                  tooltip: l10n.alertThreshold,
+                  onPressed: () => _showThresholdDialog(context, ref),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             alerts.when(
               data: (stores) {
-                if (stores.isEmpty) {
+                final threshold = ref.watch(packageAlertThresholdProvider);
+                final filtered = stores.where((s) =>
+                    _toInt(s['total_outstanding']) >= threshold).toList();
+                if (filtered.isEmpty) {
                   return _EmptyState(
                     icon: Icons.check_circle_outline,
                     message: l10n.allPackagesReturned,
@@ -270,7 +286,7 @@ class OwnerDashboardScreen extends ConsumerWidget {
                   clipBehavior: Clip.antiAlias,
                   child: Column(
                     children: [
-                      for (int i = 0; i < stores.length; i++) ...[
+                      for (int i = 0; i < filtered.length; i++) ...[
                         ListTile(
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -287,18 +303,18 @@ class OwnerDashboardScreen extends ConsumerWidget {
                             ),
                           ),
                           title: Text(
-                            stores[i]['store_name'] as String? ?? '',
+                            filtered[i]['store_name'] as String? ?? '',
                             style: theme.textTheme.titleSmall,
                           ),
                           trailing: Text(
-                            '${numberFormat.format(_toInt(stores[i]['total_outstanding']))} ${l10n.packageUnit}',
+                            '${numberFormat.format(_toInt(filtered[i]['total_outstanding']))} ${l10n.packageUnit}',
                             style: theme.textTheme.titleSmall?.copyWith(
                               color: colorScheme.tertiary,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
-                        if (i < stores.length - 1)
+                        if (i < filtered.length - 1)
                           Divider(height: 1, indent: 72, color: colorScheme.outlineVariant),
                       ],
                     ],
@@ -314,6 +330,44 @@ class OwnerDashboardScreen extends ConsumerWidget {
             const SizedBox(height: 24),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showThresholdDialog(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final current = ref.read(packageAlertThresholdProvider);
+    final controller = TextEditingController(text: '$current');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.alertThreshold),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: InputDecoration(
+            labelText: l10n.alertThreshold,
+            suffixText: l10n.packageUnit,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = int.tryParse(controller.text.trim());
+              if (value != null && value >= 1) {
+                ref.read(packageAlertThresholdProvider.notifier).state = value;
+                Navigator.pop(ctx);
+              }
+            },
+            child: Text(l10n.confirm),
+          ),
+        ],
       ),
     );
   }
@@ -559,7 +613,7 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _PendingDiscountTile extends StatelessWidget {
+class _PendingDiscountTile extends StatefulWidget {
   final Map<String, dynamic> order;
   final VoidCallback onApprove;
   final VoidCallback onReject;
@@ -573,56 +627,98 @@ class _PendingDiscountTile extends StatelessWidget {
   });
 
   @override
+  State<_PendingDiscountTile> createState() => _PendingDiscountTileState();
+}
+
+class _PendingDiscountTileState extends State<_PendingDiscountTile> {
+  Timer? _timer;
+  int _remainingSeconds = 0;
+  bool _expired = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _updateRemaining();
+    _timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _updateRemaining(),
+    );
+  }
+
+  void _updateRemaining() {
+    final createdAt = DateTime.tryParse(
+        widget.order['created_at'] as String? ?? '');
+    if (createdAt == null) return;
+
+    final elapsed = DateTime.now().toUtc().difference(createdAt);
+    final remaining = const Duration(minutes: 3) - elapsed;
+
+    if (remaining.isNegative || remaining.inSeconds <= 0) {
+      _timer?.cancel();
+      _expired = true;
+    } else {
+      _remainingSeconds = remaining.inSeconds;
+    }
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final l10n = AppLocalizations.of(context)!;
 
-    final store = order['stores'] as Map<String, dynamic>?;
+    final store = widget.order['stores'] as Map<String, dynamic>?;
     final storeName = store?['name'] ?? '';
-    final driver = order['users'] as Map<String, dynamic>?;
+    final driver = widget.order['users'] as Map<String, dynamic>?;
     final driverName = driver?['name'] ?? '';
-    final discount = (order['discount'] as num?)?.toDouble() ?? 0;
-    final createdAt = DateTime.tryParse(order['created_at'] as String? ?? '');
+    final discount =
+        (widget.order['discount'] as num?)?.toDouble() ?? 0;
 
-    // Time remaining: 3 min - elapsed
-    String timeText = '';
-    if (createdAt != null) {
-      final elapsed = DateTime.now().toUtc().difference(createdAt);
-      final remaining = const Duration(minutes: 3) - elapsed;
-      if (remaining.isNegative) {
-        timeText = l10n.discountRejected;
-      } else {
-        final mins = remaining.inMinutes;
-        final secs = (remaining.inSeconds % 60).toString().padLeft(2, '0');
-        timeText = l10n.timeRemaining(mins, secs);
-      }
+    String timeText;
+    Color timeColor;
+    if (_expired) {
+      timeText = l10n.discountRejected;
+      timeColor = colorScheme.error;
+    } else {
+      final mins = _remainingSeconds ~/ 60;
+      final secs = (_remainingSeconds % 60).toString().padLeft(2, '0');
+      timeText = l10n.timeRemaining(mins, secs);
+      timeColor = colorScheme.tertiary;
     }
 
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       leading: CircleAvatar(
         backgroundColor: colorScheme.tertiaryContainer,
         radius: 20,
-        child: Icon(Icons.percent, color: colorScheme.onTertiaryContainer, size: 20),
+        child: Icon(Icons.percent,
+            color: colorScheme.onTertiaryContainer, size: 20),
       ),
       title: Text(storeName, style: theme.textTheme.titleSmall),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '$driverName · ${currencyFormat.format(discount)} ${l10n.currencyUnit}',
+            '$driverName · ${widget.currencyFormat.format(discount)} ${l10n.currencyUnit}',
             style: theme.textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
           ),
-          if (timeText.isNotEmpty)
-            Text(
-              timeText,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: colorScheme.tertiary,
-              ),
+          Text(
+            timeText,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: timeColor,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
+          ),
         ],
       ),
       trailing: Row(
@@ -631,13 +727,13 @@ class _PendingDiscountTile extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.check_circle),
             color: Colors.green,
-            onPressed: onApprove,
+            onPressed: _expired ? null : widget.onApprove,
             tooltip: l10n.approveDiscount,
           ),
           IconButton(
             icon: const Icon(Icons.cancel),
             color: colorScheme.error,
-            onPressed: onReject,
+            onPressed: _expired ? null : widget.onReject,
             tooltip: l10n.rejectDiscount,
           ),
         ],

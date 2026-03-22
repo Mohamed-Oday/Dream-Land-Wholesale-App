@@ -37,6 +37,21 @@ class StoreRepository {
     return Map<String, dynamic>.from(result);
   }
 
+  /// Adjust a store's credit balance with reason logging.
+  Future<Map<String, dynamic>> adjustBalance({
+    required String storeId,
+    required double amount,
+    required String reason,
+  }) async {
+    final result = await _client.rpc('adjust_store_balance', params: {
+      'p_store_id': storeId,
+      'p_business_id': _businessId,
+      'p_amount': amount,
+      'p_reason': reason,
+    });
+    return Map<String, dynamic>.from(result as Map);
+  }
+
   Future<Map<String, dynamic>> update(
       String id, Map<String, dynamic> fields) async {
     final result = await _client

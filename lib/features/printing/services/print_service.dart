@@ -15,6 +15,8 @@ class PrintService {
 
   bool _connected = false;
   String? _connectedName;
+  String? _lastMacAddress;
+  String? _lastName;
 
   bool get isConnected => _connected;
   String? get connectedPrinterName => _connectedName;
@@ -30,7 +32,18 @@ class PrintService {
         macPrinterAddress: macAddress);
     _connected = result;
     _connectedName = result ? name : null;
+    if (result) {
+      _lastMacAddress = macAddress;
+      _lastName = name;
+    }
     return result;
+  }
+
+  /// Attempt to reconnect to the last known printer.
+  Future<bool> tryReconnect() async {
+    if (_lastMacAddress == null) return false;
+    debugPrint('Attempting printer auto-reconnect to $_lastName');
+    return connect(_lastMacAddress!, name: _lastName);
   }
 
   /// Disconnect from the current printer.
@@ -71,7 +84,11 @@ class PrintService {
   ///
   /// Arabic text works perfectly because Flutter renders it.
   Future<bool> printFromWidget(GlobalKey receiptKey) async {
-    if (!_connected) return false;
+    if (!_connected) {
+      // Attempt auto-reconnect to last known printer
+      final reconnected = await tryReconnect();
+      if (!reconnected) return false;
+    }
 
     try {
       // Capture widget as image
