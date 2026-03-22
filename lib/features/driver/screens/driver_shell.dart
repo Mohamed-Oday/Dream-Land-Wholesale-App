@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/features/auth/screens/settings_placeholder.dart';
 import 'package:tawzii/features/orders/screens/order_list_screen.dart';
+import 'package:tawzii/features/payments/screens/payment_list_screen.dart';
 
 class DriverShell extends StatefulWidget {
   const DriverShell({super.key});
@@ -20,7 +21,7 @@ class _DriverShellState extends State<DriverShell> {
     final screens = [
       const OrderListScreen(isOwner: false),
       _PlaceholderScreen(title: l10n.packages, icon: Icons.inventory_2),
-      _PlaceholderScreen(title: l10n.payments, icon: Icons.payments),
+      const PaymentListScreen(isOwner: false),
       const SettingsPlaceholder(roleName: 'سائق'),
     ];
 

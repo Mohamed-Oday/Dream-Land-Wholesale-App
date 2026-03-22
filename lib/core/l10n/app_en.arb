@@ -62,5 +62,21 @@
   "confirmOrderMessage": "Do you want to create this order?",
   "networkError": "No internet connection",
   "saveError": "Failed to save order",
-  "items": "items"
+  "items": "items",
+  "payment": "Payment",
+  "newPayment": "New Payment",
+  "collectPayment": "Collect Payment",
+  "paymentCollected": "Payment Collected",
+  "amount": "Amount",
+  "enterAmount": "Enter Amount",
+  "currentBalance": "Current Balance",
+  "previousBalance": "Previous Balance",
+  "newBalance": "New Balance",
+  "noPayments": "No payments",
+  "emptyPaymentMessage": "You haven't collected any payments yet",
+  "confirmPayment": "Confirm Payment",
+  "confirmPaymentMessage": "Do you want to record this payment?",
+  "balanceChange": "Balance Change",
+  "recordPayment": "Record Payment",
+  "overpaymentWarning": "Amount exceeds owed balance"
 }

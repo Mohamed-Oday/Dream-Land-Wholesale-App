@@ -475,6 +475,102 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'عناصر'**
   String get items;
+
+  /// No description provided for @payment.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدفعة'**
+  String get payment;
+
+  /// No description provided for @newPayment.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفعة جديدة'**
+  String get newPayment;
+
+  /// No description provided for @collectPayment.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحصيل دفعة'**
+  String get collectPayment;
+
+  /// No description provided for @paymentCollected.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تحصيل الدفعة'**
+  String get paymentCollected;
+
+  /// No description provided for @amount.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ'**
+  String get amount;
+
+  /// No description provided for @enterAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل المبلغ'**
+  String get enterAmount;
+
+  /// No description provided for @currentBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد الحالي'**
+  String get currentBalance;
+
+  /// No description provided for @previousBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد السابق'**
+  String get previousBalance;
+
+  /// No description provided for @newBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد الجديد'**
+  String get newBalance;
+
+  /// No description provided for @noPayments.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مدفوعات'**
+  String get noPayments;
+
+  /// No description provided for @emptyPaymentMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تقم بتحصيل أي مدفوعات بعد'**
+  String get emptyPaymentMessage;
+
+  /// No description provided for @confirmPayment.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد الدفعة'**
+  String get confirmPayment;
+
+  /// No description provided for @confirmPaymentMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل تريد تسجيل هذه الدفعة؟'**
+  String get confirmPaymentMessage;
+
+  /// No description provided for @balanceChange.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيير الرصيد'**
+  String get balanceChange;
+
+  /// No description provided for @recordPayment.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل الدفعة'**
+  String get recordPayment;
+
+  /// No description provided for @overpaymentWarning.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ أكبر من الرصيد المستحق'**
+  String get overpaymentWarning;
 }
 
 class _AppLocalizationsDelegate

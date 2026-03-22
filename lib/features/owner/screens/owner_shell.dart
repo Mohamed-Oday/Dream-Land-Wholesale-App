@@ -5,6 +5,7 @@ import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/features/auth/providers/auth_provider.dart';
 import 'package:tawzii/features/auth/screens/settings_placeholder.dart';
 import 'package:tawzii/features/orders/screens/order_list_screen.dart';
+import 'package:tawzii/features/payments/screens/payment_list_screen.dart';
 import 'package:tawzii/features/products/screens/product_list_screen.dart';
 import 'package:tawzii/features/stores/screens/store_list_screen.dart';
 
@@ -243,6 +244,16 @@ class _DashboardPlaceholder extends StatelessWidget {
       appBar: AppBar(
         title: const Text('لوحة التحكم'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.payments),
+            tooltip: 'المدفوعات',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const PaymentListScreen(isOwner: true),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.receipt_long),
             tooltip: 'الطلبات',

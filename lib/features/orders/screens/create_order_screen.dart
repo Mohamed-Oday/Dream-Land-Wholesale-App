@@ -223,6 +223,18 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
 
       if (!mounted) return;
 
+      // Update store credit balance (fire-and-forget — order is already saved)
+      try {
+        await Supabase.instance.client.rpc('update_store_balance_on_order', params: {
+          'p_store_id': _selectedStoreId!,
+          'p_order_total': _total,
+        });
+      } catch (e) {
+        debugPrint('Warning: balance update failed (order saved): $e');
+      }
+
+      if (!mounted) return;
+
       // Add line items to order data for receipt display
       orderData['order_lines'] = _lineItems
           .map((item) => {

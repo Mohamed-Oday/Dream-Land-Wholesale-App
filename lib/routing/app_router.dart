@@ -39,12 +39,18 @@ class AppRouterNotifier extends ChangeNotifier {
       notifyListeners();
     });
 
-    // Check if users exist
+    // Check if users exist (use RPC to bypass RLS)
     try {
-      final result = await client.from('users').select('id').limit(1);
-      _hasUsers = (result as List).isNotEmpty;
+      final result = await client.rpc('has_users');
+      _hasUsers = result as bool;
     } catch (_) {
-      _hasUsers = false;
+      // RPC not available — fallback to direct query
+      try {
+        final result = await client.from('users').select('id').limit(1);
+        _hasUsers = (result as List).isNotEmpty;
+      } catch (_) {
+        _hasUsers = false;
+      }
     }
 
     // Check current session

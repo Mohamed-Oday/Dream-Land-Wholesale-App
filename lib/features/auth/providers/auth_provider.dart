@@ -55,19 +55,23 @@ class AuthNotifier extends ChangeNotifier {
 
 /// Checks if the database has any users (for init screen detection).
 ///
-/// Uses Supabase Auth admin-safe approach: tries to query users table.
-/// If RLS blocks (no auth), catches the error and assumes no users.
-/// This avoids infinite recursion in RLS policies.
+/// Uses RPC function (SECURITY DEFINER) to bypass RLS.
+/// Without this, unauthenticated queries return empty due to RLS,
+/// causing the init screen to show even when users exist.
 final hasUsersProvider = FutureProvider<bool>((ref) async {
   try {
     final client = Supabase.instance.client;
-    // If user is authenticated, this query works via RLS
-    // If not authenticated, it will throw or return empty
-    final result = await client.from('users').select('id').limit(1);
-    return (result as List).isNotEmpty;
+    final result = await client.rpc('has_users');
+    return result as bool;
   } catch (_) {
-    // RLS blocked the query (no auth) — assume no users (show init)
-    return false;
+    // RPC not available (migration not run yet) — fall back to old approach
+    try {
+      final client = Supabase.instance.client;
+      final result = await client.from('users').select('id').limit(1);
+      return (result as List).isNotEmpty;
+    } catch (_) {
+      return false;
+    }
   }
 });
 

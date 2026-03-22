@@ -62,5 +62,21 @@
   "confirmOrderMessage": "هل تريد إنشاء هذا الطلب؟",
   "networkError": "لا يوجد اتصال بالإنترنت",
   "saveError": "فشل حفظ الطلب",
-  "items": "عناصر"
+  "items": "عناصر",
+  "payment": "الدفعة",
+  "newPayment": "دفعة جديدة",
+  "collectPayment": "تحصيل دفعة",
+  "paymentCollected": "تم تحصيل الدفعة",
+  "amount": "المبلغ",
+  "enterAmount": "أدخل المبلغ",
+  "currentBalance": "الرصيد الحالي",
+  "previousBalance": "الرصيد السابق",
+  "newBalance": "الرصيد الجديد",
+  "noPayments": "لا توجد مدفوعات",
+  "emptyPaymentMessage": "لم تقم بتحصيل أي مدفوعات بعد",
+  "confirmPayment": "تأكيد الدفعة",
+  "confirmPaymentMessage": "هل تريد تسجيل هذه الدفعة؟",
+  "balanceChange": "تغيير الرصيد",
+  "recordPayment": "تسجيل الدفعة",
+  "overpaymentWarning": "المبلغ أكبر من الرصيد المستحق"
 }

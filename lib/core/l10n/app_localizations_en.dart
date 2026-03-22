@@ -196,4 +196,52 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get items => 'items';
+
+  @override
+  String get payment => 'Payment';
+
+  @override
+  String get newPayment => 'New Payment';
+
+  @override
+  String get collectPayment => 'Collect Payment';
+
+  @override
+  String get paymentCollected => 'Payment Collected';
+
+  @override
+  String get amount => 'Amount';
+
+  @override
+  String get enterAmount => 'Enter Amount';
+
+  @override
+  String get currentBalance => 'Current Balance';
+
+  @override
+  String get previousBalance => 'Previous Balance';
+
+  @override
+  String get newBalance => 'New Balance';
+
+  @override
+  String get noPayments => 'No payments';
+
+  @override
+  String get emptyPaymentMessage => 'You haven\'t collected any payments yet';
+
+  @override
+  String get confirmPayment => 'Confirm Payment';
+
+  @override
+  String get confirmPaymentMessage => 'Do you want to record this payment?';
+
+  @override
+  String get balanceChange => 'Balance Change';
+
+  @override
+  String get recordPayment => 'Record Payment';
+
+  @override
+  String get overpaymentWarning => 'Amount exceeds owed balance';
 }

@@ -15,7 +15,7 @@ Phases: 1 of 4 complete
 | Phase | Name | Plans | Status | Completed |
 |-------|------|-------|--------|-----------|
 | 1 | Core Loop | 4 | Complete | 2026-03-21 |
-| 2 | Money & Packaging | TBD | Not started | - |
+| 2 | Money & Packaging | 3 | In progress | - |
 | 3 | Visibility & Control | TBD | Not started | - |
 | 4 | Polish & Hardening | TBD | Not started | - |
 
@@ -59,8 +59,9 @@ Phases: 1 of 4 complete
 - Real-time payment notifications to owner
 
 **Plans:**
-- [ ] 02-01: TBD during /paul:plan
-- [ ] 02-02: TBD
+- [ ] 02-01: Payment collection + credit balance tracking
+- [ ] 02-02: Per-product package tracking + standalone collection
+- [ ] 02-03: Bluetooth receipt printing
 
 ### Phase 3: Visibility & Control
 

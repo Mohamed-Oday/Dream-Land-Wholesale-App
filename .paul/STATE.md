@@ -5,26 +5,26 @@
 See: .paul/PROJECT.md (updated 2026-03-21)
 
 **Core value:** Owner gets real-time visibility into wholesale distribution field operations — orders, payments, returnable packaging, and driver locations — replacing paper-based tracking that causes cash leakage and packaging loss.
-**Current focus:** Phase 1 — Core Loop — COMPLETE. Ready for Phase 2 transition.
+**Current focus:** Phase 2 — Money & Packaging — Plan 01 created, awaiting approval
 
 ## Current Position
 
 Milestone: v0.1 Initial Release (v0.1.0)
-Phase: 1 of 4 (Core Loop) — Complete
-Plan: 01-04 unified, all 4 plans complete
-Status: Loop closed, Phase 1 complete — transition required
-Last activity: 2026-03-21 — Plan 01-04 unified
+Phase: 2 of 4 (Money & Packaging) — Planning
+Plan: 02-01 unified, ready for next plan
+Status: Loop closed, ready for next PLAN
+Last activity: 2026-03-22 — Plan 02-01 unified
 
 Progress:
-- Milestone: [██░░░░░░░░] 25%
-- Phase 1: [██████████] 100% (4 of 4 plans)
+- Milestone: [███░░░░░░░] 30%
+- Phase 2: [███░░░░░░░] 33% (1 of 3 plans)
 
 ## Loop Position
 
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ✓     [Loop complete — Phase 1 finished]
+  ✓        ✓        ✓     [Loop complete — ready for next PLAN]
 ```
 
 ## Accumulated Context
@@ -57,14 +57,16 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-21
-Stopped at: Phase 1 complete, transition required
-Next action: Phase transition (update PROJECT.md, ROADMAP.md, git commit, route to Phase 2)
-Resume file: .paul/phases/01-core-loop/01-04-SUMMARY.md
+Last session: 2026-03-22
+Stopped at: Plan 02-01 loop closed
+Next action: Run /paul:plan for Plan 02-02 (Per-product package tracking)
+Resume file: .paul/phases/02-money-packaging/02-01-SUMMARY.md
 Resume context:
-- Phase 1 Core Loop: all 4 plans complete (scaffold, auth, CRUD, orders)
-- Core loop proven: driver creates order → owner sees it
-- Ready for Phase 2 (Money & Packaging)
+- Plan 02-01 complete: payment collection + credit balance
+- Plan 02-02 next: per-product package tracking + standalone collection
+- Plan 02-03 after: Bluetooth receipt printing
+- Supabase RPC pattern established for future atomic operations
+- has_users() init screen bug fixed
 
 ---
 *STATE.md — Updated after every significant action*

@@ -196,4 +196,52 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get items => 'عناصر';
+
+  @override
+  String get payment => 'الدفعة';
+
+  @override
+  String get newPayment => 'دفعة جديدة';
+
+  @override
+  String get collectPayment => 'تحصيل دفعة';
+
+  @override
+  String get paymentCollected => 'تم تحصيل الدفعة';
+
+  @override
+  String get amount => 'المبلغ';
+
+  @override
+  String get enterAmount => 'أدخل المبلغ';
+
+  @override
+  String get currentBalance => 'الرصيد الحالي';
+
+  @override
+  String get previousBalance => 'الرصيد السابق';
+
+  @override
+  String get newBalance => 'الرصيد الجديد';
+
+  @override
+  String get noPayments => 'لا توجد مدفوعات';
+
+  @override
+  String get emptyPaymentMessage => 'لم تقم بتحصيل أي مدفوعات بعد';
+
+  @override
+  String get confirmPayment => 'تأكيد الدفعة';
+
+  @override
+  String get confirmPaymentMessage => 'هل تريد تسجيل هذه الدفعة؟';
+
+  @override
+  String get balanceChange => 'تغيير الرصيد';
+
+  @override
+  String get recordPayment => 'تسجيل الدفعة';
+
+  @override
+  String get overpaymentWarning => 'المبلغ أكبر من الرصيد المستحق';
 }
