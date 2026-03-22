@@ -21,6 +21,20 @@ class OrderRepository {
     return List<Map<String, dynamic>>.from(result);
   }
 
+  /// Orders for a specific store, newest first.
+  Future<List<Map<String, dynamic>>> getByStore(String storeId,
+      {int limit = 10}) async {
+    final result = await _client
+        .from('orders')
+        .select(
+            '*, stores(name, address), users!orders_driver_id_fkey(name)')
+        .eq('business_id', _businessId)
+        .eq('store_id', storeId)
+        .order('created_at', ascending: false)
+        .limit(limit);
+    return List<Map<String, dynamic>>.from(result);
+  }
+
   Future<Map<String, dynamic>> getById(String id) async {
     final result = await _client
         .from('orders')

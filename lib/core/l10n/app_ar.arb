@@ -147,5 +147,27 @@
       "minutes": { "type": "int" },
       "seconds": { "type": "String" }
     }
-  }
+  },
+  "storeDetails": "تفاصيل المتجر",
+  "recentOrders": "الطلبات الأخيرة",
+  "recentPayments": "المدفوعات الأخيرة",
+  "packageBalances": "رصيد العبوات",
+  "noOrdersForStore": "لا توجد طلبات لهذا المتجر",
+  "noPaymentsForStore": "لا توجد مدفوعات لهذا المتجر",
+  "noPackageActivity": "لا توجد حركة عبوات",
+  "address": "العنوان",
+  "phone": "الهاتف",
+  "contactPerson": "جهة الاتصال",
+  "users": "المستخدمين",
+  "createUser": "إضافة مستخدم",
+  "userCreated": "تم إنشاء الحساب بنجاح",
+  "selectRole": "اختر الدور",
+  "deactivateUser": "إيقاف المستخدم",
+  "activateUser": "تفعيل المستخدم",
+  "confirmDeactivate": "هل تريد إيقاف هذا المستخدم؟ لن يتمكن من تسجيل الدخول.",
+  "active": "نشط",
+  "inactive": "غير نشط",
+  "noUsers": "لا يوجد مستخدمين",
+  "passwordMinLength": "6 أحرف على الأقل",
+  "usernameNoSpaces": "بدون مسافات"
 }

@@ -907,6 +907,138 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'متبقي {minutes}:{seconds}'**
   String timeRemaining(int minutes, String seconds);
+
+  /// No description provided for @storeDetails.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل المتجر'**
+  String get storeDetails;
+
+  /// No description provided for @recentOrders.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطلبات الأخيرة'**
+  String get recentOrders;
+
+  /// No description provided for @recentPayments.
+  ///
+  /// In ar, this message translates to:
+  /// **'المدفوعات الأخيرة'**
+  String get recentPayments;
+
+  /// No description provided for @packageBalances.
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيد العبوات'**
+  String get packageBalances;
+
+  /// No description provided for @noOrdersForStore.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد طلبات لهذا المتجر'**
+  String get noOrdersForStore;
+
+  /// No description provided for @noPaymentsForStore.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مدفوعات لهذا المتجر'**
+  String get noPaymentsForStore;
+
+  /// No description provided for @noPackageActivity.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد حركة عبوات'**
+  String get noPackageActivity;
+
+  /// No description provided for @address.
+  ///
+  /// In ar, this message translates to:
+  /// **'العنوان'**
+  String get address;
+
+  /// No description provided for @phone.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهاتف'**
+  String get phone;
+
+  /// No description provided for @contactPerson.
+  ///
+  /// In ar, this message translates to:
+  /// **'جهة الاتصال'**
+  String get contactPerson;
+
+  /// No description provided for @users.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستخدمين'**
+  String get users;
+
+  /// No description provided for @createUser.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة مستخدم'**
+  String get createUser;
+
+  /// No description provided for @userCreated.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إنشاء الحساب بنجاح'**
+  String get userCreated;
+
+  /// No description provided for @selectRole.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر الدور'**
+  String get selectRole;
+
+  /// No description provided for @deactivateUser.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف المستخدم'**
+  String get deactivateUser;
+
+  /// No description provided for @activateUser.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفعيل المستخدم'**
+  String get activateUser;
+
+  /// No description provided for @confirmDeactivate.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل تريد إيقاف هذا المستخدم؟ لن يتمكن من تسجيل الدخول.'**
+  String get confirmDeactivate;
+
+  /// No description provided for @active.
+  ///
+  /// In ar, this message translates to:
+  /// **'نشط'**
+  String get active;
+
+  /// No description provided for @inactive.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير نشط'**
+  String get inactive;
+
+  /// No description provided for @noUsers.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد مستخدمين'**
+  String get noUsers;
+
+  /// No description provided for @passwordMinLength.
+  ///
+  /// In ar, this message translates to:
+  /// **'6 أحرف على الأقل'**
+  String get passwordMinLength;
+
+  /// No description provided for @usernameNoSpaces.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون مسافات'**
+  String get usernameNoSpaces;
 }
 
 class _AppLocalizationsDelegate

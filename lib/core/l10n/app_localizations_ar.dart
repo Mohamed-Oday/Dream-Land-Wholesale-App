@@ -419,4 +419,71 @@ class AppLocalizationsAr extends AppLocalizations {
   String timeRemaining(int minutes, String seconds) {
     return 'متبقي $minutes:$seconds';
   }
+
+  @override
+  String get storeDetails => 'تفاصيل المتجر';
+
+  @override
+  String get recentOrders => 'الطلبات الأخيرة';
+
+  @override
+  String get recentPayments => 'المدفوعات الأخيرة';
+
+  @override
+  String get packageBalances => 'رصيد العبوات';
+
+  @override
+  String get noOrdersForStore => 'لا توجد طلبات لهذا المتجر';
+
+  @override
+  String get noPaymentsForStore => 'لا توجد مدفوعات لهذا المتجر';
+
+  @override
+  String get noPackageActivity => 'لا توجد حركة عبوات';
+
+  @override
+  String get address => 'العنوان';
+
+  @override
+  String get phone => 'الهاتف';
+
+  @override
+  String get contactPerson => 'جهة الاتصال';
+
+  @override
+  String get users => 'المستخدمين';
+
+  @override
+  String get createUser => 'إضافة مستخدم';
+
+  @override
+  String get userCreated => 'تم إنشاء الحساب بنجاح';
+
+  @override
+  String get selectRole => 'اختر الدور';
+
+  @override
+  String get deactivateUser => 'إيقاف المستخدم';
+
+  @override
+  String get activateUser => 'تفعيل المستخدم';
+
+  @override
+  String get confirmDeactivate =>
+      'هل تريد إيقاف هذا المستخدم؟ لن يتمكن من تسجيل الدخول.';
+
+  @override
+  String get active => 'نشط';
+
+  @override
+  String get inactive => 'غير نشط';
+
+  @override
+  String get noUsers => 'لا يوجد مستخدمين';
+
+  @override
+  String get passwordMinLength => '6 أحرف على الأقل';
+
+  @override
+  String get usernameNoSpaces => 'بدون مسافات';
 }

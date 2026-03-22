@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/features/auth/screens/settings_placeholder.dart';
 import 'package:tawzii/features/dashboard/screens/owner_dashboard_screen.dart';
+import 'package:tawzii/features/driver/screens/user_management_screen.dart';
 import 'package:tawzii/features/location/screens/driver_map_screen.dart';
 import 'package:tawzii/features/stores/screens/store_list_screen.dart';
 
@@ -24,6 +25,7 @@ class _OwnerShellState extends ConsumerState<OwnerShell> {
       const OwnerDashboardScreen(),
       const DriverMapScreen(),
       const StoreListScreen(),
+      const UserManagementScreen(isOwner: true),
       const SettingsPlaceholder(roleName: 'مالك'),
     ];
 
@@ -49,6 +51,11 @@ class _OwnerShellState extends ConsumerState<OwnerShell> {
             icon: const Icon(Icons.store_outlined),
             selectedIcon: const Icon(Icons.store),
             label: l10n.stores,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.people_outlined),
+            selectedIcon: const Icon(Icons.people),
+            label: l10n.users,
           ),
           NavigationDestination(
             icon: const Icon(Icons.settings_outlined),

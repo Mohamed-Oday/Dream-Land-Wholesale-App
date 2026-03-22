@@ -147,5 +147,27 @@
       "minutes": { "type": "int" },
       "seconds": { "type": "String" }
     }
-  }
+  },
+  "storeDetails": "Store Details",
+  "recentOrders": "Recent Orders",
+  "recentPayments": "Recent Payments",
+  "packageBalances": "Package Balances",
+  "noOrdersForStore": "No orders for this store",
+  "noPaymentsForStore": "No payments for this store",
+  "noPackageActivity": "No package activity",
+  "address": "Address",
+  "phone": "Phone",
+  "contactPerson": "Contact Person",
+  "users": "Users",
+  "createUser": "Add User",
+  "userCreated": "Account created",
+  "selectRole": "Select Role",
+  "deactivateUser": "Deactivate User",
+  "activateUser": "Activate User",
+  "confirmDeactivate": "Deactivate this user? They won't be able to log in.",
+  "active": "Active",
+  "inactive": "Inactive",
+  "noUsers": "No users",
+  "passwordMinLength": "At least 6 characters",
+  "usernameNoSpaces": "No spaces"
 }

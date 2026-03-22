@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/store_provider.dart';
+import 'store_detail_screen.dart';
 import 'store_form_screen.dart';
 
 class StoreListScreen extends ConsumerWidget {
@@ -96,14 +97,14 @@ class StoreListScreen extends ConsumerWidget {
                       Text('الرصيد', style: theme.textTheme.labelSmall),
                     ],
                   ),
-                  onTap: () async {
-                    await Navigator.push(
+                  onTap: () {
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => StoreFormScreen(store: s),
+                        builder: (_) => StoreDetailScreen(
+                            storeId: s['id'] as String),
                       ),
                     );
-                    ref.invalidate(storeListProvider);
                   },
                 );
               },

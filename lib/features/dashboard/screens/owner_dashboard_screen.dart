@@ -8,6 +8,7 @@ import 'package:tawzii/features/dashboard/providers/dashboard_provider.dart';
 import 'package:tawzii/features/dashboard/widgets/kpi_card.dart';
 import 'package:tawzii/features/orders/providers/order_provider.dart';
 import 'package:tawzii/features/orders/screens/order_list_screen.dart';
+import 'package:tawzii/features/stores/screens/store_detail_screen.dart';
 import 'package:tawzii/features/payments/screens/payment_list_screen.dart';
 import 'package:tawzii/features/products/screens/product_list_screen.dart';
 
@@ -218,6 +219,14 @@ class OwnerDashboardScreen extends ConsumerWidget {
                             style: theme.textTheme.titleSmall?.copyWith(
                               color: colorScheme.error,
                               fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => StoreDetailScreen(
+                                storeId: stores[i]['id'] as String,
+                              ),
                             ),
                           ),
                         ),

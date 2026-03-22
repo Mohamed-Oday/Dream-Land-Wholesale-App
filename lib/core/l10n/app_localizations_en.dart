@@ -421,4 +421,71 @@ class AppLocalizationsEn extends AppLocalizations {
   String timeRemaining(int minutes, String seconds) {
     return 'Remaining $minutes:$seconds';
   }
+
+  @override
+  String get storeDetails => 'Store Details';
+
+  @override
+  String get recentOrders => 'Recent Orders';
+
+  @override
+  String get recentPayments => 'Recent Payments';
+
+  @override
+  String get packageBalances => 'Package Balances';
+
+  @override
+  String get noOrdersForStore => 'No orders for this store';
+
+  @override
+  String get noPaymentsForStore => 'No payments for this store';
+
+  @override
+  String get noPackageActivity => 'No package activity';
+
+  @override
+  String get address => 'Address';
+
+  @override
+  String get phone => 'Phone';
+
+  @override
+  String get contactPerson => 'Contact Person';
+
+  @override
+  String get users => 'Users';
+
+  @override
+  String get createUser => 'Add User';
+
+  @override
+  String get userCreated => 'Account created';
+
+  @override
+  String get selectRole => 'Select Role';
+
+  @override
+  String get deactivateUser => 'Deactivate User';
+
+  @override
+  String get activateUser => 'Activate User';
+
+  @override
+  String get confirmDeactivate =>
+      'Deactivate this user? They won\'t be able to log in.';
+
+  @override
+  String get active => 'Active';
+
+  @override
+  String get inactive => 'Inactive';
+
+  @override
+  String get noUsers => 'No users';
+
+  @override
+  String get passwordMinLength => 'At least 6 characters';
+
+  @override
+  String get usernameNoSpaces => 'No spaces';
 }

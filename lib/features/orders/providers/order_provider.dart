@@ -26,3 +26,12 @@ final allOrdersProvider =
   if (repo == null) return [];
   return repo.getAll();
 });
+
+/// Orders for a specific store (for store detail screen).
+final ordersByStoreProvider =
+    FutureProvider.family<List<Map<String, dynamic>>, String>(
+        (ref, storeId) async {
+  final repo = ref.watch(orderRepositoryProvider);
+  if (repo == null) return [];
+  return repo.getByStore(storeId);
+});
