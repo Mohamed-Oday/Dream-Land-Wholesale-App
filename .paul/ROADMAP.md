@@ -8,14 +8,14 @@ From zero to a production-ready wholesale distribution app in 4 phases. Phase 1 
 
 **v0.1 Initial Release** (v0.1.0)
 Status: In progress
-Phases: 1 of 4 complete
+Phases: 2 of 4 complete
 
 ## Phases
 
 | Phase | Name | Plans | Status | Completed |
 |-------|------|-------|--------|-----------|
 | 1 | Core Loop | 4 | Complete | 2026-03-21 |
-| 2 | Money & Packaging | 3 | In progress | - |
+| 2 | Money & Packaging | 3 | Complete | 2026-03-22 |
 | 3 | Visibility & Control | TBD | Not started | - |
 | 4 | Polish & Hardening | TBD | Not started | - |
 

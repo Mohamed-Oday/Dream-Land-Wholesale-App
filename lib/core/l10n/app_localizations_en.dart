@@ -291,4 +291,44 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get overCollectionWarning =>
       'Collected amount exceeds current balance';
+
+  @override
+  String get printerSetup => 'Printer Setup';
+
+  @override
+  String get scanPrinters => 'Scan for Printers';
+
+  @override
+  String get scanning => 'Scanning...';
+
+  @override
+  String get connectPrinter => 'Connect';
+
+  @override
+  String get disconnectPrinter => 'Disconnect';
+
+  @override
+  String get printerConnected => 'Printer Connected';
+
+  @override
+  String get printerDisconnected => 'Printer Not Connected';
+
+  @override
+  String get noPrintersFound =>
+      'No printers found\nMake sure the printer is on and paired';
+
+  @override
+  String get printing => 'Printing...';
+
+  @override
+  String get printSuccess => 'Print successful';
+
+  @override
+  String get printFailed => 'Print failed';
+
+  @override
+  String get connectPrinterFirst => 'Connect a printer in Settings';
+
+  @override
+  String get enableBluetooth => 'Enable Bluetooth and location permissions';
 }

@@ -32,6 +32,10 @@ dependencies:
   # Utilities
   uuid: ^4.5.0
 
+  # Bluetooth Printing
+  print_bluetooth_thermal: ^1.1.1
+  permission_handler: ^11.3.1
+
   # Environment
   flutter_dotenv: ^5.2.1
 

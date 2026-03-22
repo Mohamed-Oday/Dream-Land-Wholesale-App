@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:tawzii/core/l10n/app_localizations.dart';
+import 'package:tawzii/features/printing/providers/printer_provider.dart';
+import 'package:tawzii/features/printing/screens/printer_setup_screen.dart';
 import '../providers/auth_provider.dart';
 
 /// Placeholder settings screen with logout button.
@@ -14,7 +17,10 @@ class SettingsPlaceholder extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final user = ref.watch(currentUserProvider);
+    final isConnected = ref.watch(printerConnectedProvider);
+    final printerName = ref.watch(connectedPrinterNameProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('الإعدادات')),
@@ -35,6 +41,33 @@ class SettingsPlaceholder extends ConsumerWidget {
                 title: Text(user?.name ?? roleName),
                 subtitle: Text(user?.username ?? ''),
                 trailing: Chip(label: Text(roleName)),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Printer setup
+            Card(
+              child: ListTile(
+                leading: Icon(
+                  isConnected
+                      ? Icons.bluetooth_connected
+                      : Icons.bluetooth_disabled,
+                  color: isConnected
+                      ? Colors.green
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+                title: Text(l10n.printerSetup),
+                subtitle: Text(
+                  isConnected
+                      ? '${l10n.printerConnected}: $printerName'
+                      : l10n.printerDisconnected,
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const PrinterSetupScreen(),
+                  ),
+                ),
               ),
             ),
             const Spacer(),

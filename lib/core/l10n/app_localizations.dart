@@ -661,6 +661,84 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'العدد المسترجع أكبر من الرصيد الحالي'**
   String get overCollectionWarning;
+
+  /// No description provided for @printerSetup.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعداد الطابعة'**
+  String get printerSetup;
+
+  /// No description provided for @scanPrinters.
+  ///
+  /// In ar, this message translates to:
+  /// **'بحث عن طابعات'**
+  String get scanPrinters;
+
+  /// No description provided for @scanning.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري البحث...'**
+  String get scanning;
+
+  /// No description provided for @connectPrinter.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتصال'**
+  String get connectPrinter;
+
+  /// No description provided for @disconnectPrinter.
+  ///
+  /// In ar, this message translates to:
+  /// **'قطع الاتصال'**
+  String get disconnectPrinter;
+
+  /// No description provided for @printerConnected.
+  ///
+  /// In ar, this message translates to:
+  /// **'متصل بالطابعة'**
+  String get printerConnected;
+
+  /// No description provided for @printerDisconnected.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطابعة غير متصلة'**
+  String get printerDisconnected;
+
+  /// No description provided for @noPrintersFound.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يتم العثور على طابعات\nتأكد من تشغيل الطابعة وإقرانها'**
+  String get noPrintersFound;
+
+  /// No description provided for @printing.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري الطباعة...'**
+  String get printing;
+
+  /// No description provided for @printSuccess.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت الطباعة بنجاح'**
+  String get printSuccess;
+
+  /// No description provided for @printFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'فشلت الطباعة'**
+  String get printFailed;
+
+  /// No description provided for @connectPrinterFirst.
+  ///
+  /// In ar, this message translates to:
+  /// **'قم بتوصيل الطابعة من الإعدادات'**
+  String get connectPrinterFirst;
+
+  /// No description provided for @enableBluetooth.
+  ///
+  /// In ar, this message translates to:
+  /// **'قم بتفعيل البلوتوث وصلاحيات الموقع'**
+  String get enableBluetooth;
 }
 
 class _AppLocalizationsDelegate

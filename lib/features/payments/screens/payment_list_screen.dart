@@ -184,13 +184,18 @@ class _PaymentCard extends StatelessWidget {
               ),
             ),
             // Amount
-            Text(
-              '${amount.toStringAsFixed(2)} د.ج',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.success,
-                fontFeatures: [const FontFeature.tabularFigures()],
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${amount.toStringAsFixed(2)} د.ج',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.success,
+                    fontFeatures: [const FontFeature.tabularFigures()],
+                  ),
+                ),
+              ],
             ),
           ],
         ),

@@ -93,5 +93,18 @@
   "packagesGiven": "Packages Given",
   "packagesReturned": "Packages Returned",
   "currentPackageBalance": "Current Package Balance",
-  "overCollectionWarning": "Collected amount exceeds current balance"
+  "overCollectionWarning": "Collected amount exceeds current balance",
+  "printerSetup": "Printer Setup",
+  "scanPrinters": "Scan for Printers",
+  "scanning": "Scanning...",
+  "connectPrinter": "Connect",
+  "disconnectPrinter": "Disconnect",
+  "printerConnected": "Printer Connected",
+  "printerDisconnected": "Printer Not Connected",
+  "noPrintersFound": "No printers found\nMake sure the printer is on and paired",
+  "printing": "Printing...",
+  "printSuccess": "Print successful",
+  "printFailed": "Print failed",
+  "connectPrinterFirst": "Connect a printer in Settings",
+  "enableBluetooth": "Enable Bluetooth and location permissions"
 }

@@ -289,4 +289,44 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get overCollectionWarning => 'العدد المسترجع أكبر من الرصيد الحالي';
+
+  @override
+  String get printerSetup => 'إعداد الطابعة';
+
+  @override
+  String get scanPrinters => 'بحث عن طابعات';
+
+  @override
+  String get scanning => 'جاري البحث...';
+
+  @override
+  String get connectPrinter => 'اتصال';
+
+  @override
+  String get disconnectPrinter => 'قطع الاتصال';
+
+  @override
+  String get printerConnected => 'متصل بالطابعة';
+
+  @override
+  String get printerDisconnected => 'الطابعة غير متصلة';
+
+  @override
+  String get noPrintersFound =>
+      'لم يتم العثور على طابعات\nتأكد من تشغيل الطابعة وإقرانها';
+
+  @override
+  String get printing => 'جاري الطباعة...';
+
+  @override
+  String get printSuccess => 'تمت الطباعة بنجاح';
+
+  @override
+  String get printFailed => 'فشلت الطباعة';
+
+  @override
+  String get connectPrinterFirst => 'قم بتوصيل الطابعة من الإعدادات';
+
+  @override
+  String get enableBluetooth => 'قم بتفعيل البلوتوث وصلاحيات الموقع';
 }

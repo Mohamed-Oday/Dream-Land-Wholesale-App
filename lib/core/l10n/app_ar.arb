@@ -93,5 +93,18 @@
   "packagesGiven": "عبوات مُسلّمة",
   "packagesReturned": "عبوات مُسترجعة",
   "currentPackageBalance": "رصيد العبوات الحالي",
-  "overCollectionWarning": "العدد المسترجع أكبر من الرصيد الحالي"
+  "overCollectionWarning": "العدد المسترجع أكبر من الرصيد الحالي",
+  "printerSetup": "إعداد الطابعة",
+  "scanPrinters": "بحث عن طابعات",
+  "scanning": "جاري البحث...",
+  "connectPrinter": "اتصال",
+  "disconnectPrinter": "قطع الاتصال",
+  "printerConnected": "متصل بالطابعة",
+  "printerDisconnected": "الطابعة غير متصلة",
+  "noPrintersFound": "لم يتم العثور على طابعات\nتأكد من تشغيل الطابعة وإقرانها",
+  "printing": "جاري الطباعة...",
+  "printSuccess": "تمت الطباعة بنجاح",
+  "printFailed": "فشلت الطباعة",
+  "connectPrinterFirst": "قم بتوصيل الطابعة من الإعدادات",
+  "enableBluetooth": "قم بتفعيل البلوتوث وصلاحيات الموقع"
 }

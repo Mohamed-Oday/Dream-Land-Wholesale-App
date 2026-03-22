@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/core/theme/app_colors.dart';
+import '../../printing/providers/printer_provider.dart';
 import '../providers/order_provider.dart';
 
 class ReceiptPreviewScreen extends ConsumerWidget {
@@ -80,7 +81,7 @@ class ReceiptPreviewScreen extends ConsumerWidget {
   }
 }
 
-class _ReceiptScaffold extends StatelessWidget {
+class _ReceiptScaffold extends ConsumerStatefulWidget {
   final Map<String, dynamic> order;
   final AppLocalizations l10n;
   final ThemeData theme;
@@ -92,12 +93,65 @@ class _ReceiptScaffold extends StatelessWidget {
   });
 
   @override
+  ConsumerState<_ReceiptScaffold> createState() => _ReceiptScaffoldState();
+}
+
+class _ReceiptScaffoldState extends ConsumerState<_ReceiptScaffold> {
+  final _receiptKey = GlobalKey();
+  bool _isPrinting = false;
+
+  Future<void> _print() async {
+    setState(() => _isPrinting = true);
+    try {
+      final printService = ref.read(printServiceProvider);
+      final success = await printService.printFromWidget(_receiptKey);
+      if (!mounted) return;
+      final l10n = widget.l10n;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success ? l10n.printSuccess : l10n.printFailed),
+          backgroundColor: success ? AppColors.success : AppColors.error,
+          action: success
+              ? null
+              : SnackBarAction(
+                  label: l10n.retry,
+                  textColor: Colors.white,
+                  onPressed: _print,
+                ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${widget.l10n.printFailed}: $e'),
+            backgroundColor: AppColors.error,
+            action: SnackBarAction(
+              label: widget.l10n.retry,
+              textColor: Colors.white,
+              onPressed: _print,
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPrinting = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isConnected = ref.watch(printerConnectedProvider);
+
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.receipt)),
+      appBar: AppBar(title: Text(widget.l10n.receipt)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: _ReceiptCard(order: order, l10n: l10n, theme: theme),
+        child: RepaintBoundary(
+          key: _receiptKey,
+          child: _ReceiptCard(
+              order: widget.order, l10n: widget.l10n, theme: widget.theme),
+        ),
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
@@ -106,9 +160,16 @@ class _ReceiptScaffold extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: null, // Phase 2
-                  icon: const Icon(Icons.print),
-                  label: Text(l10n.print),
+                  onPressed: isConnected && !_isPrinting ? _print : null,
+                  icon: _isPrinting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.print),
+                  label: Text(_isPrinting
+                      ? widget.l10n.printing
+                      : widget.l10n.print),
                 ),
               ),
               const SizedBox(width: 12),
@@ -118,7 +179,7 @@ class _ReceiptScaffold extends StatelessWidget {
                   style: FilledButton.styleFrom(
                     minimumSize: const Size(0, 48),
                   ),
-                  child: Text(l10n.done),
+                  child: Text(widget.l10n.done),
                 ),
               ),
             ],
