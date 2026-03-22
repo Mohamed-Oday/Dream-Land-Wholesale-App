@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 
+import 'package:tawzii/core/l10n/app_localizations.dart';
+import 'package:tawzii/core/theme/app_colors.dart';
 import '../providers/store_provider.dart';
 
 class StoreFormScreen extends ConsumerStatefulWidget {
@@ -22,6 +27,10 @@ class _StoreFormScreenState extends ConsumerState<StoreFormScreen> {
   late final TextEditingController _contactController;
   bool _isLoading = false;
   String? _errorMessage;
+  double? _selectedLat;
+  double? _selectedLng;
+  LatLng _mapCenter = const LatLng(36.75, 3.06);
+  bool _locationResolved = false;
 
   @override
   void initState() {
@@ -32,6 +41,38 @@ class _StoreFormScreenState extends ConsumerState<StoreFormScreen> {
     _phoneController = TextEditingController(text: s?['phone'] ?? '');
     _contactController =
         TextEditingController(text: s?['contact_person'] ?? '');
+    _selectedLat = (s?['gps_lat'] as num?)?.toDouble();
+    _selectedLng = (s?['gps_lng'] as num?)?.toDouble();
+    if (_selectedLat != null && _selectedLng != null) {
+      _mapCenter = LatLng(_selectedLat!, _selectedLng!);
+      _locationResolved = true;
+    } else {
+      _resolveCurrentLocation();
+    }
+  }
+
+  Future<void> _resolveCurrentLocation() async {
+    try {
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return;
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 5),
+        ),
+      );
+      if (mounted) {
+        setState(() {
+          _mapCenter = LatLng(pos.latitude, pos.longitude);
+          _locationResolved = true;
+        });
+      }
+    } catch (_) {
+      // Fall back to Algiers default — no error needed
+    }
   }
 
   @override
@@ -61,6 +102,8 @@ class _StoreFormScreenState extends ConsumerState<StoreFormScreen> {
           'address': _addressController.text.trim(),
           'phone': _phoneController.text.trim(),
           'contact_person': _contactController.text.trim(),
+          'gps_lat': _selectedLat,
+          'gps_lng': _selectedLng,
         });
       } else {
         await repo.create(
@@ -68,6 +111,8 @@ class _StoreFormScreenState extends ConsumerState<StoreFormScreen> {
           address: _addressController.text.trim(),
           phone: _phoneController.text.trim(),
           contactPerson: _contactController.text.trim(),
+          gpsLat: _selectedLat,
+          gpsLng: _selectedLng,
         );
       }
 
@@ -86,6 +131,9 @@ class _StoreFormScreenState extends ConsumerState<StoreFormScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = theme.colorScheme;
+    final hasMarker = _selectedLat != null && _selectedLng != null;
 
     return Scaffold(
       appBar: AppBar(
@@ -144,6 +192,101 @@ class _StoreFormScreenState extends ConsumerState<StoreFormScreen> {
                   hintText: 'اختياري',
                 ),
               ),
+
+              // --- Map Location Picker ---
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Icon(Icons.map_outlined,
+                      size: 20, color: colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    l10n.storeLocation,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              if (!hasMarker)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    l10n.tapToSetLocation,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 4),
+              Card(
+                elevation: 0,
+                color: colorScheme.surfaceContainerLow,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: SizedBox(
+                  height: 200,
+                  child: FlutterMap(
+                    options: MapOptions(
+                      initialCenter: hasMarker
+                          ? LatLng(_selectedLat!, _selectedLng!)
+                          : _mapCenter,
+                      initialZoom: hasMarker || _locationResolved ? 15 : 13,
+                      onTap: (_, point) {
+                        if (!_isLoading) {
+                          setState(() {
+                            _selectedLat = point.latitude;
+                            _selectedLng = point.longitude;
+                          });
+                        }
+                      },
+                    ),
+                    children: [
+                      TileLayer(
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.dreamland.tawzii',
+                      ),
+                      if (hasMarker)
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: LatLng(_selectedLat!, _selectedLng!),
+                              width: 40,
+                              height: 40,
+                              child: Icon(
+                                Icons.location_pin,
+                                color: AppColors.error,
+                                size: 40,
+                              ),
+                            ),
+                          ],
+                        ),
+                      const SimpleAttributionWidget(
+                        source: Text('OpenStreetMap contributors'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (hasMarker)
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.close, size: 18),
+                    label: Text(l10n.removeLocation),
+                    onPressed: _isLoading
+                        ? null
+                        : () => setState(() {
+                              _selectedLat = null;
+                              _selectedLng = null;
+                            }),
+                  ),
+                ),
+
               const SizedBox(height: 8),
               if (_errorMessage != null)
                 Padding(

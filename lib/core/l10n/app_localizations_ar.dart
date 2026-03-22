@@ -575,4 +575,37 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get printerReconnecting => 'جاري إعادة الاتصال بالطابعة...';
+
+  @override
+  String get storeLocation => 'موقع المتجر';
+
+  @override
+  String get tapToSetLocation => 'اضغط على الخريطة لتحديد الموقع';
+
+  @override
+  String get removeLocation => 'إزالة الموقع';
+
+  @override
+  String get suppliers => 'الموردين';
+
+  @override
+  String get supplier => 'المورد';
+
+  @override
+  String get addSupplier => 'إضافة مورد';
+
+  @override
+  String get editSupplier => 'تعديل المورد';
+
+  @override
+  String get supplierName => 'اسم المورد';
+
+  @override
+  String get noSuppliers => 'لا يوجد موردين';
+
+  @override
+  String get costPrice => 'سعر التكلفة';
+
+  @override
+  String get sellPrice => 'سعر البيع';
 }

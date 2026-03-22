@@ -198,5 +198,16 @@
   "latestVersion": "You have the latest version",
   "syncStatus": "Sync Status",
   "syncAutomatic": "Data syncs automatically when connected",
-  "printerReconnecting": "Reconnecting to printer..."
+  "printerReconnecting": "Reconnecting to printer...",
+  "storeLocation": "Store Location",
+  "tapToSetLocation": "Tap map to set location",
+  "removeLocation": "Remove Location",
+  "suppliers": "Suppliers",
+  "supplier": "Supplier",
+  "addSupplier": "Add Supplier",
+  "editSupplier": "Edit Supplier",
+  "supplierName": "Supplier Name",
+  "noSuppliers": "No suppliers yet",
+  "costPrice": "Cost Price",
+  "sellPrice": "Sell Price"
 }

@@ -577,4 +577,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get printerReconnecting => 'Reconnecting to printer...';
+
+  @override
+  String get storeLocation => 'Store Location';
+
+  @override
+  String get tapToSetLocation => 'Tap map to set location';
+
+  @override
+  String get removeLocation => 'Remove Location';
+
+  @override
+  String get suppliers => 'Suppliers';
+
+  @override
+  String get supplier => 'Supplier';
+
+  @override
+  String get addSupplier => 'Add Supplier';
+
+  @override
+  String get editSupplier => 'Edit Supplier';
+
+  @override
+  String get supplierName => 'Supplier Name';
+
+  @override
+  String get noSuppliers => 'No suppliers yet';
+
+  @override
+  String get costPrice => 'Cost Price';
+
+  @override
+  String get sellPrice => 'Sell Price';
 }

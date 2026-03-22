@@ -5,26 +5,28 @@
 See: .paul/PROJECT.md (updated 2026-03-21)
 
 **Core value:** Owner gets real-time visibility into wholesale distribution field operations — orders, payments, returnable packaging, and driver locations — replacing paper-based tracking that causes cash leakage and packaging loss.
-**Current focus:** Phase 5 — Admin Expansion + Store Creation
+**Current focus:** Phase 6 — Procurement & Cost Tracking
 
 ## Current Position
 
 Milestone: v0.2 Business Intelligence & Procurement (v0.2.0)
-Phase: 5 of 7 (Admin Expansion + Store Creation) — Not started
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-03-22 — Milestone v0.2 created
+Phase: 6 of 7 (Procurement & Cost Tracking) — Planning
+Plan: 06-01 complete, 06-02 not started
+Status: Ready for next PLAN (06-02)
+Last activity: 2026-03-22 — Completed 06-01 (Suppliers + Product Cost Price)
 
 Progress:
 - Milestone v0.1: [██████████] 100% COMPLETE
-- Milestone v0.2: [░░░░░░░░░░] 0%
+- Milestone v0.2: [████░░░░░░] 44%
+- Phase 5: [██████████] 100% COMPLETE
+- Phase 6: [███░░░░░░░] 33% (1/3 plans)
 
 ## Loop Position
 
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ○        ○        ○     [Ready for first PLAN]
+  ✓        ✓        ✓     [Loop complete — ready for next PLAN]
 ```
 
 ## Accumulated Context
@@ -51,6 +53,9 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | Enterprise audit on 04-03: Applied 1 must-have + 2 strongly-recommended | 04-03 | Plan strengthened: auth.uid() for adjusted_by (non-spoofable), zero-amount rejection, threshold input validation |
 | Enterprise audit on 04-04: Applied 0 must-have + 2 strongly-recommended | 04-04 | Plan strengthened: FutureProvider for config caching, empty download_url handling |
 | Enterprise audit on 04-05: Applied 0 must-have + 3 strongly-recommended | 04-05 | Plan strengthened: printer reconnect name persistence, AC for colors, checkpoint color verify |
+| Enterprise audit on 05-01: Applied 1 must-have + 3 strongly-recommended | 05-01 | Plan strengthened: ReceiptPreviewScreen fix (compile-blocking), order join pattern, status indicator, RefreshIndicator async |
+| Enterprise audit on 05-02: Applied 1 must-have + 1 strongly-recommended | 05-02 | Plan strengthened: SimpleAttributionWidget (matches existing pattern), map tap guard during save |
+| Enterprise audit on 06-01: Applied 1 must-have + 1 strongly-recommended | 06-01 | Plan strengthened: cost_price CHECK >= 0 constraint, flutter gen-l10n step |
 
 ### Deferred Issues
 | Issue | Origin | Effort | Revisit |
@@ -61,7 +66,7 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | Live countdown timer on pending discounts | 03-03 user report | S | Implemented in 04-01 (order list + dashboard) |
 | Block order print/finalize while discount pending | 03-03 user report | S | Implemented in 04-01 (print blocked + info banner) |
 | Store selector UI needs improvement | 04-01 user report | S | Future plan (DropdownButtonFormField looks bad) |
-| Store location picker on map | 01-03 user request | M | Phase 3 (OpenStreetMap) |
+| Store location picker on map | 01-03 user request | M | Implemented in 05-02 (flutter_map tap-to-set + GPS auto-center) |
 | Remove debug error messages from login | 01-02 | S | Before production |
 | App feels ~30fps laggy (performance tuning) | 03-01 user report | M | Phase 4 (profile rebuilds, optimize widget trees, provider caching) |
 
@@ -71,15 +76,15 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-22
-Stopped at: Session paused — v0.2 milestone created
-Next action: /paul:plan for Phase 5 (Admin Expansion + Store Creation)
-Resume file: .paul/HANDOFF-2026-03-22-v02-start.md
+Stopped at: Session paused — 06-01 complete, ready to plan 06-02
+Next action: /paul:plan for 06-02 (Purchase Orders)
+Resume file: .paul/HANDOFF-2026-03-22-phase6.md
 Resume context:
-- v0.1 COMPLETE (16 plans, 4 phases)
-- v0.2 milestone created: 3 phases (5-admin, 6-procurement, 7-stock)
-- Phase 5 first: admin dashboard-lite, product mgmt, driver store creation, map location picker
-- Enterprise audit enabled
-- Cairo font + warm amber palette applied
+- 06-01 COMPLETE: Suppliers CRUD + product cost_price
+- 06-02 next: Purchase orders (create, list, detail with supplier + product lines)
+- 06-03 after: Profit margins + dashboard KPIs
+- Suppliers table ready for FK reference from purchase_orders
+- Migration 012 needed for purchase_orders + purchase_order_lines
 
 ---
 *STATE.md — Updated after every significant action*

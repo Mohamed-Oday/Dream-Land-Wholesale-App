@@ -1,69 +1,48 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class StoreRepository {
+class SupplierRepository {
   final SupabaseClient _client;
   final String _businessId;
 
-  StoreRepository(this._client, this._businessId);
+  SupplierRepository(this._client, this._businessId);
 
   Future<List<Map<String, dynamic>>> getAll() async {
     final result = await _client
-        .from('stores')
+        .from('suppliers')
         .select()
         .eq('business_id', _businessId)
-        .order('created_at', ascending: false);
+        .order('name', ascending: true);
     return List<Map<String, dynamic>>.from(result);
   }
 
   Future<Map<String, dynamic>> getById(String id) async {
     final result =
-        await _client.from('stores').select().eq('id', id).single();
+        await _client.from('suppliers').select().eq('id', id).single();
     return Map<String, dynamic>.from(result);
   }
 
   Future<Map<String, dynamic>> create({
     required String name,
-    String address = '',
     String phone = '',
+    String address = '',
     String contactPerson = '',
-    double? gpsLat,
-    double? gpsLng,
   }) async {
     final data = <String, dynamic>{
       'business_id': _businessId,
       'name': name,
-      'address': address,
       'phone': phone,
+      'address': address,
       'contact_person': contactPerson,
     };
-    if (gpsLat != null && gpsLng != null) {
-      data['gps_lat'] = gpsLat;
-      data['gps_lng'] = gpsLng;
-    }
-    final result = await _client.from('stores').insert(data).select();
+    final result = await _client.from('suppliers').insert(data).select();
     final rows = List<Map<String, dynamic>>.from(result);
     return rows.isNotEmpty ? rows.first : data;
-  }
-
-  /// Adjust a store's credit balance with reason logging.
-  Future<Map<String, dynamic>> adjustBalance({
-    required String storeId,
-    required double amount,
-    required String reason,
-  }) async {
-    final result = await _client.rpc('adjust_store_balance', params: {
-      'p_store_id': storeId,
-      'p_business_id': _businessId,
-      'p_amount': amount,
-      'p_reason': reason,
-    });
-    return Map<String, dynamic>.from(result as Map);
   }
 
   Future<Map<String, dynamic>> update(
       String id, Map<String, dynamic> fields) async {
     final result = await _client
-        .from('stores')
+        .from('suppliers')
         .update(fields)
         .eq('id', id)
         .select()

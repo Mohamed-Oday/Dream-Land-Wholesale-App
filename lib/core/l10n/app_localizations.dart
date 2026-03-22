@@ -1213,6 +1213,72 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'جاري إعادة الاتصال بالطابعة...'**
   String get printerReconnecting;
+
+  /// No description provided for @storeLocation.
+  ///
+  /// In ar, this message translates to:
+  /// **'موقع المتجر'**
+  String get storeLocation;
+
+  /// No description provided for @tapToSetLocation.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط على الخريطة لتحديد الموقع'**
+  String get tapToSetLocation;
+
+  /// No description provided for @removeLocation.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة الموقع'**
+  String get removeLocation;
+
+  /// No description provided for @suppliers.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموردين'**
+  String get suppliers;
+
+  /// No description provided for @supplier.
+  ///
+  /// In ar, this message translates to:
+  /// **'المورد'**
+  String get supplier;
+
+  /// No description provided for @addSupplier.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة مورد'**
+  String get addSupplier;
+
+  /// No description provided for @editSupplier.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل المورد'**
+  String get editSupplier;
+
+  /// No description provided for @supplierName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المورد'**
+  String get supplierName;
+
+  /// No description provided for @noSuppliers.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد موردين'**
+  String get noSuppliers;
+
+  /// No description provided for @costPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعر التكلفة'**
+  String get costPrice;
+
+  /// No description provided for @sellPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعر البيع'**
+  String get sellPrice;
 }
 
 class _AppLocalizationsDelegate

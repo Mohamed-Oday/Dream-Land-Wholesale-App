@@ -2,13 +2,13 @@
   "name": "dream-land-shopping",
   "version": "0.0.0",
   "milestone": {
-    "name": "v0.1 Initial Release",
-    "version": "0.1.0",
+    "name": "v0.2 Business Intelligence & Procurement",
+    "version": "0.2.0",
     "status": "in_progress"
   },
   "phase": {
-    "number": 3,
-    "name": "Visibility & Control",
+    "number": 6,
+    "name": "Procurement & Cost Tracking",
     "status": "in_progress"
   },
   "loop": {

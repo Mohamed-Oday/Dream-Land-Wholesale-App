@@ -27,6 +27,7 @@ class ProductRepository {
     required double unitPrice,
     int? unitsPerPackage,
     bool hasReturnablePackaging = false,
+    double? costPrice,
   }) async {
     final result = await _client.from('products').insert({
       'business_id': _businessId,
@@ -34,6 +35,7 @@ class ProductRepository {
       'unit_price': unitPrice,
       'units_per_package': unitsPerPackage,
       'has_returnable_packaging': hasReturnablePackaging,
+      'cost_price': costPrice,
     }).select().single();
     return Map<String, dynamic>.from(result);
   }

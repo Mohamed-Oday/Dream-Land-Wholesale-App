@@ -198,5 +198,16 @@
   "latestVersion": "لديك أحدث إصدار",
   "syncStatus": "حالة المزامنة",
   "syncAutomatic": "البيانات تُزامن تلقائياً عند الاتصال",
-  "printerReconnecting": "جاري إعادة الاتصال بالطابعة..."
+  "printerReconnecting": "جاري إعادة الاتصال بالطابعة...",
+  "storeLocation": "موقع المتجر",
+  "tapToSetLocation": "اضغط على الخريطة لتحديد الموقع",
+  "removeLocation": "إزالة الموقع",
+  "suppliers": "الموردين",
+  "supplier": "المورد",
+  "addSupplier": "إضافة مورد",
+  "editSupplier": "تعديل المورد",
+  "supplierName": "اسم المورد",
+  "noSuppliers": "لا يوجد موردين",
+  "costPrice": "سعر التكلفة",
+  "sellPrice": "سعر البيع"
 }

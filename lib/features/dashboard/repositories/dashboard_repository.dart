@@ -70,6 +70,17 @@ class DashboardRepository {
     return List<Map<String, dynamic>>.from(result);
   }
 
+  /// Most recent orders across the business, newest first.
+  Future<List<Map<String, dynamic>>> getRecentOrders({int limit = 10}) async {
+    final result = await _client
+        .from('orders')
+        .select('*, stores(name, address), users!orders_driver_id_fkey(name)')
+        .eq('business_id', _businessId)
+        .order('created_at', ascending: false)
+        .limit(limit);
+    return List<Map<String, dynamic>>.from(result);
+  }
+
   /// Stores with outstanding unreturned packages via RPC.
   Future<List<Map<String, dynamic>>> getPackageAlerts() async {
     final result = await _client.rpc('get_package_alerts', params: {

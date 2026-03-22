@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:tawzii/core/l10n/app_localizations.dart';
 import '../providers/product_provider.dart';
 
 class ProductFormScreen extends ConsumerStatefulWidget {
@@ -19,6 +20,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   late final TextEditingController _nameController;
   late final TextEditingController _priceController;
   late final TextEditingController _unitsPerPkgController;
+  late final TextEditingController _costPriceController;
   late bool _hasReturnablePackaging;
   bool _isLoading = false;
   String? _errorMessage;
@@ -32,6 +34,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         TextEditingController(text: p?['unit_price']?.toString() ?? '');
     _unitsPerPkgController =
         TextEditingController(text: p?['units_per_package']?.toString() ?? '');
+    _costPriceController =
+        TextEditingController(text: p?['cost_price']?.toString() ?? '');
     _hasReturnablePackaging = p?['has_returnable_packaging'] ?? false;
   }
 
@@ -40,6 +44,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     _nameController.dispose();
     _priceController.dispose();
     _unitsPerPkgController.dispose();
+    _costPriceController.dispose();
     super.dispose();
   }
 
@@ -58,6 +63,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       final unitsPerPkg = _unitsPerPkgController.text.trim().isNotEmpty
           ? int.parse(_unitsPerPkgController.text.trim())
           : null;
+      final costPrice = _costPriceController.text.trim().isNotEmpty
+          ? double.parse(_costPriceController.text.trim())
+          : null;
 
       if (widget.isEditing) {
         await repo.update(widget.product!['id'], {
@@ -65,6 +73,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
           'unit_price': price,
           'units_per_package': unitsPerPkg,
           'has_returnable_packaging': _hasReturnablePackaging,
+          'cost_price': costPrice,
         });
       } else {
         await repo.create(
@@ -72,6 +81,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
           unitPrice: price,
           unitsPerPackage: unitsPerPkg,
           hasReturnablePackaging: _hasReturnablePackaging,
+          costPrice: costPrice,
         );
       }
 
@@ -90,6 +100,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
@@ -129,6 +140,27 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                   final price = double.tryParse(v.trim());
                   if (price == null) return 'أدخل رقماً صحيحاً';
                   if (price <= 0) return 'السعر يجب أن يكون أكبر من صفر';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _costPriceController,
+                enabled: !_isLoading,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                textInputAction: TextInputAction.next,
+                decoration: InputDecoration(
+                  labelText: l10n.costPrice,
+                  prefixIcon: const Icon(Icons.money_off_outlined),
+                  hintText: 'اختياري',
+                  suffixText: 'د.ج',
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return null;
+                  final cost = double.tryParse(v.trim());
+                  if (cost == null) return 'أدخل رقماً صحيحاً';
+                  if (cost < 0) return 'السعر يجب أن يكون صفر أو أكبر';
                   return null;
                 },
               ),

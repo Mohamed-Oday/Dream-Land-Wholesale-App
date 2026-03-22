@@ -40,6 +40,14 @@ final packageAlertsProvider =
   return repo.getPackageAlerts();
 });
 
+/// Recent orders for admin dashboard (last 10).
+final recentOrdersProvider =
+    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final repo = ref.watch(dashboardRepositoryProvider);
+  if (repo == null) return [];
+  return repo.getRecentOrders();
+});
+
 /// Pending discounts for owner dashboard.
 /// Auto-rejects expired discounts first, then fetches remaining pending.
 final pendingDiscountsProvider =

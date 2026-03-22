@@ -13,7 +13,7 @@ Completed: 2026-03-22
 
 ### v0.2 Business Intelligence & Procurement (v0.2.0) — IN PROGRESS
 Status: In progress
-Phases: 0 of 3 complete (Phases 5-7)
+Phases: 1 of 3 complete (Phases 5-7)
 
 ## Phases
 
@@ -23,8 +23,8 @@ Phases: 0 of 3 complete (Phases 5-7)
 | 2 | Money & Packaging | 3 | Complete | 2026-03-22 |
 | 3 | Visibility & Control | 4 | Complete | 2026-03-22 |
 | 4 | Polish & Hardening | 5 | Complete | 2026-03-22 |
-| 5 | Admin Expansion + Store Creation | TBD | Not started | - |
-| 6 | Procurement & Cost Tracking | TBD | Not started | - |
+| 5 | Admin Expansion + Store Creation | 2 | Complete | 2026-03-22 |
+| 6 | Procurement & Cost Tracking | 3 | Planning | - |
 | 7 | Stock & Inventory | TBD | Not started | - |
 
 ## Phase Details
@@ -88,7 +88,8 @@ Phases: 0 of 3 complete (Phases 5-7)
 - Store location displayed on store detail screen
 
 **Plans:**
-- [ ] 05-01: TBD during /paul:plan
+- [x] 05-01: Admin Tab Expansion (Dashboard + Products tabs for admin shell)
+- [x] 05-02: Store Location Picker + Driver Store Creation
 
 ### Phase 6: Procurement & Cost Tracking
 
@@ -106,7 +107,9 @@ Phases: 0 of 3 complete (Phases 5-7)
 - Purchase receipt/record
 
 **Plans:**
-- [ ] 06-01: TBD during /paul:plan
+- [x] 06-01: Suppliers + Product Cost Price (data foundation)
+- [ ] 06-02: Purchase Orders (create, list, detail) (TBD)
+- [ ] 06-03: Profit Margins + Dashboard KPIs (TBD)
 
 ### Phase 7: Stock & Inventory
 

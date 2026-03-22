@@ -7,6 +7,7 @@ import 'package:tawzii/features/location/providers/location_provider.dart';
 import 'package:tawzii/features/orders/screens/order_list_screen.dart';
 import 'package:tawzii/features/packages/screens/package_list_screen.dart';
 import 'package:tawzii/features/payments/screens/payment_list_screen.dart';
+import 'package:tawzii/features/stores/screens/store_list_screen.dart';
 
 class DriverShell extends ConsumerStatefulWidget {
   const DriverShell({super.key});
@@ -88,6 +89,7 @@ class _DriverShellState extends ConsumerState<DriverShell> {
       const OrderListScreen(isOwner: false),
       const PackageListScreen(),
       const PaymentListScreen(isOwner: false),
+      const StoreListScreen(),
       const SettingsPlaceholder(roleName: 'سائق'),
     ];
 
@@ -171,6 +173,11 @@ class _DriverShellState extends ConsumerState<DriverShell> {
             icon: const Icon(Icons.payments_outlined),
             selectedIcon: const Icon(Icons.payments),
             label: l10n.payments,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.store_outlined),
+            selectedIcon: const Icon(Icons.store),
+            label: l10n.stores,
           ),
           NavigationDestination(
             icon: const Icon(Icons.settings_outlined),
