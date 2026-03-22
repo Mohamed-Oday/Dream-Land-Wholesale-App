@@ -739,6 +739,174 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'قم بتفعيل البلوتوث وصلاحيات الموقع'**
   String get enableBluetooth;
+
+  /// No description provided for @todayRevenue.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيرادات اليوم'**
+  String get todayRevenue;
+
+  /// No description provided for @todayOrders.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلبات اليوم'**
+  String get todayOrders;
+
+  /// No description provided for @topDebtors.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكبر المدينين'**
+  String get topDebtors;
+
+  /// No description provided for @packageAlerts.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات العبوات'**
+  String get packageAlerts;
+
+  /// No description provided for @noDebts.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد ديون مستحقة'**
+  String get noDebts;
+
+  /// No description provided for @allPackagesReturned.
+  ///
+  /// In ar, this message translates to:
+  /// **'جميع العبوات مُسترجعة'**
+  String get allPackagesReturned;
+
+  /// No description provided for @currencyUnit.
+  ///
+  /// In ar, this message translates to:
+  /// **'د.ج'**
+  String get currencyUnit;
+
+  /// No description provided for @packageUnit.
+  ///
+  /// In ar, this message translates to:
+  /// **'عبوة'**
+  String get packageUnit;
+
+  /// No description provided for @viewAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض الكل'**
+  String get viewAll;
+
+  /// No description provided for @noActiveDrivers.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد سائقين في الخدمة'**
+  String get noActiveDrivers;
+
+  /// No description provided for @lastSeenAgo.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر ظهور منذ {minutes} دقيقة'**
+  String lastSeenAgo(int minutes);
+
+  /// No description provided for @locationPermissionDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'يجب تفعيل صلاحية الموقع وخدمة GPS'**
+  String get locationPermissionDenied;
+
+  /// No description provided for @tapToToggleDuty.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط لتغيير حالة الخدمة'**
+  String get tapToToggleDuty;
+
+  /// No description provided for @discount.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصم'**
+  String get discount;
+
+  /// No description provided for @discountAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'مبلغ الخصم'**
+  String get discountAmount;
+
+  /// No description provided for @requiresOwnerApproval.
+  ///
+  /// In ar, this message translates to:
+  /// **'يتطلب موافقة المالك'**
+  String get requiresOwnerApproval;
+
+  /// No description provided for @discountPending.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصم معلق'**
+  String get discountPending;
+
+  /// No description provided for @discountApproved.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصم مقبول'**
+  String get discountApproved;
+
+  /// No description provided for @discountRejected.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصم مرفوض'**
+  String get discountRejected;
+
+  /// No description provided for @pendingDiscounts.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصومات معلقة'**
+  String get pendingDiscounts;
+
+  /// No description provided for @noPendingDiscounts.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد خصومات معلقة'**
+  String get noPendingDiscounts;
+
+  /// No description provided for @approveDiscount.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبول الخصم'**
+  String get approveDiscount;
+
+  /// No description provided for @rejectDiscount.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفض الخصم'**
+  String get rejectDiscount;
+
+  /// No description provided for @confirmApproveDiscount.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل تريد قبول هذا الخصم؟'**
+  String get confirmApproveDiscount;
+
+  /// No description provided for @confirmRejectDiscount.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل تريد رفض هذا الخصم؟ سيتم تعديل الإجمالي.'**
+  String get confirmRejectDiscount;
+
+  /// No description provided for @discountExceedsSubtotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخصم لا يمكن أن يتجاوز المجموع الفرعي'**
+  String get discountExceedsSubtotal;
+
+  /// No description provided for @discountAlreadyProcessed.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخصم تمت معالجته مسبقاً'**
+  String get discountAlreadyProcessed;
+
+  /// No description provided for @timeRemaining.
+  ///
+  /// In ar, this message translates to:
+  /// **'متبقي {minutes}:{seconds}'**
+  String timeRemaining(int minutes, String seconds);
 }
 
 class _AppLocalizationsDelegate

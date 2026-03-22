@@ -209,6 +209,8 @@ class _ReceiptCard extends StatelessWidget {
     final status = order['status'] as String? ?? 'created';
     final subtotal = (order['subtotal'] as num?)?.toDouble() ?? 0;
     final taxAmount = (order['tax_amount'] as num?)?.toDouble() ?? 0;
+    final discount = (order['discount'] as num?)?.toDouble() ?? 0;
+    final discountStatus = order['discount_status'] as String? ?? 'none';
     final total = (order['total'] as num?)?.toDouble() ?? 0;
     final createdAt = order['created_at'] as String?;
     final lines = order['order_lines'] as List<dynamic>? ?? [];
@@ -416,6 +418,14 @@ class _ReceiptCard extends StatelessWidget {
                 value: taxAmount,
                 theme: theme,
               ),
+            if (discount > 0 &&
+                (discountStatus == 'approved' || discountStatus == 'pending'))
+              _TotalLine(
+                label: l10n.discount,
+                value: -discount,
+                theme: theme,
+                isDiscount: true,
+              ),
             const SizedBox(height: 4),
             Container(
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -493,25 +503,35 @@ class _TotalLine extends StatelessWidget {
   final double value;
   final ThemeData theme;
   final bool isGrandTotal;
+  final bool isDiscount;
 
   const _TotalLine({
     required this.label,
     required this.value,
     required this.theme,
     this.isGrandTotal = false,
+    this.isDiscount = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final style = isGrandTotal
-        ? theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            fontFeatures: [const FontFeature.tabularFigures()],
-          )
-        : theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontFeatures: [const FontFeature.tabularFigures()],
-          );
+    TextStyle? style;
+    if (isGrandTotal) {
+      style = theme.textTheme.titleMedium?.copyWith(
+        fontWeight: FontWeight.bold,
+        fontFeatures: [const FontFeature.tabularFigures()],
+      );
+    } else if (isDiscount) {
+      style = theme.textTheme.bodyMedium?.copyWith(
+        color: theme.colorScheme.error,
+        fontFeatures: [const FontFeature.tabularFigures()],
+      );
+    } else {
+      style = theme.textTheme.bodyMedium?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+        fontFeatures: [const FontFeature.tabularFigures()],
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),

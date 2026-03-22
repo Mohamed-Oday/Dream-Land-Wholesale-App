@@ -5,26 +5,26 @@
 See: .paul/PROJECT.md (updated 2026-03-21)
 
 **Core value:** Owner gets real-time visibility into wholesale distribution field operations — orders, payments, returnable packaging, and driver locations — replacing paper-based tracking that causes cash leakage and packaging loss.
-**Current focus:** Phase 2 — Money & Packaging — Plan 01 created, awaiting approval
+**Current focus:** Phase 3 — Visibility & Control — Plan 02 created, awaiting approval
 
 ## Current Position
 
 Milestone: v0.1 Initial Release (v0.1.0)
-Phase: 2 of 4 (Money & Packaging) — Planning
-Plan: 02-03 unified, all 3 plans complete
-Status: Loop closed, Phase 2 complete
-Last activity: 2026-03-22 — Plan 02-03 unified, Phase 2 complete
+Phase: 3 of 4 (Visibility & Control) — Planning
+Plan: 03-03 complete
+Status: Loop closed, ready for next PLAN
+Last activity: 2026-03-22 — Unified 03-03, discount approval complete
 
 Progress:
-- Milestone: [█████░░░░░] 50%
-- Phase 2: [██████████] 100% (3 of 3 plans)
+- Milestone: [████████░░] 75%
+- Phase 3: [███████░░░] 75% (3 of 4 plans)
 
 ## Loop Position
 
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ✓     [Loop complete — Phase 2 finished]
+  ✓        ✓        ✓     [Loop complete — ready for next PLAN]
 ```
 
 ## Accumulated Context
@@ -42,15 +42,21 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | Repository pattern: SupabaseClient + businessId | 01-03 | All data access follows this |
 | Navigator.push for sub-screens within shells | 01-03 | GoRouter for top-level, Navigator for in-shell |
 | Enterprise audit on 01-04: Applied 2 must-have + 3 strongly-recommended | 01-04 | Plan strengthened: atomic insert cleanup, driver name join, confirmation dialog, error categorization |
+| Enterprise audit on 03-01: Applied 2 must-have + 5 strongly-recommended | 03-01 | Plan strengthened: migration filename fix (004 not 002), timezone to Algeria local, RPC auth check, GRANT EXECUTE, migration deployment step, query index, refresh completion |
+| Enterprise audit on 03-02: Applied 2 must-have + 4 strongly-recommended | 03-02 | Plan strengthened: removed BACKGROUND_LOCATION perm, GPS service check, filter inactive drivers, silent insert failures, OSM attribution, migration deployment |
+| Enterprise audit on 03-03: Applied 1 must-have + 4 strongly-recommended | 03-03 | Plan strengthened: RPC exception for stale actions, provider location fix, receipt hides rejected discounts, migration deploy, race condition UI handling |
 
 ### Deferred Issues
 | Issue | Origin | Effort | Revisit |
 |-------|--------|--------|---------|
 | Printer model selection | PRD | S | Before Phase 2 |
 | Arabic thermal printer encoding | Ideation | M | Before Phase 2 |
-| Discount timeout duration | Ideation | S | Phase 3 |
+| Discount timeout duration | Ideation | S | Implemented (3 min auto-reject) |
+| Live countdown timer on pending discounts | 03-03 user report | S | Phase 4 (static text, needs periodic setState) |
+| Block order print/finalize while discount pending | 03-03 user report | S | Phase 4 (driver should wait for approval before printing) |
 | Store location picker on map | 01-03 user request | M | Phase 3 (OpenStreetMap) |
 | Remove debug error messages from login | 01-02 | S | Before production |
+| App feels ~30fps laggy (performance tuning) | 03-01 user report | M | Phase 4 (profile rebuilds, optimize widget trees, provider caching) |
 
 ### Blockers/Concerns
 None.
@@ -58,14 +64,14 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-22
-Stopped at: Phase 2 complete
-Next action: Phase transition → Phase 3 (Visibility & Control)
-Resume file: .paul/phases/02-money-packaging/02-03-SUMMARY.md
+Stopped at: Session paused after 03-03 unify (context deep)
+Next action: /paul:plan for Plan 03-04 (Drill-down views + admin user management)
+Resume file: .paul/HANDOFF-2026-03-22.md
 Resume context:
-- Phase 2 complete: payments, packages, printing
-- Milestone v0.1 at 50%
-- Phase 3 next: owner dashboard, GPS tracking, live map, discount approval
-- Bluetooth printing needs hardware test before production
+- 3 plans completed this session (03-01, 03-02, 03-03)
+- Phase 3 at 75% (3 of 4 plans)
+- Next: Plan 03-04 — per-store/per-driver/per-product drill-downs + admin user management
+- Milestone v0.1 at 75%
 
 ---
 *STATE.md — Updated after every significant action*

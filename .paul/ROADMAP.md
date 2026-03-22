@@ -16,7 +16,7 @@ Phases: 2 of 4 complete
 |-------|------|-------|--------|-----------|
 | 1 | Core Loop | 4 | Complete | 2026-03-21 |
 | 2 | Money & Packaging | 3 | Complete | 2026-03-22 |
-| 3 | Visibility & Control | TBD | Not started | - |
+| 3 | Visibility & Control | 4 | Planning | - |
 | 4 | Polish & Hardening | TBD | Not started | - |
 
 ## Phase Details
@@ -78,8 +78,10 @@ Phases: 2 of 4 complete
 - Admin user management (create/remove drivers)
 
 **Plans:**
-- [ ] 03-01: TBD during /paul:plan
-- [ ] 03-02: TBD
+- [ ] 03-01: Owner dashboard (KPI metrics, top debtors, package alerts)
+- [ ] 03-02: Driver GPS tracking + live map (OpenStreetMap)
+- [ ] 03-03: Discount approval flow (request → notify → approve/reject → auto-reject)
+- [ ] 03-04: Drill-down views + admin user management
 
 ### Phase 4: Polish & Hardening
 

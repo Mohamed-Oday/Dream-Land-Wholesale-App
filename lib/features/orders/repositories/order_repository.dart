@@ -90,4 +90,45 @@ class OrderRepository {
 
     return Map<String, dynamic>.from(orderData);
   }
+
+  /// Approve a pending discount on an order.
+  Future<Map<String, dynamic>> approveDiscount(
+      String orderId, String approvedBy) async {
+    final result = await _client.rpc('approve_discount', params: {
+      'p_order_id': orderId,
+      'p_approved_by': approvedBy,
+      'p_business_id': _businessId,
+    });
+    return Map<String, dynamic>.from(result as Map);
+  }
+
+  /// Reject a pending discount, recalculate total and adjust store balance.
+  Future<Map<String, dynamic>> rejectDiscount(String orderId) async {
+    final result = await _client.rpc('reject_discount', params: {
+      'p_order_id': orderId,
+      'p_business_id': _businessId,
+    });
+    return Map<String, dynamic>.from(result as Map);
+  }
+
+  /// Auto-reject all expired pending discounts (>3 min old).
+  Future<int> rejectExpiredDiscounts() async {
+    final result = await _client.rpc('reject_expired_discounts', params: {
+      'p_business_id': _businessId,
+    });
+    final data = Map<String, dynamic>.from(result as Map);
+    return (data['rejected_count'] as num?)?.toInt() ?? 0;
+  }
+
+  /// Get orders with pending discount status for owner dashboard.
+  Future<List<Map<String, dynamic>>> getPendingDiscounts() async {
+    final result = await _client
+        .from('orders')
+        .select(
+            '*, stores(name), users!orders_driver_id_fkey(name)')
+        .eq('business_id', _businessId)
+        .eq('discount_status', 'pending')
+        .order('created_at', ascending: true);
+    return List<Map<String, dynamic>>.from(result);
+  }
 }

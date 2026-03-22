@@ -331,4 +331,94 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get enableBluetooth => 'Enable Bluetooth and location permissions';
+
+  @override
+  String get todayRevenue => 'Today\'s Revenue';
+
+  @override
+  String get todayOrders => 'Today\'s Orders';
+
+  @override
+  String get topDebtors => 'Top Debtors';
+
+  @override
+  String get packageAlerts => 'Package Alerts';
+
+  @override
+  String get noDebts => 'No outstanding debts';
+
+  @override
+  String get allPackagesReturned => 'All packages returned';
+
+  @override
+  String get currencyUnit => 'DA';
+
+  @override
+  String get packageUnit => 'package';
+
+  @override
+  String get viewAll => 'View all';
+
+  @override
+  String get noActiveDrivers => 'No active drivers';
+
+  @override
+  String lastSeenAgo(int minutes) {
+    return 'Last seen $minutes min ago';
+  }
+
+  @override
+  String get locationPermissionDenied =>
+      'Location permission and GPS must be enabled';
+
+  @override
+  String get tapToToggleDuty => 'Tap to toggle duty status';
+
+  @override
+  String get discount => 'Discount';
+
+  @override
+  String get discountAmount => 'Discount Amount';
+
+  @override
+  String get requiresOwnerApproval => 'Requires owner approval';
+
+  @override
+  String get discountPending => 'Discount Pending';
+
+  @override
+  String get discountApproved => 'Discount Approved';
+
+  @override
+  String get discountRejected => 'Discount Rejected';
+
+  @override
+  String get pendingDiscounts => 'Pending Discounts';
+
+  @override
+  String get noPendingDiscounts => 'No pending discounts';
+
+  @override
+  String get approveDiscount => 'Approve Discount';
+
+  @override
+  String get rejectDiscount => 'Reject Discount';
+
+  @override
+  String get confirmApproveDiscount => 'Approve this discount?';
+
+  @override
+  String get confirmRejectDiscount =>
+      'Reject this discount? Total will be adjusted.';
+
+  @override
+  String get discountExceedsSubtotal => 'Discount cannot exceed subtotal';
+
+  @override
+  String get discountAlreadyProcessed => 'Discount already processed';
+
+  @override
+  String timeRemaining(int minutes, String seconds) {
+    return 'Remaining $minutes:$seconds';
+  }
 }

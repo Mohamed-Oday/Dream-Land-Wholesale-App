@@ -106,5 +106,46 @@
   "printSuccess": "Print successful",
   "printFailed": "Print failed",
   "connectPrinterFirst": "Connect a printer in Settings",
-  "enableBluetooth": "Enable Bluetooth and location permissions"
+  "enableBluetooth": "Enable Bluetooth and location permissions",
+  "todayRevenue": "Today's Revenue",
+  "todayOrders": "Today's Orders",
+  "topDebtors": "Top Debtors",
+  "packageAlerts": "Package Alerts",
+  "noDebts": "No outstanding debts",
+  "allPackagesReturned": "All packages returned",
+  "currencyUnit": "DA",
+  "packageUnit": "package",
+  "viewAll": "View all",
+  "noActiveDrivers": "No active drivers",
+  "lastSeenAgo": "Last seen {minutes} min ago",
+  "@lastSeenAgo": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "locationPermissionDenied": "Location permission and GPS must be enabled",
+  "tapToToggleDuty": "Tap to toggle duty status",
+  "discount": "Discount",
+  "discountAmount": "Discount Amount",
+  "requiresOwnerApproval": "Requires owner approval",
+  "discountPending": "Discount Pending",
+  "discountApproved": "Discount Approved",
+  "discountRejected": "Discount Rejected",
+  "pendingDiscounts": "Pending Discounts",
+  "noPendingDiscounts": "No pending discounts",
+  "approveDiscount": "Approve Discount",
+  "rejectDiscount": "Reject Discount",
+  "confirmApproveDiscount": "Approve this discount?",
+  "confirmRejectDiscount": "Reject this discount? Total will be adjusted.",
+  "discountExceedsSubtotal": "Discount cannot exceed subtotal",
+  "discountAlreadyProcessed": "Discount already processed",
+  "timeRemaining": "Remaining {minutes}:{seconds}",
+  "@timeRemaining": {
+    "placeholders": {
+      "minutes": { "type": "int" },
+      "seconds": { "type": "String" }
+    }
+  }
 }

@@ -23,7 +23,9 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
   String? _selectedStoreId;
   String _selectedStoreName = '';
   final List<_LineItem> _lineItems = [];
+  final _discountController = TextEditingController();
   bool _isLoading = false;
+  bool _showDiscount = false;
 
   double get _subtotal =>
       _lineItems.fold(0, (sum, item) => sum + item.lineTotal);
@@ -32,7 +34,15 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
 
   double get _taxAmount => _subtotal * _taxPercentage / 100;
 
-  double get _total => _subtotal + _taxAmount;
+  double get _discountAmount {
+    final text = _discountController.text.trim();
+    if (text.isEmpty) return 0;
+    return double.tryParse(text) ?? 0;
+  }
+
+  double get _total => _subtotal + _taxAmount - _discountAmount;
+
+  bool get _hasDiscount => _discountAmount > 0;
 
   bool get _canSubmit =>
       _selectedStoreId != null && _lineItems.isNotEmpty && !_isLoading;
@@ -141,6 +151,12 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    _discountController.dispose();
+    super.dispose();
+  }
+
   void _removeItem(int index) {
     setState(() => _lineItems.removeAt(index));
   }
@@ -217,8 +233,8 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
         subtotal: _subtotal,
         taxPercentage: _taxPercentage,
         taxAmount: _taxAmount,
-        discount: 0,
-        discountStatus: 'none',
+        discount: _discountAmount,
+        discountStatus: _hasDiscount ? 'pending' : 'none',
         total: _total,
         lineItems: lineItemMaps,
       );
@@ -558,6 +574,93 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                       _TotalRow(label: l10n.subtotal, value: _subtotal),
                       if (_taxAmount > 0)
                         _TotalRow(label: l10n.tax, value: _taxAmount),
+
+                      // Discount section
+                      const SizedBox(height: 12),
+                      InkWell(
+                        onTap: _isLoading
+                            ? null
+                            : () => setState(() => _showDiscount = !_showDiscount),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              Icon(Icons.percent, size: 18,
+                                  color: theme.colorScheme.onSurfaceVariant),
+                              const SizedBox(width: 8),
+                              Text(l10n.discount,
+                                  style: theme.textTheme.titleSmall),
+                              const Spacer(),
+                              Icon(
+                                _showDiscount
+                                    ? Icons.expand_less
+                                    : Icons.expand_more,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      if (_showDiscount) ...[
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _discountController,
+                          enabled: !_isLoading,
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
+                          decoration: InputDecoration(
+                            labelText: l10n.discountAmount,
+                            suffixText: l10n.currencyUnit,
+                            prefixIcon: const Icon(Icons.percent),
+                          ),
+                          onChanged: (_) => setState(() {}),
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) return null;
+                            final val = double.tryParse(v.trim());
+                            if (val == null || val < 0) return l10n.error;
+                            if (val > _subtotal) {
+                              return l10n.discountExceedsSubtotal;
+                            }
+                            return null;
+                          },
+                        ),
+                        if (_hasDiscount) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.tertiaryContainer
+                                  .withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.info_outline,
+                                    size: 16,
+                                    color: theme
+                                        .colorScheme.onTertiaryContainer),
+                                const SizedBox(width: 8),
+                                Text(
+                                  l10n.requiresOwnerApproval,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme
+                                        .colorScheme.onTertiaryContainer,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                      if (_hasDiscount)
+                        _TotalRow(
+                          label: l10n.discount,
+                          value: -_discountAmount,
+                          isDiscount: true,
+                        ),
+
                       const SizedBox(height: 4),
                       _TotalRow(
                           label: l10n.total, value: _total, isTotal: true),
@@ -600,23 +703,34 @@ class _TotalRow extends StatelessWidget {
   final String label;
   final double value;
   final bool isTotal;
+  final bool isDiscount;
 
   const _TotalRow({
     required this.label,
     required this.value,
     this.isTotal = false,
+    this.isDiscount = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final style = isTotal
-        ? Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              fontFeatures: [const FontFeature.tabularFigures()],
-            )
-        : Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontFeatures: [const FontFeature.tabularFigures()],
-            );
+    final theme = Theme.of(context);
+    TextStyle? style;
+    if (isTotal) {
+      style = theme.textTheme.titleMedium?.copyWith(
+        fontWeight: FontWeight.bold,
+        fontFeatures: [const FontFeature.tabularFigures()],
+      );
+    } else if (isDiscount) {
+      style = theme.textTheme.bodyMedium?.copyWith(
+        color: theme.colorScheme.error,
+        fontFeatures: [const FontFeature.tabularFigures()],
+      );
+    } else {
+      style = theme.textTheme.bodyMedium?.copyWith(
+        fontFeatures: [const FontFeature.tabularFigures()],
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),

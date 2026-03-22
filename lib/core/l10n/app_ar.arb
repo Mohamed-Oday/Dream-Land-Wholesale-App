@@ -106,5 +106,46 @@
   "printSuccess": "تمت الطباعة بنجاح",
   "printFailed": "فشلت الطباعة",
   "connectPrinterFirst": "قم بتوصيل الطابعة من الإعدادات",
-  "enableBluetooth": "قم بتفعيل البلوتوث وصلاحيات الموقع"
+  "enableBluetooth": "قم بتفعيل البلوتوث وصلاحيات الموقع",
+  "todayRevenue": "إيرادات اليوم",
+  "todayOrders": "طلبات اليوم",
+  "topDebtors": "أكبر المدينين",
+  "packageAlerts": "تنبيهات العبوات",
+  "noDebts": "لا توجد ديون مستحقة",
+  "allPackagesReturned": "جميع العبوات مُسترجعة",
+  "currencyUnit": "د.ج",
+  "packageUnit": "عبوة",
+  "viewAll": "عرض الكل",
+  "noActiveDrivers": "لا يوجد سائقين في الخدمة",
+  "lastSeenAgo": "آخر ظهور منذ {minutes} دقيقة",
+  "@lastSeenAgo": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "locationPermissionDenied": "يجب تفعيل صلاحية الموقع وخدمة GPS",
+  "tapToToggleDuty": "اضغط لتغيير حالة الخدمة",
+  "discount": "خصم",
+  "discountAmount": "مبلغ الخصم",
+  "requiresOwnerApproval": "يتطلب موافقة المالك",
+  "discountPending": "خصم معلق",
+  "discountApproved": "خصم مقبول",
+  "discountRejected": "خصم مرفوض",
+  "pendingDiscounts": "خصومات معلقة",
+  "noPendingDiscounts": "لا توجد خصومات معلقة",
+  "approveDiscount": "قبول الخصم",
+  "rejectDiscount": "رفض الخصم",
+  "confirmApproveDiscount": "هل تريد قبول هذا الخصم؟",
+  "confirmRejectDiscount": "هل تريد رفض هذا الخصم؟ سيتم تعديل الإجمالي.",
+  "discountExceedsSubtotal": "الخصم لا يمكن أن يتجاوز المجموع الفرعي",
+  "discountAlreadyProcessed": "الخصم تمت معالجته مسبقاً",
+  "timeRemaining": "متبقي {minutes}:{seconds}",
+  "@timeRemaining": {
+    "placeholders": {
+      "minutes": { "type": "int" },
+      "seconds": { "type": "String" }
+    }
+  }
 }

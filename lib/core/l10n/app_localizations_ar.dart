@@ -329,4 +329,94 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get enableBluetooth => 'قم بتفعيل البلوتوث وصلاحيات الموقع';
+
+  @override
+  String get todayRevenue => 'إيرادات اليوم';
+
+  @override
+  String get todayOrders => 'طلبات اليوم';
+
+  @override
+  String get topDebtors => 'أكبر المدينين';
+
+  @override
+  String get packageAlerts => 'تنبيهات العبوات';
+
+  @override
+  String get noDebts => 'لا توجد ديون مستحقة';
+
+  @override
+  String get allPackagesReturned => 'جميع العبوات مُسترجعة';
+
+  @override
+  String get currencyUnit => 'د.ج';
+
+  @override
+  String get packageUnit => 'عبوة';
+
+  @override
+  String get viewAll => 'عرض الكل';
+
+  @override
+  String get noActiveDrivers => 'لا يوجد سائقين في الخدمة';
+
+  @override
+  String lastSeenAgo(int minutes) {
+    return 'آخر ظهور منذ $minutes دقيقة';
+  }
+
+  @override
+  String get locationPermissionDenied => 'يجب تفعيل صلاحية الموقع وخدمة GPS';
+
+  @override
+  String get tapToToggleDuty => 'اضغط لتغيير حالة الخدمة';
+
+  @override
+  String get discount => 'خصم';
+
+  @override
+  String get discountAmount => 'مبلغ الخصم';
+
+  @override
+  String get requiresOwnerApproval => 'يتطلب موافقة المالك';
+
+  @override
+  String get discountPending => 'خصم معلق';
+
+  @override
+  String get discountApproved => 'خصم مقبول';
+
+  @override
+  String get discountRejected => 'خصم مرفوض';
+
+  @override
+  String get pendingDiscounts => 'خصومات معلقة';
+
+  @override
+  String get noPendingDiscounts => 'لا توجد خصومات معلقة';
+
+  @override
+  String get approveDiscount => 'قبول الخصم';
+
+  @override
+  String get rejectDiscount => 'رفض الخصم';
+
+  @override
+  String get confirmApproveDiscount => 'هل تريد قبول هذا الخصم؟';
+
+  @override
+  String get confirmRejectDiscount =>
+      'هل تريد رفض هذا الخصم؟ سيتم تعديل الإجمالي.';
+
+  @override
+  String get discountExceedsSubtotal =>
+      'الخصم لا يمكن أن يتجاوز المجموع الفرعي';
+
+  @override
+  String get discountAlreadyProcessed => 'الخصم تمت معالجته مسبقاً';
+
+  @override
+  String timeRemaining(int minutes, String seconds) {
+    return 'متبقي $minutes:$seconds';
+  }
 }

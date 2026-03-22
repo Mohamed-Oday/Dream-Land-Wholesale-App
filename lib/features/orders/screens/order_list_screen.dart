@@ -199,6 +199,14 @@ class _OrderCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   _StatusChip(status: status, l10n: l10n),
+                  if (order['discount_status'] != null &&
+                      order['discount_status'] != 'none') ...[
+                    const SizedBox(height: 4),
+                    _DiscountStatusChip(
+                      discountStatus: order['discount_status'] as String,
+                      l10n: l10n,
+                    ),
+                  ],
                 ],
               ),
             ],
@@ -249,6 +257,63 @@ class _StatusChip extends StatelessWidget {
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
+      ),
+    );
+  }
+}
+
+class _DiscountStatusChip extends StatelessWidget {
+  final String discountStatus;
+  final AppLocalizations l10n;
+
+  const _DiscountStatusChip({
+    required this.discountStatus,
+    required this.l10n,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Color bgColor;
+    final Color fgColor;
+    final String label;
+
+    switch (discountStatus) {
+      case 'pending':
+        bgColor = AppColors.warning.withValues(alpha: 0.12);
+        fgColor = AppColors.warning;
+        label = l10n.discountPending;
+      case 'approved':
+        bgColor = AppColors.success.withValues(alpha: 0.12);
+        fgColor = AppColors.success;
+        label = l10n.discountApproved;
+      case 'rejected':
+        bgColor = AppColors.error.withValues(alpha: 0.12);
+        fgColor = AppColors.error;
+        label = l10n.discountRejected;
+      default:
+        return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.percent, size: 10, color: fgColor),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: TextStyle(
+              color: fgColor,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
