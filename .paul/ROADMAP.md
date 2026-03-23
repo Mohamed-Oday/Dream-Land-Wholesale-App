@@ -18,7 +18,7 @@ Completed: 2026-03-22
 
 ### v0.2.1 AEGIS Audit Remediation (v0.2.1)
 Status: In Progress
-Phases: 0 of 3 complete (Phases 8-10)
+Phases: 2 of 3 complete (Phases 8-10)
 Source: `.aegis/report/AEGIS-REPORT.md` Section 5 — Remediation Roadmap
 
 ## Phases
@@ -33,7 +33,7 @@ Source: `.aegis/report/AEGIS-REPORT.md` Section 5 — Remediation Roadmap
 | 6 | Procurement & Cost Tracking | 3 | Complete | 2026-03-22 |
 | 7 | Stock & Inventory | 2 | Complete | 2026-03-22 |
 | 8 | Day-1 Fixes | 1 | Complete | 2026-03-23 |
-| 9 | Security & Atomicity | 3 | Planning | - |
+| 9 | Security & Atomicity | 3 | Complete | 2026-03-23 |
 | 10 | Structural Improvements | TBD | Not started | - |
 
 ## Phase Details
@@ -176,8 +176,8 @@ Source: `.aegis/report/AEGIS-REPORT.md` Section 5 — Remediation Roadmap
 
 **Plans:**
 - [x] 09-01: SQL Security Hardening (JWT trigger, 7 role checks, append-only RLS)
-- [ ] 09-02: Atomic Order RPC + Deactivation + Version Check
-- [ ] 09-03: Minimum Test Suite (financial calcs + SQL RPC tests)
+- [x] 09-02: Atomic Order RPC + Deactivation + Version Check
+- [x] 09-03: Minimum Test Suite (financial calcs + SQL RPC tests)
 
 ### Phase 10: Structural Improvements
 

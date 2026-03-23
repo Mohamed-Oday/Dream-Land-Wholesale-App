@@ -5,7 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/constants/app_constants.dart';
+import '../core/utils/version_utils.dart';
 import '../features/auth/models/app_user.dart';
+import '../features/auth/screens/force_update_screen.dart';
 import '../features/auth/screens/init_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/splash_screen.dart';
@@ -13,14 +16,20 @@ import '../features/driver/screens/driver_shell.dart';
 import '../features/owner/screens/owner_shell.dart';
 import '../features/admin/screens/admin_shell.dart';
 
-/// Manages app routing state: init check + auth.
+/// Manages app routing state: init check + auth + version check.
 class AppRouterNotifier extends ChangeNotifier {
   bool _initialized = false;
   bool _hasUsers = false;
+  bool _forceUpdate = false;
+  String _minVersion = '';
+  String _downloadUrl = '';
   AppUser? _currentUser;
 
   bool get initialized => _initialized;
   bool get hasUsers => _hasUsers;
+  bool get forceUpdate => _forceUpdate;
+  String get minVersion => _minVersion;
+  String get downloadUrl => _downloadUrl;
   AppUser? get currentUser => _currentUser;
   bool get isLoggedIn => _currentUser != null;
 
@@ -51,6 +60,26 @@ class AppRouterNotifier extends ChangeNotifier {
       } catch (_) {
         _hasUsers = false;
       }
+    }
+
+    // Check minimum version from remote_config
+    try {
+      final configResult = await client
+          .from('remote_config')
+          .select('key, value');
+      final rows = List<Map<String, dynamic>>.from(configResult);
+      final config = {
+        for (final r in rows) r['key'] as String: r['value'] as String
+      };
+      final remoteMin = config['min_version'] ?? '';
+      if (remoteMin.isNotEmpty &&
+          isNewerVersion(remoteMin, AppConstants.appVersion)) {
+        _forceUpdate = true;
+        _minVersion = remoteMin;
+        _downloadUrl = config['download_url'] ?? '';
+      }
+    } catch (_) {
+      // Network failure: proceed normally — don't block app on fetch error
     }
 
     // Check current session
@@ -102,6 +131,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return path == '/splash' ? null : '/splash';
       }
 
+      // Force update — block all navigation
+      if (notifier.forceUpdate) {
+        return path == '/force-update' ? null : '/force-update';
+      }
+
       // No users → init screen
       if (!notifier.hasUsers) {
         if (notifier.isLoggedIn) {
@@ -128,6 +162,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/splash',
         builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/force-update',
+        builder: (context, state) => ForceUpdateScreen(
+          minVersion: notifier.minVersion,
+          downloadUrl: notifier.downloadUrl,
+        ),
       ),
       GoRoute(
         path: '/init',

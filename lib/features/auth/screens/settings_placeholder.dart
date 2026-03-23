@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tawzii/core/constants/app_constants.dart';
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/core/theme/app_colors.dart';
+import 'package:tawzii/core/utils/version_utils.dart';
 import 'package:tawzii/features/printing/providers/printer_provider.dart';
 import 'package:tawzii/features/printing/screens/printer_setup_screen.dart';
 import '../providers/auth_provider.dart';
@@ -22,17 +23,6 @@ final remoteConfigProvider =
     return {};
   }
 });
-
-/// Compare two semver strings. Returns true if remote > local.
-bool _isNewerVersion(String remote, String local) {
-  final rParts = remote.split('.').map((s) => int.tryParse(s) ?? 0).toList();
-  final lParts = local.split('.').map((s) => int.tryParse(s) ?? 0).toList();
-  for (int i = 0; i < rParts.length && i < lParts.length; i++) {
-    if (rParts[i] > lParts[i]) return true;
-    if (rParts[i] < lParts[i]) return false;
-  }
-  return rParts.length > lParts.length;
-}
 
 /// Placeholder settings screen with logout button.
 ///
@@ -93,7 +83,7 @@ class SettingsPlaceholder extends ConsumerWidget {
                 final latestVersion = config['latest_version'] ?? '';
                 final downloadUrl = config['download_url'] ?? '';
                 final hasUpdate = latestVersion.isNotEmpty &&
-                    _isNewerVersion(latestVersion, AppConstants.appVersion);
+                    isNewerVersion(latestVersion, AppConstants.appVersion);
 
                 if (!hasUpdate) return const SizedBox.shrink();
 

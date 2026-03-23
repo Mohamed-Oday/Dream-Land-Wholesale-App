@@ -5,27 +5,27 @@
 See: .paul/PROJECT.md (updated 2026-03-21)
 
 **Core value:** Owner gets real-time visibility into wholesale distribution field operations — orders, payments, returnable packaging, and driver locations — replacing paper-based tracking that causes cash leakage and packaging loss.
-**Current focus:** Phase 8 — Day-1 Fixes (AEGIS Remediation)
+**Current focus:** Phase 9 — Security & Atomicity (AEGIS Remediation)
 
 ## Current Position
 
 Milestone: v0.2.1 AEGIS Audit Remediation (v0.2.1)
-Phase: 9 of 10 (Security & Atomicity) — Planning
-Plan: 09-01 complete
-Status: Loop closed, ready for Plan 09-02
-Last activity: 2026-03-23 — Unified 09-01 (SQL Security Hardening)
+Phase: 9 of 10 (Security & Atomicity) — COMPLETE
+Plan: 09-03 complete (all 3 plans in phase delivered)
+Status: Phase 9 complete, ready for Phase 10
+Last activity: 2026-03-23 — Unified 09-03 (Minimum Test Suite) + Phase 9 transition
 
 Progress:
 - Milestone v0.1: [██████████] 100% COMPLETE
 - Milestone v0.2: [██████████] 100% COMPLETE
-- Milestone v0.2.1: [███░░░░░░░] 33%
+- Milestone v0.2.1: [████████░░] 77%
 
 ## Loop Position
 
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ✓     [Loop complete — ready for Plan 09-02]
+  ✓        ✓        ✓     [Loop complete — Phase 9 DONE, ready for Phase 10]
 ```
 
 ## Accumulated Context
@@ -62,6 +62,8 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | AEGIS full diagnostic audit completed | v0.2.1 | 99 findings, 5 DA challenges, 7-section report. Remediation roadmap drives phases 8-10. |
 | Enterprise audit on 08-01: Applied 1 must-have + 2 strongly-recommended | 08-01 | Plan strengthened: migration deployment step, generated l10n verification, REVOKE signature validation |
 | Enterprise audit on 09-01: Applied 2 must-have + 2 strongly-recommended | 09-01 | Plan strengthened: added reject_expired_discounts + update_store_balance_on_order to hardening list, REVOKE on trigger function, deployment step |
+| Enterprise audit on 09-02: Applied 2 must-have + 3 strongly-recommended | 09-02 | Plan strengthened: idempotency guard (client UUID), cross-business store validation, discount status validation, deactivated user UX, SelectableText on force-update URL |
+| Enterprise audit on 09-03: Applied 1 must-have + 2 strongly-recommended | 09-03 | Plan strengthened: mandatory widget_test.dart deletion, closeTo() for float assertions, User construction pattern for AppUser tests |
 
 ### Deferred Issues
 | Issue | Origin | Effort | Revisit |
@@ -82,24 +84,15 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-23
-Stopped at: Plan 09-01 loop closed, session paused
-Next action: /paul:plan for 09-02 (Atomic Order RPC + Deactivation + Version Check)
-Resume file: .paul/HANDOFF-2026-03-23.md
+Stopped at: Phase 9 complete, session paused
+Next action: /paul:plan for Phase 10 (Structural Improvements)
+Resume file: .paul/HANDOFF-2026-03-23-phase9-complete.md
 Resume context:
-- AEGIS audit complete: 99 findings, 7-section report at .aegis/report/AEGIS-REPORT.md
-- Phase 8 DONE: Day-1 fixes (migration 015)
-- Phase 9 Plan 01 DONE: SQL security hardening (migration 016 — needs deployment)
-- Phase 9 Plan 02 NEXT: Atomic order RPC + deactivation + version check (most complex plan)
-- Phase 9 Plan 03 AFTER: Minimum test suite
-- Total: 8 phases, 24 plans delivered + 1 plan remaining in Phase 9
-Resume file: .aegis/report/AEGIS-REPORT.md (Section 5 — Remediation Roadmap)
-Resume context:
-- v0.1 COMPLETE: Core loop, money, visibility, hardening (4 phases, 16 plans)
-- v0.2 COMPLETE: Admin expansion, procurement, stock & inventory (3 phases, 7 plans)
-- v0.2.1 IN PROGRESS: AEGIS audit remediation (3 phases planned)
-- Total: 7 phases, 23 plans delivered across 2 milestones
-- AEGIS audit: 99 findings across 12 agents, 5 DA challenges resolved
-- Next: Plan Phase 8 (Day-1 Fixes — 7 trivial items)
+- Phase 9 COMPLETE: 3 plans (SQL hardening, atomic order RPC, test suite)
+- Migrations 015, 016, 017 need deployment to live Supabase
+- 40 automated tests now protect financial calculations
+- Phase 10 NEXT: Structural Improvements (typed models, error logging, CHECK constraints, dashboard RPC consolidation)
+- Total: 9 phases, 26 plans delivered across 3 milestones
 
 ---
 *STATE.md — Updated after every significant action*

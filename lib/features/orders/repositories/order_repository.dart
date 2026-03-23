@@ -56,9 +56,12 @@ class OrderRepository {
     return Map<String, dynamic>.from(result);
   }
 
+  /// Create an order atomically via single RPC call.
+  ///
+  /// All 5 operations (order, lines, balance, packages, stock) happen in one
+  /// PostgreSQL transaction. Client-generated [orderId] enables idempotent retry.
   Future<Map<String, dynamic>> create({
     required String storeId,
-    required String driverId,
     required double subtotal,
     required double taxPercentage,
     required double taxAmount,
@@ -67,62 +70,24 @@ class OrderRepository {
     required double total,
     required List<Map<String, dynamic>> lineItems,
   }) async {
+    // Client-generated UUID for idempotency on network retry
     const uuid = Uuid();
     final orderId = uuid.v4();
 
-    // Insert order
-    final orderData = await _client
-        .from('orders')
-        .insert({
-          'id': orderId,
-          'business_id': _businessId,
-          'store_id': storeId,
-          'driver_id': driverId,
-          'subtotal': subtotal,
-          'tax_percentage': taxPercentage,
-          'tax_amount': taxAmount,
-          'discount': discount,
-          'discount_status': discountStatus,
-          'total': total,
-          'status': 'created',
-        })
-        .select()
-        .single();
+    final result = await _client.rpc('create_order_atomic', params: {
+      'p_order_id': orderId,
+      'p_store_id': storeId,
+      'p_business_id': _businessId,
+      'p_subtotal': subtotal,
+      'p_tax_percentage': taxPercentage,
+      'p_tax_amount': taxAmount,
+      'p_discount': discount,
+      'p_discount_status': discountStatus,
+      'p_total': total,
+      'p_line_items': lineItems,
+    });
 
-    // Insert order lines — with cleanup on failure
-    try {
-      final lines = lineItems.map((item) {
-        return {
-          'id': uuid.v4(),
-          'order_id': orderId,
-          'product_id': item['product_id'],
-          'quantity': item['quantity'],
-          'unit_price': item['unit_price'],
-          'line_total': item['line_total'],
-        };
-      }).toList();
-
-      await _client.from('order_lines').insert(lines);
-    } catch (e) {
-      // Clean up orphaned order
-      try {
-        await _client.from('orders').delete().eq('id', orderId);
-      } catch (_) {
-        // Cleanup failed — original error is more important
-      }
-      rethrow;
-    }
-
-    // Deduct stock (fire-and-forget — order is the primary business event)
-    try {
-      await _client.rpc('deduct_stock_for_order', params: {
-        'p_order_id': orderId,
-      });
-    } catch (e) {
-      debugPrint('Warning: stock deduction failed (order saved): $e');
-    }
-
-    return Map<String, dynamic>.from(orderData);
+    return Map<String, dynamic>.from(result as Map);
   }
 
   /// Approve a pending discount on an order.

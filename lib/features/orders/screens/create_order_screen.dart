@@ -5,9 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
+import 'package:tawzii/core/utils/order_calculator.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../products/providers/product_provider.dart';
 import '../../stores/providers/store_provider.dart';
+import '../models/line_item.dart';
 import '../providers/order_provider.dart';
 import 'receipt_preview_screen.dart';
 
@@ -22,25 +24,20 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
   final _formKey = GlobalKey<FormState>();
   String? _selectedStoreId;
   String _selectedStoreName = '';
-  final List<_LineItem> _lineItems = [];
+  final List<LineItem> _lineItems = [];
   final _discountController = TextEditingController();
   bool _isLoading = false;
   bool _showDiscount = false;
 
-  double get _subtotal =>
-      _lineItems.fold(0, (sum, item) => sum + item.lineTotal);
+  double get _subtotal => calculateSubtotal(_lineItems);
 
   double get _taxPercentage => 0;
 
-  double get _taxAmount => _subtotal * _taxPercentage / 100;
+  double get _taxAmount => calculateTax(_subtotal, _taxPercentage);
 
-  double get _discountAmount {
-    final text = _discountController.text.trim();
-    if (text.isEmpty) return 0;
-    return double.tryParse(text) ?? 0;
-  }
+  double get _discountAmount => parseDiscount(_discountController.text);
 
-  double get _total => _subtotal + _taxAmount - _discountAmount;
+  double get _total => calculateTotal(_subtotal, _taxAmount, _discountAmount);
 
   bool get _hasDiscount => _discountAmount > 0;
 
@@ -232,7 +229,7 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
         }
         _lineItems[existingIndex].quantity++;
       } else {
-        _lineItems.add(_LineItem(
+        _lineItems.add(LineItem(
           productId: product['id'],
           productName: product['name'] ?? '',
           unitPrice: (product['unit_price'] as num).toDouble(),
@@ -321,7 +318,6 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
 
     try {
       final repo = ref.read(orderRepositoryProvider)!;
-      final user = ref.read(currentUserProvider)!;
 
       final lineItemMaps = _lineItems.map((item) => {
             'product_id': item.productId,
@@ -330,9 +326,9 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
             'line_total': item.lineTotal,
           }).toList();
 
+      // Single atomic RPC — order, lines, balance, packages, stock all in one transaction
       final orderData = await repo.create(
         storeId: _selectedStoreId!,
-        driverId: user.id,
         subtotal: _subtotal,
         taxPercentage: _taxPercentage,
         taxAmount: _taxAmount,
@@ -341,39 +337,6 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
         total: _total,
         lineItems: lineItemMaps,
       );
-
-      if (!mounted) return;
-
-      // Update store credit balance (fire-and-forget — order is already saved)
-      try {
-        await Supabase.instance.client.rpc('update_store_balance_on_order', params: {
-          'p_store_id': _selectedStoreId!,
-          'p_order_total': _total,
-        });
-      } catch (e) {
-        debugPrint('Warning: balance update failed (order saved): $e');
-      }
-
-      if (!mounted) return;
-
-      // Auto-log packages for returnable products (fire-and-forget)
-      final orderId = orderData['id'] as String?;
-      for (final item in _lineItems) {
-        if (item.hasReturnablePackaging && orderId != null) {
-          try {
-            await Supabase.instance.client.rpc('create_package_log', params: {
-              'p_store_id': _selectedStoreId!,
-              'p_product_id': item.productId,
-              'p_business_id': user.businessId,
-              'p_given': item.quantity,
-              'p_collected': 0,
-              'p_order_id': orderId,
-            });
-          } catch (e) {
-            debugPrint('Warning: package log failed (order saved): $e');
-          }
-        }
-      }
 
       if (!mounted) return;
 
@@ -411,6 +374,18 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
     } on PostgrestException catch (e) {
       debugPrint('Order save PostgrestException: ${e.message} / ${e.details}');
       if (mounted) {
+        // Deactivated user: RLS denies all access → show clear message + sign out
+        final msg = e.message;
+        if (msg.contains('permission denied') || msg.contains('new row violates row-level security')) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('تم تعطيل حسابك — تواصل مع المالك'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+          ref.read(authServiceProvider).signOut();
+          return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${l10n.saveError}: ${e.message}'),
@@ -899,31 +874,3 @@ class _SummaryRow extends StatelessWidget {
   }
 }
 
-class _LineItem {
-  final String productId;
-  final String productName;
-  final double unitPrice;
-  final int? unitsPerPackage;
-  final bool hasReturnablePackaging;
-  final int stockOnHand;
-  int quantity;
-
-  _LineItem({
-    required this.productId,
-    required this.productName,
-    required this.unitPrice,
-    required this.quantity,
-    this.unitsPerPackage,
-    this.hasReturnablePackaging = false,
-    this.stockOnHand = 0,
-  });
-
-  /// Price per package (or per unit if no package).
-  double get packagePrice => unitPrice * (unitsPerPackage ?? 1);
-
-  double get lineTotal => packagePrice * quantity;
-
-  /// Total individual pieces (quantity × unitsPerPackage).
-  int? get totalPieces =>
-      unitsPerPackage != null ? quantity * unitsPerPackage! : null;
-}
