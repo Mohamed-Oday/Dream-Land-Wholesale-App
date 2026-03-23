@@ -60,14 +60,10 @@ class StoreRepository {
     return Map<String, dynamic>.from(result as Map);
   }
 
-  Future<Map<String, dynamic>> update(
-      String id, Map<String, dynamic> fields) async {
-    final result = await _client
+  Future<void> update(String id, Map<String, dynamic> fields) async {
+    await _client
         .from('stores')
         .update(fields)
-        .eq('id', id)
-        .select()
-        .single();
-    return Map<String, dynamic>.from(result);
+        .eq('id', id);
   }
 }

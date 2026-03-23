@@ -134,8 +134,8 @@ class PrintService {
 
       final pixels = byteData.buffer.asUint8List();
 
-      // Target print width: 384 pixels (48mm printable on 58mm paper at 203dpi)
-      const printWidth = 384;
+      // Target print width: 576 pixels (72mm printable on 80mm paper at 203dpi)
+      const printWidth = 576;
       final scale = printWidth / width;
       final printHeight = (height * scale).toInt();
 
