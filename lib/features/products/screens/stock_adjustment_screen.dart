@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/core/theme/app_colors.dart';
@@ -50,11 +49,12 @@ class _StockAdjustmentScreenState
     setState(() => _isLoading = true);
 
     try {
-      await Supabase.instance.client.rpc('adjust_stock', params: {
-        'p_product_id': widget.product['id'],
-        'p_quantity': qty,
-        'p_notes': _reasonController.text.trim(),
-      });
+      final repo = ref.read(productRepositoryProvider)!;
+      await repo.adjustStock(
+        productId: widget.product['id'] as String,
+        quantity: qty,
+        notes: _reasonController.text.trim(),
+      );
 
       ref.invalidate(productListProvider);
 

@@ -6,6 +6,14 @@ class DashboardRepository {
 
   DashboardRepository(this._client, this._businessId);
 
+  /// Consolidated dashboard data — single RPC returning all KPIs.
+  Future<Map<String, dynamic>> getDashboardSummary() async {
+    final result = await _client.rpc('get_dashboard_summary', params: {
+      'p_business_id': _businessId,
+    });
+    return Map<String, dynamic>.from(result as Map);
+  }
+
   /// Today's start in Algeria local time (Africa/Algiers, UTC+1),
   /// returned as a UTC ISO8601 string for Supabase filtering.
   String _todayStartUtc() {

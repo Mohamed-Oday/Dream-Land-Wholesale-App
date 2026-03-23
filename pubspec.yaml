@@ -1,7 +1,7 @@
 name: tawzii
 description: "Dream Land Shopping - Wholesale Distribution Management"
 publish_to: 'none'
-version: 0.2.0+1
+version: 0.2.1+2
 
 environment:
   sdk: ^3.11.1
@@ -51,6 +51,14 @@ dev_dependencies:
   drift_dev: ^2.22.0
   build_runner: ^2.4.14
   riverpod_generator: ^2.6.3
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "app_icon.png"
+  adaptive_icon_foreground: "app_icon.png"
+  adaptive_icon_background: "#F5A623"
 
 flutter:
   uses-material-design: true

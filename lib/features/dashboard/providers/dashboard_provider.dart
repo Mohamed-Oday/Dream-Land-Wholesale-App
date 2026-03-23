@@ -14,25 +14,55 @@ final dashboardRepositoryProvider = Provider<DashboardRepository?>((ref) {
   return DashboardRepository(Supabase.instance.client, user.businessId);
 });
 
+/// Single RPC returning all dashboard KPIs — replaces 5 separate queries.
+final dashboardSummaryProvider =
+    FutureProvider<Map<String, dynamic>>((ref) async {
+  final repo = ref.watch(dashboardRepositoryProvider);
+  if (repo == null) return {};
+  return repo.getDashboardSummary();
+});
+
+/// Derived from dashboardSummaryProvider — no separate query.
 final todayRevenueProvider = FutureProvider<double>((ref) async {
-  final repo = ref.watch(dashboardRepositoryProvider);
-  if (repo == null) return 0.0;
-  return repo.getTodayRevenue();
+  final summary = await ref.watch(dashboardSummaryProvider.future);
+  return (summary['today_revenue'] as num?)?.toDouble() ?? 0.0;
 });
 
+/// Derived from dashboardSummaryProvider — no separate query.
 final todayOrderCountProvider = FutureProvider<int>((ref) async {
-  final repo = ref.watch(dashboardRepositoryProvider);
-  if (repo == null) return 0;
-  return repo.getTodayOrderCount();
+  final summary = await ref.watch(dashboardSummaryProvider.future);
+  return (summary['today_order_count'] as num?)?.toInt() ?? 0;
 });
 
+/// Derived from dashboardSummaryProvider — no separate query.
+final todayPurchasesProvider = FutureProvider<double>((ref) async {
+  final summary = await ref.watch(dashboardSummaryProvider.future);
+  return (summary['today_purchases'] as num?)?.toDouble() ?? 0.0;
+});
+
+/// Derived from dashboardSummaryProvider — no separate query.
+final todayProfitProvider = FutureProvider<double>((ref) async {
+  final summary = await ref.watch(dashboardSummaryProvider.future);
+  return (summary['today_profit'] as num?)?.toDouble() ?? 0.0;
+});
+
+/// Derived from dashboardSummaryProvider — no separate query.
 final topDebtorsProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  final repo = ref.watch(dashboardRepositoryProvider);
-  if (repo == null) return [];
-  return repo.getTopDebtors();
+  final summary = await ref.watch(dashboardSummaryProvider.future);
+  return List<Map<String, dynamic>>.from(
+      summary['top_debtors'] as List? ?? []);
 });
 
+/// Derived from dashboardSummaryProvider — no separate query.
+final lowStockProductsProvider =
+    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final summary = await ref.watch(dashboardSummaryProvider.future);
+  return List<Map<String, dynamic>>.from(
+      summary['low_stock_products'] as List? ?? []);
+});
+
+/// Package alerts — still a separate RPC (already consolidated).
 final packageAlertsProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final repo = ref.watch(dashboardRepositoryProvider);
@@ -40,29 +70,7 @@ final packageAlertsProvider =
   return repo.getPackageAlerts();
 });
 
-/// Products with stock below their low_stock_threshold.
-final lowStockProductsProvider =
-    FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  final repo = ref.watch(dashboardRepositoryProvider);
-  if (repo == null) return [];
-  return repo.getLowStockProducts();
-});
-
-/// Today's purchase order costs.
-final todayPurchasesProvider = FutureProvider<double>((ref) async {
-  final repo = ref.watch(dashboardRepositoryProvider);
-  if (repo == null) return 0.0;
-  return repo.getTodayPurchases();
-});
-
-/// Today's profit = revenue - purchases.
-final todayProfitProvider = FutureProvider<double>((ref) async {
-  final revenue = await ref.watch(todayRevenueProvider.future);
-  final purchases = await ref.watch(todayPurchasesProvider.future);
-  return revenue - purchases;
-});
-
-/// Recent orders for admin dashboard (last 10).
+/// Recent orders for admin dashboard (last 10) — separate query (complex joins).
 final recentOrdersProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final repo = ref.watch(dashboardRepositoryProvider);

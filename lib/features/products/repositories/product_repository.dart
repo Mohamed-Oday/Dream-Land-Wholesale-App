@@ -55,6 +55,19 @@ class ProductRepository {
     await _client.from('products').update({'active': false}).eq('id', id);
   }
 
+  /// Adjust stock for a product (positive = add, negative = deduct).
+  Future<void> adjustStock({
+    required String productId,
+    required int quantity,
+    required String notes,
+  }) async {
+    await _client.rpc('adjust_stock', params: {
+      'p_product_id': productId,
+      'p_quantity': quantity,
+      'p_notes': notes,
+    });
+  }
+
   /// Stock movements for a product, newest first.
   Future<List<Map<String, dynamic>>> getStockMovements(String productId) async {
     final result = await _client

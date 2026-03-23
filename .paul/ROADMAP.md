@@ -16,9 +16,10 @@ Status: Complete
 Phases: 3 of 3 complete (Phases 5-7)
 Completed: 2026-03-22
 
-### v0.2.1 AEGIS Audit Remediation (v0.2.1)
-Status: In Progress
-Phases: 2 of 3 complete (Phases 8-10)
+### v0.2.1 AEGIS Audit Remediation (v0.2.1) — COMPLETE
+Status: Complete
+Phases: 3 of 3 complete (Phases 8-10)
+Completed: 2026-03-23
 Source: `.aegis/report/AEGIS-REPORT.md` Section 5 — Remediation Roadmap
 
 ## Phases
@@ -34,7 +35,7 @@ Source: `.aegis/report/AEGIS-REPORT.md` Section 5 — Remediation Roadmap
 | 7 | Stock & Inventory | 2 | Complete | 2026-03-22 |
 | 8 | Day-1 Fixes | 1 | Complete | 2026-03-23 |
 | 9 | Security & Atomicity | 3 | Complete | 2026-03-23 |
-| 10 | Structural Improvements | TBD | Not started | - |
+| 10 | Structural Improvements | 2 | Complete | 2026-03-23 |
 
 ## Phase Details
 
@@ -197,8 +198,14 @@ Source: `.aegis/report/AEGIS-REPORT.md` Section 5 — Remediation Roadmap
 - Move inline RPC calls from screens into repositories
 - Replace financial records FOR ALL with separate policies (no DELETE)
 
+**Deferred to future milestone:**
+- Typed model classes (Order, Product, Store, Payment) — large effort, low immediate impact
+- FOR ALL policy replacement — already done in migration 016
+- Package log reversal in cancellation — already implemented
+
 **Plans:**
-- [ ] 10-01: TBD (defined during /paul:plan)
+- [x] 10-01: Schema Hardening (CHECK constraints, updated_at triggers, cancellation audit trail)
+- [x] 10-02: Dashboard Consolidation + Role-Operation Matrix
 
 ---
 *Roadmap created: 2026-03-21*

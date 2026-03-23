@@ -5,27 +5,27 @@
 See: .paul/PROJECT.md (updated 2026-03-21)
 
 **Core value:** Owner gets real-time visibility into wholesale distribution field operations — orders, payments, returnable packaging, and driver locations — replacing paper-based tracking that causes cash leakage and packaging loss.
-**Current focus:** Phase 9 — Security & Atomicity (AEGIS Remediation)
+**Current focus:** Milestone v0.2.1 COMPLETE — AEGIS Audit Remediation
 
 ## Current Position
 
 Milestone: v0.2.1 AEGIS Audit Remediation (v0.2.1)
-Phase: 9 of 10 (Security & Atomicity) — COMPLETE
-Plan: 09-03 complete (all 3 plans in phase delivered)
-Status: Phase 9 complete, ready for Phase 10
-Last activity: 2026-03-23 — Unified 09-03 (Minimum Test Suite) + Phase 9 transition
+Phase: 10 of 10 (Structural Improvements) — COMPLETE
+Plan: 10-02 complete (all plans in phase and milestone delivered)
+Status: MILESTONE v0.2.1 COMPLETE
+Last activity: 2026-03-23 — Unified 10-02 + Phase 10 + Milestone v0.2.1 transition
 
 Progress:
 - Milestone v0.1: [██████████] 100% COMPLETE
 - Milestone v0.2: [██████████] 100% COMPLETE
-- Milestone v0.2.1: [████████░░] 77%
+- Milestone v0.2.1: [██████████] 100% COMPLETE
 
 ## Loop Position
 
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ✓     [Loop complete — Phase 9 DONE, ready for Phase 10]
+  ✓        ✓        ✓     [MILESTONE v0.2.1 COMPLETE]
 ```
 
 ## Accumulated Context
@@ -64,6 +64,8 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | Enterprise audit on 09-01: Applied 2 must-have + 2 strongly-recommended | 09-01 | Plan strengthened: added reject_expired_discounts + update_store_balance_on_order to hardening list, REVOKE on trigger function, deployment step |
 | Enterprise audit on 09-02: Applied 2 must-have + 3 strongly-recommended | 09-02 | Plan strengthened: idempotency guard (client UUID), cross-business store validation, discount status validation, deactivated user UX, SelectableText on force-update URL |
 | Enterprise audit on 09-03: Applied 1 must-have + 2 strongly-recommended | 09-03 | Plan strengthened: mandatory widget_test.dart deletion, closeTo() for float assertions, User construction pattern for AppUser tests |
+| Enterprise audit on 10-01: Applied 0 must-have + 2 strongly-recommended | 10-01 | Plan strengthened: REVOKE on set_updated_at trigger function, consolidated cancel_order into single UPDATE with CASE |
+| Enterprise audit on 10-02: Applied 1 must-have + 1 strongly-recommended | 10-02 | Plan strengthened: COALESCE on all SQL aggregates (NULL → 0/[]), type-safe Dart extraction from RPC response |
 
 ### Deferred Issues
 | Issue | Origin | Effort | Revisit |
@@ -84,15 +86,16 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-23
-Stopped at: Phase 9 complete, session paused
-Next action: /paul:plan for Phase 10 (Structural Improvements)
-Resume file: .paul/HANDOFF-2026-03-23-phase9-complete.md
+Stopped at: Milestone v0.2.1 COMPLETE
+Next action: /paul:discuss-milestone for next milestone
 Resume context:
-- Phase 9 COMPLETE: 3 plans (SQL hardening, atomic order RPC, test suite)
-- Migrations 015, 016, 017 need deployment to live Supabase
-- 40 automated tests now protect financial calculations
-- Phase 10 NEXT: Structural Improvements (typed models, error logging, CHECK constraints, dashboard RPC consolidation)
-- Total: 9 phases, 26 plans delivered across 3 milestones
+- v0.1 COMPLETE: Core loop, money, visibility, hardening (4 phases, 16 plans)
+- v0.2 COMPLETE: Admin expansion, procurement, stock & inventory (3 phases, 7 plans)
+- v0.2.1 COMPLETE: AEGIS audit remediation (3 phases, 5 plans)
+- Total: 10 phases, 28 plans delivered across 3 milestones
+- 40 automated tests, 19 SQL migrations, role-operation matrix documented
+- Migrations 015-019 need deployment to live Supabase
+- Deferred: typed model classes, error logging, Drift offline
 
 ---
 *STATE.md — Updated after every significant action*
