@@ -83,7 +83,7 @@ class PrintService {
   /// 2. Sends raw image bytes to printer via ESC/POS commands
   ///
   /// Arabic text works perfectly because Flutter renders it.
-  Future<bool> printFromWidget(GlobalKey receiptKey) async {
+  Future<bool> printFromWidget(GlobalKey receiptKey, {double pixelRatio = 3.0}) async {
     if (!_connected) {
       // Attempt auto-reconnect to last known printer
       final reconnected = await tryReconnect();
@@ -92,7 +92,7 @@ class PrintService {
 
     try {
       // Capture widget as image
-      final imageBytes = await captureWidget(receiptKey, pixelRatio: 2.0);
+      final imageBytes = await captureWidget(receiptKey, pixelRatio: pixelRatio);
       if (imageBytes == null) return false;
 
       // Initialize printer

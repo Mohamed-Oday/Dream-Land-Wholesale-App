@@ -116,6 +116,7 @@ class _StoreFormScreenState extends ConsumerState<StoreFormScreen> {
         );
       }
 
+      ref.invalidate(storeListProvider);
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {

@@ -57,6 +57,7 @@ class _StockAdjustmentScreenState
       );
 
       ref.invalidate(productListProvider);
+      ref.invalidate(stockMovementsProvider);
 
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;

@@ -64,6 +64,7 @@ class StoreRepository {
     await _client
         .from('stores')
         .update(fields)
-        .eq('id', id);
+        .eq('id', id)
+        .eq('business_id', _businessId);
   }
 }

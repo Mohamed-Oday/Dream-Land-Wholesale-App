@@ -222,7 +222,6 @@ class _ReceiptScaffoldState extends ConsumerState<_ReceiptScaffold> {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.receipt)),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
         child: RepaintBoundary(
           key: _receiptKey,
           child: _ReceiptCard(
@@ -370,7 +369,7 @@ class _ReceiptCard extends StatelessWidget {
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -401,7 +400,7 @@ class _ReceiptCard extends StatelessWidget {
                           ),
                         ),
                         if (storeAddress.isNotEmpty)
-                          Text(storeAddress, style: dimStyle),
+                          Text(storeAddress, style: dimStyle?.copyWith(fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -412,7 +411,7 @@ class _ReceiptCard extends StatelessWidget {
 
             // Date
             const SizedBox(height: 10),
-            Text(formattedDate, style: dimStyle),
+            Text(formattedDate, style: dimStyle?.copyWith(fontWeight: FontWeight.bold)),
 
             const SizedBox(height: 16),
 
@@ -428,13 +427,18 @@ class _ReceiptCard extends StatelessWidget {
                   Expanded(
                     flex: 4,
                     child: Text(l10n.products,
-                        style: theme.textTheme.labelSmall?.copyWith(
+                        style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.bold)),
                   ),
+                  const SizedBox(width: 6),
                   _headerCell('سعر', flex: 2),
-                  _headerCell('و/ع', flex: 1), // وحدة/عبوة
+                  const SizedBox(width: 6),
+                  _headerCell('و/ع', flex: 1),
+                  const SizedBox(width: 6),
                   _headerCell('عبوات', flex: 1),
+                  const SizedBox(width: 6),
                   _headerCell('وحدات', flex: 2),
+                  const SizedBox(width: 6),
                   _headerCell(l10n.lineTotal, flex: 3),
                 ],
               ),
@@ -451,7 +455,6 @@ class _ReceiptCard extends StatelessWidget {
               final lt = (lineMap['line_total'] as num?)?.toDouble() ??
                   (orderLineUnitPrice * qty);
 
-              // Get piece price and units_per_package from product data
               final piecePrice =
                   (product?['unit_price'] as num?)?.toDouble();
               final upkg =
@@ -459,11 +462,8 @@ class _ReceiptCard extends StatelessWidget {
               final totalPieces =
                   upkg != null ? qty * upkg : null;
 
-              final numStyle = theme.textTheme.bodySmall?.copyWith(
+              final numStyle = theme.textTheme.bodyMedium?.copyWith(
                 fontFeatures: [const FontFeature.tabularFigures()],
-              );
-              final boldNumStyle = numStyle?.copyWith(
-                fontWeight: FontWeight.w600,
               );
 
               return Container(
@@ -484,10 +484,10 @@ class _ReceiptCard extends StatelessWidget {
                       flex: 4,
                       child: Text(
                         productName,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(fontWeight: FontWeight.w500),
+                        style: numStyle,
                       ),
                     ),
+                    const SizedBox(width: 6),
                     // Piece price
                     Expanded(
                       flex: 2,
@@ -499,6 +499,7 @@ class _ReceiptCard extends StatelessWidget {
                         style: numStyle,
                       ),
                     ),
+                    const SizedBox(width: 6),
                     // Units/package
                     Expanded(
                       flex: 1,
@@ -508,15 +509,17 @@ class _ReceiptCard extends StatelessWidget {
                         style: numStyle,
                       ),
                     ),
+                    const SizedBox(width: 6),
                     // Qty (packages)
                     Expanded(
                       flex: 1,
                       child: Text(
                         '$qty',
                         textAlign: TextAlign.center,
-                        style: boldNumStyle,
+                        style: numStyle,
                       ),
                     ),
+                    const SizedBox(width: 6),
                     // Total pieces
                     Expanded(
                       flex: 2,
@@ -526,13 +529,14 @@ class _ReceiptCard extends StatelessWidget {
                         style: numStyle,
                       ),
                     ),
+                    const SizedBox(width: 6),
                     // Line total
                     Expanded(
                       flex: 3,
                       child: Text(
-                        lt.toStringAsFixed(2),
+                        lt.toStringAsFixed(0),
                         textAlign: TextAlign.end,
-                        style: boldNumStyle,
+                        style: numStyle,
                       ),
                     ),
                   ],
@@ -590,7 +594,7 @@ class _ReceiptCard extends StatelessWidget {
       child: Text(
         text,
         textAlign: TextAlign.center,
-        style: theme.textTheme.labelSmall
+        style: theme.textTheme.bodyMedium
             ?.copyWith(fontWeight: FontWeight.bold),
       ),
     );
@@ -659,11 +663,13 @@ class _TotalLine extends StatelessWidget {
       );
     } else if (isDiscount) {
       style = theme.textTheme.bodyMedium?.copyWith(
+        fontWeight: FontWeight.bold,
         color: theme.colorScheme.error,
         fontFeatures: [const FontFeature.tabularFigures()],
       );
     } else {
       style = theme.textTheme.bodyMedium?.copyWith(
+        fontWeight: FontWeight.bold,
         color: theme.colorScheme.onSurfaceVariant,
         fontFeatures: [const FontFeature.tabularFigures()],
       );
