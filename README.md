@@ -1,162 +1,187 @@
-# Dream Land Shopping — Tawzii
+# Dream Land Shopping (Tawzii)
 
-> Mobile-first Arabic (RTL) wholesale distribution management app for B2B field operations: orders, payments, returnable packaging tracking, Bluetooth receipt printing, and real-time owner visibility.
+<p align="center">
+  <img src="app_icon.png" width="120" alt="Dream Land Shopping">
+</p>
 
-**Type:** Application
-**Stack:** Flutter + Supabase + Drift (SQLite) + OpenStreetMap
-**Skill Loadout:** PAUL, CARL, UI UX Pro Max
-**Quality Gates:** Offline sync integrity, RLS validation, RTL layout correctness, Bluetooth print test, real-time latency (<3s)
-
----
-
-## Overview
-
-A wholesale distribution business in Algeria has zero real-time visibility into field operations. Drivers deliver products (primarily bread), collect payments, and manage returnable packaging — all tracked by memory and paper. This app digitizes the entire workflow:
-
-- **Drivers** take orders, print Bluetooth receipts, collect payments, and log package returns
-- **Admins** manage drivers and view operational data
-- **Owner** gets a real-time dashboard with GPS tracking, revenue metrics, and discount approval control
-
-Scale: <10 drivers, 10-20 stores. Single business (with `business_id` on all tables for future multi-tenancy). Android only, distributed via APK sideload.
+<p align="center">
+  <strong>Real-time wholesale distribution management</strong><br>
+  Orders, payments, packages, and driver tracking — replacing paper with digital accountability.
+</p>
 
 ---
 
-## Stack
+## About
 
-| Layer | Choice | Rationale |
-|-------|--------|-----------|
-| Mobile | Flutter (Dart) | Single codebase, strong RTL/Arabic support, Bluetooth libraries |
-| Backend | Supabase Free Tier | Postgres + Realtime + Auth + Edge Functions + RLS included |
-| Local DB | Drift (SQLite) | Type-safe reactive queries, powers offline-first sync queue |
-| Maps | OpenStreetMap + flutter_map | Free, no API key, sufficient for <10 driver pins |
-| Bluetooth | esc_pos_bluetooth / flutter_blue_plus | Thermal receipt printing (TBD based on printer model) |
+A mobile-first Arabic (RTL) wholesale distribution management app for B2B food distribution businesses in Algeria. Drivers operate as mobile salespeople visiting stores on routes — taking orders, delivering products, collecting payments, tracking returnable packaging, and printing Bluetooth receipts. Everything syncs in real-time to the owner's dashboard.
+
+**Scale:** <10 drivers, 10-20 stores, single business. Android only, distributed via APK sideload.
+
+## Features
+
+### Owner
+- Real-time dashboard: revenue, orders, profit, cash flow
+- Top debtors and outstanding credit balances
+- Low stock alerts with configurable thresholds
+- Discount approval queue (auto-reject after 3 min timeout)
+- Live driver GPS tracking on OpenStreetMap
+- Manual balance adjustments with audit trail
+- User management (create/deactivate admins and drivers)
+
+### Driver
+- Fast order creation with product catalog and stock validation
+- Bluetooth thermal receipt printing
+- Payment collection with automatic credit balance tracking
+- Returnable packaging tracking (per product, per store)
+- Store creation in the field with map location picker
+
+### Admin
+- Operational dashboard (revenue, orders, payments)
+- Product catalog management
+- Driver account management
+
+### Procurement & Inventory
+- Supplier management
+- Purchase orders with cost tracking
+- Automatic stock deduction on orders, replenishment from purchases
+- Manual stock adjustments with movement history
+- Profit margins (sell price vs cost price)
+
+### Security
+- Atomic order creation (5 DB operations in 1 PostgreSQL transaction)
+- JWT metadata protection (role and business_id immutable via trigger)
+- Role-based access control (RLS policies + RPC role checks)
+- Idempotent order creation (prevents duplicates on network retry)
+- Deactivation enforcement (instantly blocks all data access)
+- Startup version check with blocking force-update screen
+- Append-only audit tables (no UPDATE/DELETE on financial records)
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Mobile | Flutter (Dart) — Android |
+| Backend | Supabase (PostgreSQL + Realtime + Auth + RLS) |
+| Local DB | Drift (SQLite) |
+| Maps | OpenStreetMap + flutter_map |
+| Printing | Bluetooth thermal printer (ESC/POS) |
+| State | Riverpod |
+
+## Architecture
+
+```
+lib/
+├── core/
+│   ├── constants/          # App-wide constants
+│   ├── l10n/               # Arabic localization
+│   ├── theme/              # Material Design 3 (#F5A623 brand)
+│   ├── sync/               # Sync queue manager
+│   └── utils/              # Version utils, order calculator
+├── features/
+│   ├── auth/               # Login, init, settings, force-update
+│   ├── orders/             # Order creation, list, receipt, models
+│   ├── payments/           # Payment collection, history
+│   ├── stores/             # Store CRUD, location picker
+│   ├── products/           # Product catalog, stock adjustment
+│   ├── driver/             # Driver shell, user management, GPS
+│   ├── owner/              # Owner shell, dashboard
+│   ├── admin/              # Admin shell
+│   ├── dashboard/          # Consolidated dashboard RPC + providers
+│   ├── printing/           # Bluetooth printer service
+│   ├── packages/           # Returnable packaging tracking
+│   ├── procurement/        # Suppliers, purchase orders
+│   └── discount/           # Discount approval flow
+├── routing/                # GoRouter with role-based routing
+└── app.dart
+
+supabase/migrations/        # 19 PostgreSQL migrations
+docs/                       # Role-operation matrix
+```
+
+## Roles
+
+| Role | Access |
+|------|--------|
+| **Owner** | Full visibility — dashboard, all orders, payments, GPS, discounts, users, stock, procurement |
+| **Admin** | Operational — dashboard, products, payments, packages, driver management |
+| **Driver** | Field — create orders, collect payments, log packages, GPS tracking |
+
+See [`docs/ROLE-OPERATION-MATRIX.md`](docs/ROLE-OPERATION-MATRIX.md) for the complete access control matrix.
+
+## Getting Started
+
+### Prerequisites
+
+- Flutter SDK (^3.11)
+- Android SDK
+- Supabase project (free tier sufficient)
+
+### Setup
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Mohamed-Oday/Dream-Land-Wholesale-App.git
+   cd Dream-Land-Wholesale-App
+   ```
+
+2. Create `.env` file with your Supabase credentials:
+   ```
+   SUPABASE_URL=https://your-project.supabase.co
+   SUPABASE_ANON_KEY=your-anon-key
+   ```
+
+3. Run all 19 migrations on your Supabase project (SQL Editor or `supabase db push`)
+
+4. Install dependencies and run:
+   ```bash
+   flutter pub get
+   flutter run
+   ```
+
+5. On first launch, the init screen creates the owner account
+
+### Build Release APK
+
+```bash
+flutter build apk --release
+```
+
+Output: `build/app/outputs/flutter-apk/app-release.apk`
+
+## Testing
+
+```bash
+flutter test
+```
+
+40 unit tests covering:
+- Financial calculations (line item pricing, subtotal, tax, discount)
+- Version comparison (semver)
+- User model (roles, routing, factory)
+
+## Database
+
+19 PostgreSQL migrations:
+- Core schema (users, stores, products, orders, payments, packages)
+- RPC functions (atomic orders, discount approval, stock management, dashboard)
+- Row-Level Security policies per role
+- SECURITY DEFINER functions with role checks
+- CHECK constraints, auto-updating timestamps, cancellation audit trail
+
+## Version History
+
+| Version | Description |
+|---------|-------------|
+| **v0.2.1** | AEGIS audit remediation — security hardening, atomic transactions, 40 tests, dashboard consolidation |
+| **v0.2** | Business intelligence — admin expansion, procurement, stock & inventory |
+| **v0.1** | Core loop — auth, orders, payments, packages, GPS, printing, hardening |
+
+**Totals: 10 phases, 28 plans, 19 migrations, 40 unit tests**
+
+## License
+
+Private — proprietary software for Dream Land Shopping wholesale distribution.
 
 ---
 
-## Data Model
-
-| Entity | Key Fields | Relationships |
-|--------|-----------|---------------|
-| User | id, business_id, name, username, password_hash, role (owner\|admin\|driver), created_by, active | Owner creates Admins, Admins create Drivers |
-| Store | id, business_id, name, address, phone, contact_person, gps_lat, gps_lng, credit_balance | Has many Orders, Payments, PackageLogs |
-| Product | id, business_id, name, unit_price, units_per_package, has_returnable_packaging (bool), active | Referenced by OrderLines and PackageLogs |
-| Order | id, business_id, store_id, driver_id, subtotal, tax_percentage, tax_amount, discount, discount_status, total, status | Has many OrderLines, may trigger PackageLogs |
-| OrderLine | id, order_id, product_id, quantity, unit_price, packages_count (nullable), line_total | Belongs to Order and Product |
-| Payment | id, business_id, store_id, driver_id, amount, method, previous_balance, new_balance | Belongs to Store and Driver |
-| PackageLog | id, business_id, store_id, driver_id, product_id, order_id (nullable), given, collected, balance_after | Per-product per-store package tracking |
-| DriverLocation | driver_id, business_id, lat, lng, timestamp | Append-only, 7-day retention |
-| AppConfig | id, business_id, key, value | latest_version, download_url, thresholds |
-
-**Key design notes:**
-- PackageLog tracks per-product per-store balances (not global counters)
-- `business_id` on all tables for future multi-tenancy (single value for MVP)
-- DriverLocation is append-only with scheduled 7-day purge
-- `credit_balance` on Store is denormalized, kept in sync by Edge Functions
-
----
-
-## API Surface
-
-**Auth:** Username + password for all roles via Supabase Auth with custom role claims. No OTP.
-
-**PostgREST (auto-generated CRUD):** products, stores, orders, order_lines, payments, package_logs, driver_locations — all protected by RLS.
-
-**Edge Functions:**
-- `discount-request` — driver sends request, owner notified, 2-3 min auto-reject timeout
-- `recalc-balance` — triggered after order/payment to keep store credit_balance consistent
-
-**Realtime Channels:**
-- `payments` — owner notifications on payment collection
-- `discount-requests` — owner ↔ driver approval flow
-- `driver-locations` — owner's live map
-- `orders` — dashboard refresh
-
----
-
-## Deployment
-
-- **Backend:** Supabase cloud free tier (500MB DB, 50K MAU, 2GB bandwidth)
-- **Mobile:** APK sideload via WhatsApp/direct download
-- **Updates:** AppConfig table with latest_version + download_url, in-app check on launch
-- **Future:** Google Play listing when stable
-- **No CI/CD for MVP** — manual build and distribution
-
----
-
-## Security
-
-- **RLS enforcement:** Drivers see own data only, Admins see their drivers, Owner sees all — scoped by business_id
-- **Audit trail:** Immutable payment records (previous_balance → new_balance), discount request logs
-- **GPS privacy:** Location tracked only while on-duty, 7-day retention
-- **Secrets:** Supabase anon key in client (by design), service role key in Edge Functions only
-- **Rate limiting:** Edge Function built-in limits + 30s client-side GPS throttle
-
----
-
-## UI/UX
-
-**Brand:** Orange/Amber `#F5A623` primary (from logo), white on-primary, Material Design 3 with orange seed color. Noto Sans Arabic typography. Full RTL layout, numbers LTR.
-
-**Design principles:** Large tap targets (one-handed field use), high contrast, minimal text, functional over flashy.
-
-**Driver (Bottom Nav — 4 tabs):** Orders | Packages | Payments | Settings
-**Owner (Bottom Nav — 4 tabs):** Dashboard | Map | Stores | Settings
-**Admin (Bottom Nav — 3 tabs):** Drivers | Stores | Settings
-
-**Real-time:** Supabase Realtime for payment notifications, discount approvals, GPS updates, dashboard refresh.
-
----
-
-## Implementation Phases
-
-### Phase 1: Core Loop
-Auth, product catalog CRUD, store registry CRUD, order creation flow, on-screen receipt preview, Drift local DB + sync queue, Flutter scaffold (RTL, Arabic, orange Material 3 theme).
-**Outcome:** Driver takes an order, owner sees it.
-
-### Phase 2: Money & Packaging
-Payment collection, store financial ledger, per-product package tracking, standalone package collection screen, Bluetooth receipt printing, real-time payment notifications.
-**Outcome:** Full financial and packaging accountability with printed receipts.
-
-### Phase 3: Visibility & Control
-Owner dashboard (metrics, drill-downs), driver GPS tracking + live map, discount approval flow (request → timeout → resolve), admin user management.
-**Outcome:** Owner has full operational visibility and discount control.
-
-### Phase 4: Polish & Hardening
-In-app update check, date range filters, package alert thresholds, driver performance view, manual balance adjustment, 7-day location retention, offline edge cases, order cancellation.
-**Outcome:** Production-hardened app ready for daily field use.
-
----
-
-## Design Decisions
-
-1. **Drift over Hive** — type-safe reactive SQL maps to Postgres schema
-2. **OpenStreetMap over Google Maps** — free, no API key, sufficient for <10 pins
-3. **Per-product package counts (not serial tracking)** — matches business complexity
-4. **Username/password for all roles (no OTP)** — eliminates SMS costs
-5. **business_id on all tables** — zero-cost multi-tenancy future-proofing
-6. **Separate package collection screen** — standalone return visits are common
-7. **Discount auto-reject on 2-3 min timeout** — prevents field blocking
-8. **Append-only DriverLocation with 7-day retention** — history without unbounded growth
-9. **In-app update via AppConfig** — no Play Store dependency
-10. **Mobile-only (no web dashboard)** — same Flutter app for all roles, different nav
-
----
-
-## Open Questions
-
-1. **Printer model?** Blocking for Phase 2 Bluetooth SDK selection
-2. **State management — Riverpod or Bloc?** Deferred to Phase 1
-3. **Arabic thermal printer support?** Need hardware verification
-4. **Discount timeout duration?** 2 min, 3 min, or owner-configurable?
-
----
-
-## References
-
-- PLANNING.md: `projects/dream-land-shopping/PLANNING.md`
-- PRD: `PRD.md` (workspace root)
-- Supabase Free Tier: 500MB DB, 50K MAU, 2GB bandwidth, 500K Edge Function invocations
-
----
-
-*Last updated: 2026-03-21*
+Built with [Claude Code](https://claude.com/claude-code)
