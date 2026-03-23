@@ -472,7 +472,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get confirmDeactivate =>
-      'Deactivate this user? They won\'t be able to log in.';
+      'Deactivate this user? They will be hidden from active lists.';
 
   @override
   String get active => 'Active';
@@ -573,7 +573,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get syncStatus => 'Sync Status';
 
   @override
-  String get syncAutomatic => 'Data syncs automatically when connected';
+  String get syncAutomatic => 'Requires internet connection';
 
   @override
   String get printerReconnecting => 'Reconnecting to printer...';
@@ -648,7 +648,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayPurchases => 'Today\'s Purchases';
 
   @override
-  String get todayProfit => 'Today\'s Profit';
+  String get todayProfit => 'Today\'s Cash Flow';
 
   @override
   String get stockOnHand => 'Stock';

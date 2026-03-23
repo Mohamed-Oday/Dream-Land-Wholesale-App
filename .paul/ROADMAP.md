@@ -16,6 +16,11 @@ Status: Complete
 Phases: 3 of 3 complete (Phases 5-7)
 Completed: 2026-03-22
 
+### v0.2.1 AEGIS Audit Remediation (v0.2.1)
+Status: In Progress
+Phases: 0 of 3 complete (Phases 8-10)
+Source: `.aegis/report/AEGIS-REPORT.md` Section 5 — Remediation Roadmap
+
 ## Phases
 
 | Phase | Name | Plans | Status | Completed |
@@ -27,6 +32,9 @@ Completed: 2026-03-22
 | 5 | Admin Expansion + Store Creation | 2 | Complete | 2026-03-22 |
 | 6 | Procurement & Cost Tracking | 3 | Complete | 2026-03-22 |
 | 7 | Stock & Inventory | 2 | Complete | 2026-03-22 |
+| 8 | Day-1 Fixes | 1 | Complete | 2026-03-23 |
+| 9 | Security & Atomicity | 3 | Planning | - |
+| 10 | Structural Improvements | TBD | Not started | - |
 
 ## Phase Details
 
@@ -131,6 +139,67 @@ Completed: 2026-03-22
 - [x] 07-01: Stock Data Model + Automatic Stock Flow (migration, RPCs, product stock display, order deduction, PO replenishment)
 - [x] 07-02: Low Stock Alerts + Manual Stock Management (dashboard alerts, stock adjustment screen, movement history)
 
+### Phase 8: Day-1 Fixes
+
+**Goal:** Eliminate disproportionate risk with trivial one-line fixes. All items are <5 minutes each.
+**Depends on:** Phase 7 (v0.2 complete)
+**Source:** AEGIS Remediation Roadmap — Immediate tier
+**Research:** None needed
+
+**Scope:**
+- Prevent Supabase free tier pause (upgrade or keep-alive cron)
+- Fix version constant mismatch (0.1.0 → 0.2.0)
+- Fix sync status text (remove false offline claim)
+- Fix deactivation text or implement auth ban
+- Fix broken location cleanup SQL (created_at → timestamp)
+- Rename "Profit" to "Cash Flow" in l10n
+- Revoke anon grants on 7 mutation RPCs
+
+**Plans:**
+- [x] 08-01: Day-1 fixes (version, l10n corrections, anon revokes, column fix)
+
+### Phase 9: Security & Atomicity
+
+**Goal:** Fix the critical security and data integrity issues — JWT metadata lockdown, atomic order creation, role checks, audit trail protection, deactivation enforcement, minimum test suite.
+**Depends on:** Phase 8 (day-1 fixes applied)
+**Source:** AEGIS Remediation Roadmap — Short-term tier
+**Research:** Likely (Supabase auth hooks, app_metadata migration path)
+
+**Scope:**
+- Lock down JWT user_metadata (move to app_metadata or add trigger)
+- Consolidate order creation into single atomic RPC (biggest single fix)
+- Add role checks to all SECURITY DEFINER functions
+- Fix balance_adjustments RLS (role-based, append-only)
+- Make deactivation actually revoke access
+- Write minimum test suite (~3 hours: _LineItem, financial calcs, SQL RPCs)
+- Add startup version check with blocking dialog
+
+**Plans:**
+- [x] 09-01: SQL Security Hardening (JWT trigger, 7 role checks, append-only RLS)
+- [ ] 09-02: Atomic Order RPC + Deactivation + Version Check
+- [ ] 09-03: Minimum Test Suite (financial calcs + SQL RPC tests)
+
+### Phase 10: Structural Improvements
+
+**Goal:** Evolvability and maintainability improvements that prevent future issues as the codebase grows.
+**Depends on:** Phase 9 (security hardened, tests exist)
+**Source:** AEGIS Remediation Roadmap — Medium-term tier
+**Research:** Unlikely (applying established patterns)
+
+**Scope:**
+- Create typed model classes (Order, OrderLine, Product, Store, Payment)
+- Document role-operation matrix
+- Add error logging (Supabase error_log table or Sentry)
+- Add CHECK constraints (stock_on_hand >= 0, FOR UPDATE locking)
+- Consolidate dashboard into single RPC (8 calls → 1)
+- Add updated_at columns + cancelled_by/cancelled_at to orders
+- Add package log reversal to cancellation flow
+- Move inline RPC calls from screens into repositories
+- Replace financial records FOR ALL with separate policies (no DELETE)
+
+**Plans:**
+- [ ] 10-01: TBD (defined during /paul:plan)
+
 ---
 *Roadmap created: 2026-03-21*
-*Last updated: 2026-03-22*
+*Last updated: 2026-03-23*

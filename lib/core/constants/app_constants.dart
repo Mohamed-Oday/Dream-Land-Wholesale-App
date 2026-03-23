@@ -2,7 +2,7 @@
 abstract final class AppConstants {
   static const String appName = 'دريم لاند للتسوق';
   static const String appNameEn = 'Dream Land Shopping';
-  static const String appVersion = '0.1.0';
+  static const String appVersion = '0.2.0';
 
   // Sync
   static const int maxSyncRetries = 3;

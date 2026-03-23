@@ -1007,7 +1007,7 @@ abstract class AppLocalizations {
   /// No description provided for @confirmDeactivate.
   ///
   /// In ar, this message translates to:
-  /// **'هل تريد إيقاف هذا المستخدم؟ لن يتمكن من تسجيل الدخول.'**
+  /// **'هل تريد إيقاف هذا المستخدم؟ سيتم إخفاؤه من القوائم النشطة.'**
   String get confirmDeactivate;
 
   /// No description provided for @active.
@@ -1205,7 +1205,7 @@ abstract class AppLocalizations {
   /// No description provided for @syncAutomatic.
   ///
   /// In ar, this message translates to:
-  /// **'البيانات تُزامن تلقائياً عند الاتصال'**
+  /// **'يتطلب اتصال بالإنترنت'**
   String get syncAutomatic;
 
   /// No description provided for @printerReconnecting.
@@ -1355,7 +1355,7 @@ abstract class AppLocalizations {
   /// No description provided for @todayProfit.
   ///
   /// In ar, this message translates to:
-  /// **'ربح اليوم'**
+  /// **'التدفق النقدي اليوم'**
   String get todayProfit;
 
   /// No description provided for @stockOnHand.

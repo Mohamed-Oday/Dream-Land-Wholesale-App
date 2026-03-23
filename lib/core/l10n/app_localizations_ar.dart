@@ -470,7 +470,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get confirmDeactivate =>
-      'هل تريد إيقاف هذا المستخدم؟ لن يتمكن من تسجيل الدخول.';
+      'هل تريد إيقاف هذا المستخدم؟ سيتم إخفاؤه من القوائم النشطة.';
 
   @override
   String get active => 'نشط';
@@ -571,7 +571,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get syncStatus => 'حالة المزامنة';
 
   @override
-  String get syncAutomatic => 'البيانات تُزامن تلقائياً عند الاتصال';
+  String get syncAutomatic => 'يتطلب اتصال بالإنترنت';
 
   @override
   String get printerReconnecting => 'جاري إعادة الاتصال بالطابعة...';
@@ -646,7 +646,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get todayPurchases => 'مشتريات اليوم';
 
   @override
-  String get todayProfit => 'ربح اليوم';
+  String get todayProfit => 'التدفق النقدي اليوم';
 
   @override
   String get stockOnHand => 'المخزون';
