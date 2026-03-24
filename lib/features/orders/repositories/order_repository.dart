@@ -24,9 +24,7 @@ class OrderRepository {
     if (startDate != null) {
       query = query.gte('created_at', startDate.toUtc().toIso8601String());
     }
-    if (endDate != null) {
-      query = query.lte('created_at', endDate.toUtc().toIso8601String());
-    }
+    // No endDate filter — ranges use startDate only to always include latest orders
 
     final result = await query.order('created_at', ascending: false);
     return List<Map<String, dynamic>>.from(result);

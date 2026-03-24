@@ -16,6 +16,7 @@ import 'package:tawzii/features/payments/screens/payment_list_screen.dart';
 import 'package:tawzii/features/products/providers/product_provider.dart';
 import 'package:tawzii/features/products/screens/product_form_screen.dart';
 import 'package:tawzii/features/products/screens/product_list_screen.dart';
+import 'package:tawzii/features/driver_loads/screens/load_list_screen.dart';
 
 class OwnerDashboardScreen extends ConsumerWidget {
   const OwnerDashboardScreen({super.key});
@@ -42,6 +43,14 @@ class OwnerDashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(l10n.dashboard),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.local_shipping),
+            tooltip: l10n.driverLoads,
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const LoadListScreen()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.payments),
             tooltip: l10n.payments,

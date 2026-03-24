@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/core/utils/order_calculator.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../driver_loads/providers/driver_load_providers.dart';
 import '../../products/providers/product_provider.dart';
 import '../../stores/providers/store_provider.dart';
 import '../models/line_item.dart';
@@ -111,6 +112,26 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
             return Consumer(
               builder: (ctx, ref, _) {
                 final productsAsync = ref.watch(productListProvider);
+                final loadAsync = ref.watch(driverCurrentLoadProvider);
+
+                // Build load inventory map: product_id → remaining qty
+                final Map<String, int> loadStock = {};
+                final bool hasActiveLoad;
+                final loadData = loadAsync.valueOrNull;
+                if (loadData != null) {
+                  hasActiveLoad = true;
+                  final items = loadData['items'] as List<dynamic>? ?? [];
+                  for (final item in items) {
+                    final m = item as Map<String, dynamic>;
+                    final pid = m['product_id'] as String;
+                    final loaded = (m['quantity_loaded'] as num?)?.toInt() ?? 0;
+                    final sold = (m['quantity_sold'] as num?)?.toInt() ?? 0;
+                    loadStock[pid] = loaded - sold;
+                  }
+                } else {
+                  hasActiveLoad = false;
+                }
+
                 return Column(
                   children: [
                     // Handle bar
@@ -142,45 +163,80 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                           itemCount: products.length,
                           itemBuilder: (_, index) {
                             final p = products[index];
-                            final stock = (p['stock_on_hand'] as num?)?.toInt() ?? 0;
-                            final isOutOfStock = stock <= 0;
+                            final productId = p['id'] as String;
+                            final warehouseStock = (p['stock_on_hand'] as num?)?.toInt() ?? 0;
+
+                            // If driver has active load, use load remaining as available stock
+                            final int availableStock;
+                            final bool notInLoad;
+                            if (hasActiveLoad) {
+                              final loadRemaining = loadStock[productId];
+                              if (loadRemaining == null) {
+                                // Product not in driver's load — disable it
+                                availableStock = 0;
+                                notInLoad = true;
+                              } else {
+                                availableStock = loadRemaining;
+                                notInLoad = false;
+                              }
+                            } else {
+                              // No active load — use warehouse stock (backwards compatible)
+                              availableStock = warehouseStock;
+                              notInLoad = false;
+                            }
+
+                            final isDisabled = availableStock <= 0 || notInLoad;
+
                             return ListTile(
                               leading: CircleAvatar(
-                                backgroundColor: isOutOfStock
+                                backgroundColor: isDisabled
                                     ? Theme.of(ctx).colorScheme.errorContainer
                                     : Theme.of(ctx).colorScheme.primaryContainer,
                                 child: Icon(Icons.shopping_bag,
-                                    color: isOutOfStock
+                                    color: isDisabled
                                         ? Theme.of(ctx).colorScheme.onErrorContainer
                                         : Theme.of(ctx).colorScheme.onPrimaryContainer),
                               ),
                               title: Text(
                                 p['name'] ?? '',
-                                style: isOutOfStock
+                                style: isDisabled
                                     ? TextStyle(color: Theme.of(ctx).colorScheme.onSurfaceVariant)
                                     : null,
                               ),
                               subtitle: Text(() {
                                 final price = (p['unit_price'] as num).toDouble();
                                 final upkg = p['units_per_package'] as int?;
-                                final stockLabel = 'المخزون: $stock';
+                                final stockLabel = hasActiveLoad
+                                    ? (notInLoad ? 'ليس في التحميل' : 'المتبقي: $availableStock')
+                                    : 'المخزون: $warehouseStock';
                                 if (upkg != null) {
                                   return '${(price * upkg).toStringAsFixed(2)} د.ج/عبوة · $stockLabel';
                                 }
                                 return '${price.toStringAsFixed(2)} د.ج · $stockLabel';
                               }()),
-                              trailing: isOutOfStock
-                                  ? Text('نفذ',
+                              trailing: notInLoad
+                                  ? Text('غير محمّل',
                                       style: TextStyle(
-                                        color: Theme.of(ctx).colorScheme.error,
+                                        color: Theme.of(ctx).colorScheme.onSurfaceVariant,
                                         fontWeight: FontWeight.w600,
-                                        fontSize: 12,
+                                        fontSize: 11,
                                       ))
-                                  : null,
-                              enabled: !isOutOfStock,
-                              onTap: isOutOfStock
+                                  : availableStock <= 0
+                                      ? Text('نفذ',
+                                          style: TextStyle(
+                                            color: Theme.of(ctx).colorScheme.error,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                          ))
+                                      : null,
+                              enabled: !isDisabled,
+                              onTap: isDisabled
                                   ? null
                                   : () {
+                                      // Override stock_on_hand with load remaining for quantity cap
+                                      if (hasActiveLoad) {
+                                        p['stock_on_hand'] = availableStock;
+                                      }
                                       _addProduct(p);
                                       Navigator.pop(ctx);
                                     },
@@ -340,6 +396,11 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
 
       if (!mounted) return;
 
+      // Add store info for receipt display
+      orderData['stores'] = {
+        'name': _selectedStoreName,
+      };
+
       // Add line items to order data for receipt display
       orderData['order_lines'] = _lineItems
           .map((item) => {
@@ -355,6 +416,8 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
           .toList();
 
       ref.invalidate(productListProvider);
+      ref.invalidate(orderListProvider);
+      ref.invalidate(driverCurrentLoadProvider);
 
       Navigator.pushReplacement(
         context,

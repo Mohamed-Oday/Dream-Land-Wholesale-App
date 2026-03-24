@@ -21,7 +21,6 @@ final packageListProvider =
   return repo.getAll(
     driverId: user.id,
     startDate: dateRange?.start,
-    endDate: dateRange?.end,
   );
 });
 
@@ -33,6 +32,5 @@ final allPackageLogsProvider =
   if (repo == null) return [];
   return repo.getAll(
     startDate: dateRange?.start,
-    endDate: dateRange?.end,
   );
 });

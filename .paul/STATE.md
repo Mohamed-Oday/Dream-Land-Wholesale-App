@@ -5,27 +5,30 @@
 See: .paul/PROJECT.md (updated 2026-03-21)
 
 **Core value:** Owner gets real-time visibility into wholesale distribution field operations — orders, payments, returnable packaging, and driver locations — replacing paper-based tracking that causes cash leakage and packaging loss.
-**Current focus:** Milestone v0.2.1 COMPLETE — AEGIS Audit Remediation
+**Current focus:** v0.3 Driver Stock Loading & Notifications
 
 ## Current Position
 
-Milestone: v0.2.1 AEGIS Audit Remediation (v0.2.1)
-Phase: 10 of 10 (Structural Improvements) — COMPLETE
-Plan: 10-02 complete (all plans in phase and milestone delivered)
-Status: MILESTONE v0.2.1 COMPLETE
-Last activity: 2026-03-23 — Unified 10-02 + Phase 10 + Milestone v0.2.1 transition
+Milestone: v0.3 Driver Stock Loading & Notifications (v0.3.0)
+Phase: 11 of 12 (Driver Stock Loading & Shifts) — In Progress
+Plan: Phase 11 complete
+Status: Phase 11 DONE — ready for Phase 12
+Last activity: 2026-03-24 — Phase 11 complete (2 plans, driver stock loading lifecycle)
 
 Progress:
 - Milestone v0.1: [██████████] 100% COMPLETE
 - Milestone v0.2: [██████████] 100% COMPLETE
 - Milestone v0.2.1: [██████████] 100% COMPLETE
+- Milestone v0.3: [█████░░░░░] 50%
+  - Phase 11: [██████████] 100% COMPLETE
+  - Phase 12: [░░░░░░░░░░] 0%
 
 ## Loop Position
 
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ✓     [MILESTONE v0.2.1 COMPLETE]
+  ✓        ✓        ✓     [Loop complete — Phase 11 DONE]
 ```
 
 ## Accumulated Context
@@ -66,6 +69,8 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | Enterprise audit on 09-03: Applied 1 must-have + 2 strongly-recommended | 09-03 | Plan strengthened: mandatory widget_test.dart deletion, closeTo() for float assertions, User construction pattern for AppUser tests |
 | Enterprise audit on 10-01: Applied 0 must-have + 2 strongly-recommended | 10-01 | Plan strengthened: REVOKE on set_updated_at trigger function, consolidated cancel_order into single UPDATE with CASE |
 | Enterprise audit on 10-02: Applied 1 must-have + 1 strongly-recommended | 10-02 | Plan strengthened: COALESCE on all SQL aggregates (NULL → 0/[]), type-safe Dart extraction from RPC response |
+| Enterprise audit on 11-01: Applied 2 must-have + 4 strongly-recommended | 11-01 | Plan strengthened: ALTER stock_movements CHECK constraint, explicit driver_load_items RLS (no FK cascade), FOR UPDATE row lock, driver role+business validation, empty items guard, REVOKE FROM PUBLIC pattern |
+| Enterprise audit on 11-02: Applied 2 must-have + 2 strongly-recommended | 11-02 | Plan strengthened: cancel_order reverses quantity_sold + restores stock_on_hand, close_driver_load business_id fetch + returned qty validation + typo fix, add_to_driver_load business_id fetch |
 
 ### Deferred Issues
 | Issue | Origin | Effort | Revisit |
@@ -85,17 +90,15 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-23
-Stopped at: Milestone v0.2.1 COMPLETE
-Next action: /paul:discuss-milestone for next milestone
+Last session: 2026-03-24
+Stopped at: Phase 11 complete, session paused
+Next action: /paul:plan for Phase 12 (Push Notifications via FCM)
+Resume file: .paul/HANDOFF-2026-03-24-phase11.md
 Resume context:
-- v0.1 COMPLETE: Core loop, money, visibility, hardening (4 phases, 16 plans)
-- v0.2 COMPLETE: Admin expansion, procurement, stock & inventory (3 phases, 7 plans)
-- v0.2.1 COMPLETE: AEGIS audit remediation (3 phases, 5 plans)
-- Total: 10 phases, 28 plans delivered across 3 milestones
-- 40 automated tests, 19 SQL migrations, role-operation matrix documented
-- Migrations 015-019 need deployment to live Supabase
-- Deferred: typed model classes, error logging, Drift offline
+- Phase 11 COMPLETE: 2 plans, 2 migrations (020+021), 11 new screens/files, 19 modified files
+- Bug fixes shipped: stale endDate, 5 missing invalidations, tab-switch refresh, load-aware picker, seller rename, FK fix
+- v0.3 milestone 50% complete (Phase 11 done, Phase 12 remaining)
+- Phase 12 NEXT: Firebase Cloud Messaging — free push notifications
 
 ---
 *STATE.md — Updated after every significant action*

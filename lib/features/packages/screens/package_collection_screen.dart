@@ -198,6 +198,9 @@ class _PackageCollectionScreenState
 
       if (!mounted) return;
 
+      ref.invalidate(packageListProvider);
+      ref.invalidate(storeListProvider);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.packagesCollected),

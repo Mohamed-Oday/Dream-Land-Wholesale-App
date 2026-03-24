@@ -22,6 +22,10 @@ Phases: 3 of 3 complete (Phases 8-10)
 Completed: 2026-03-23
 Source: `.aegis/report/AEGIS-REPORT.md` Section 5 — Remediation Roadmap
 
+### v0.3 Driver Stock Loading & Notifications (v0.3.0)
+Status: In Progress
+Phases: 1 of 2 complete (Phases 11-12) — Phase 12 next
+
 ## Phases
 
 | Phase | Name | Plans | Status | Completed |
@@ -36,6 +40,8 @@ Source: `.aegis/report/AEGIS-REPORT.md` Section 5 — Remediation Roadmap
 | 8 | Day-1 Fixes | 1 | Complete | 2026-03-23 |
 | 9 | Security & Atomicity | 3 | Complete | 2026-03-23 |
 | 10 | Structural Improvements | 2 | Complete | 2026-03-23 |
+| 11 | Driver Stock Loading & Shifts | 2 | Complete | 2026-03-24 |
+| 12 | Push Notifications | TBD | Not started | - |
 
 ## Phase Details
 
@@ -207,6 +213,41 @@ Source: `.aegis/report/AEGIS-REPORT.md` Section 5 — Remediation Roadmap
 - [x] 10-01: Schema Hardening (CHECK constraints, updated_at triggers, cancellation audit trail)
 - [x] 10-02: Dashboard Consolidation + Role-Operation Matrix
 
+### Phase 11: Driver Stock Loading & Shifts
+
+**Goal:** Admin/owner loads products onto drivers at start of day, tracks driver stock in real-time, drivers close shifts with return receipt at end of day.
+**Depends on:** Phase 10 (schema hardened, stock tracking exists)
+**Research:** Likely (shift lifecycle, driver stock vs warehouse stock model)
+
+**Scope:**
+- `driver_loads` table: shift record per driver per day (loaded_by, status: active/closed)
+- `driver_load_items` table: products + quantities loaded onto driver
+- Load creation screen: admin/owner picks driver, selects products + quantities, prints load receipt
+- Real-time driver stock view: owner/admin sees each driver's current inventory (loaded - sold - returned)
+- Shift close flow: driver ends shift, enters remaining quantities, prints return receipt
+- Driver stock deduction: orders automatically deduct from driver's loaded stock (not just warehouse)
+- Load receipt + return receipt Bluetooth printing
+
+**Plans:**
+- [x] 11-01: Driver Load Schema & Load Creation (tables, RPCs, RLS, load creation screen, load receipt, load list)
+- [x] 11-02: Shift Close, Order Integration, Driver Stock View & Add-to-Load
+
+### Phase 12: Push Notifications
+
+**Goal:** Send real-time push notifications to admin/owner phones even when app is not open — new orders, payments, discount requests, low stock alerts.
+**Depends on:** Phase 11 (driver shifts provide more notification triggers)
+**Research:** Likely (Firebase setup, FCM token management, Supabase Edge Functions)
+
+**Scope:**
+- Firebase Cloud Messaging (FCM) integration — FREE, unlimited
+- FCM token storage in Supabase (per device, per user)
+- Notification triggers: new order created, payment collected, discount pending, low stock, shift opened/closed
+- Background notification handling (app not open)
+- Notification preferences per user (optional: toggle which notifications to receive)
+
+**Plans:**
+- [ ] 12-01: TBD (defined during /paul:plan)
+
 ---
 *Roadmap created: 2026-03-21*
-*Last updated: 2026-03-23*
+*Last updated: 2026-03-24*

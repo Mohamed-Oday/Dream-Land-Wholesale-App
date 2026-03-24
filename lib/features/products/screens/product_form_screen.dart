@@ -99,7 +99,10 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         );
       }
 
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        ref.invalidate(productListProvider);
+        Navigator.pop(context);
+      }
     } catch (e) {
       if (mounted) {
         setState(() {

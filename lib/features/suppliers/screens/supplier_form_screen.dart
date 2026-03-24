@@ -72,7 +72,10 @@ class _SupplierFormScreenState extends ConsumerState<SupplierFormScreen> {
         );
       }
 
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        ref.invalidate(supplierListProvider);
+        Navigator.pop(context);
+      }
     } catch (e) {
       if (mounted) {
         setState(() {

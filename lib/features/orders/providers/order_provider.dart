@@ -21,7 +21,6 @@ final orderListProvider =
   return repo.getAll(
     driverId: user.id,
     startDate: dateRange?.start,
-    endDate: dateRange?.end,
   );
 });
 
@@ -33,7 +32,6 @@ final allOrdersProvider =
   if (repo == null) return [];
   return repo.getAll(
     startDate: dateRange?.start,
-    endDate: dateRange?.end,
   );
 });
 

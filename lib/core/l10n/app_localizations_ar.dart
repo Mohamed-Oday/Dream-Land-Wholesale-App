@@ -33,7 +33,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get stores => 'المتاجر';
 
   @override
-  String get drivers => 'السائقين';
+  String get drivers => 'البائعين';
 
   @override
   String get login => 'تسجيل الدخول';
@@ -93,7 +93,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get admin => 'المشرف';
 
   @override
-  String get driver => 'السائق';
+  String get driver => 'البائع';
 
   @override
   String get products => 'المنتجات';
@@ -358,7 +358,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get viewAll => 'عرض الكل';
 
   @override
-  String get noActiveDrivers => 'لا يوجد سائقين في الخدمة';
+  String get noActiveDrivers => 'لا يوجد بائعين في الخدمة';
 
   @override
   String lastSeenAgo(int minutes) {
@@ -514,7 +514,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get allTime => 'الكل';
 
   @override
-  String get driverPerformance => 'أداء السائق';
+  String get driverPerformance => 'أداء البائع';
 
   @override
   String get totalCollected => 'إجمالي المحصّل';
@@ -696,4 +696,88 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get resultCannotBeNegative => 'النتيجة لا يمكن أن تكون سالبة';
+
+  @override
+  String get driverLoads => 'تحميلات البائعين';
+
+  @override
+  String get loadDriver => 'تحميل بائع';
+
+  @override
+  String get selectDriver => 'اختر البائع';
+
+  @override
+  String get quantityToLoad => 'الكمية للتحميل';
+
+  @override
+  String get confirmLoad => 'تأكيد التحميل';
+
+  @override
+  String get loadCreated => 'تم إنشاء التحميل بنجاح';
+
+  @override
+  String get driverHasActiveLoad => 'البائع لديه تحميل نشط بالفعل';
+
+  @override
+  String get insufficientStock => 'المخزون غير كافٍ';
+
+  @override
+  String get loadedBy => 'تم التحميل بواسطة';
+
+  @override
+  String get activeLoad => 'تحميل نشط';
+
+  @override
+  String get closedLoad => 'تحميل مغلق';
+
+  @override
+  String get totalLoaded => 'إجمالي المحمّل';
+
+  @override
+  String get loadReceipt => 'إيصال التحميل';
+
+  @override
+  String get noLoads => 'لا توجد تحميلات';
+
+  @override
+  String get loadDetails => 'تفاصيل التحميل';
+
+  @override
+  String get printLoadReceipt => 'طباعة إيصال التحميل';
+
+  @override
+  String get movementLoadOut => 'تحميل بائع (خروج)';
+
+  @override
+  String get myStock => 'مخزوني';
+
+  @override
+  String get noActiveLoad => 'لا يوجد تحميل نشط';
+
+  @override
+  String get loaded => 'محمّل';
+
+  @override
+  String get sold => 'مباع';
+
+  @override
+  String get remaining => 'متبقي';
+
+  @override
+  String get closeShift => 'إغلاق الوردية';
+
+  @override
+  String get shiftCloseReceipt => 'إيصال إغلاق الوردية';
+
+  @override
+  String get returned => 'مرتجع';
+
+  @override
+  String get confirmCloseShift => 'تأكيد إغلاق الوردية';
+
+  @override
+  String get shiftClosed => 'تم إغلاق الوردية';
+
+  @override
+  String get addToLoad => 'إضافة للتحميل';
 }

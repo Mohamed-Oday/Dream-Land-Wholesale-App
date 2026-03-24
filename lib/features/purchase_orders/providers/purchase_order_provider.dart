@@ -19,6 +19,5 @@ final purchaseOrderListProvider =
   if (repo == null) return [];
   return repo.getAll(
     startDate: dateRange?.start,
-    endDate: dateRange?.end,
   );
 });

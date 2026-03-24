@@ -7,6 +7,7 @@ import 'package:tawzii/core/theme/app_colors.dart';
 import 'package:tawzii/features/dashboard/providers/dashboard_provider.dart';
 import 'package:tawzii/features/orders/screens/receipt_preview_screen.dart';
 import 'package:tawzii/features/stores/screens/store_detail_screen.dart';
+import 'package:tawzii/features/driver_loads/screens/load_list_screen.dart';
 
 class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
@@ -25,7 +26,19 @@ class AdminDashboardScreen extends ConsumerWidget {
     final currencyFormat = NumberFormat('#,##0.00', 'ar');
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.dashboard)),
+      appBar: AppBar(
+        title: Text(l10n.dashboard),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.local_shipping),
+            tooltip: l10n.driverLoads,
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const LoadListScreen()),
+            ),
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(recentOrdersProvider);

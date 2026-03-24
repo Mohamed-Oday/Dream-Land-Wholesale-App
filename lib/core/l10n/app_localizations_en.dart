@@ -33,7 +33,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stores => 'Stores';
 
   @override
-  String get drivers => 'Drivers';
+  String get drivers => 'Sellers';
 
   @override
   String get login => 'Login';
@@ -93,7 +93,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get admin => 'Admin';
 
   @override
-  String get driver => 'Driver';
+  String get driver => 'Seller';
 
   @override
   String get products => 'Products';
@@ -360,7 +360,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewAll => 'View all';
 
   @override
-  String get noActiveDrivers => 'No active drivers';
+  String get noActiveDrivers => 'No active sellers';
 
   @override
   String lastSeenAgo(int minutes) {
@@ -516,7 +516,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get allTime => 'All';
 
   @override
-  String get driverPerformance => 'Driver Performance';
+  String get driverPerformance => 'Seller Performance';
 
   @override
   String get totalCollected => 'Total Collected';
@@ -698,4 +698,88 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resultCannotBeNegative => 'Result cannot be negative';
+
+  @override
+  String get driverLoads => 'Seller Loads';
+
+  @override
+  String get loadDriver => 'Load Seller';
+
+  @override
+  String get selectDriver => 'Select Seller';
+
+  @override
+  String get quantityToLoad => 'Quantity to Load';
+
+  @override
+  String get confirmLoad => 'Confirm Load';
+
+  @override
+  String get loadCreated => 'Load created successfully';
+
+  @override
+  String get driverHasActiveLoad => 'Seller already has an active load';
+
+  @override
+  String get insufficientStock => 'Insufficient stock';
+
+  @override
+  String get loadedBy => 'Loaded by';
+
+  @override
+  String get activeLoad => 'Active Load';
+
+  @override
+  String get closedLoad => 'Closed Load';
+
+  @override
+  String get totalLoaded => 'Total Loaded';
+
+  @override
+  String get loadReceipt => 'Load Receipt';
+
+  @override
+  String get noLoads => 'No loads';
+
+  @override
+  String get loadDetails => 'Load Details';
+
+  @override
+  String get printLoadReceipt => 'Print Load Receipt';
+
+  @override
+  String get movementLoadOut => 'Seller load (out)';
+
+  @override
+  String get myStock => 'My Stock';
+
+  @override
+  String get noActiveLoad => 'No active load';
+
+  @override
+  String get loaded => 'Loaded';
+
+  @override
+  String get sold => 'Sold';
+
+  @override
+  String get remaining => 'Remaining';
+
+  @override
+  String get closeShift => 'Close Shift';
+
+  @override
+  String get shiftCloseReceipt => 'Shift Close Receipt';
+
+  @override
+  String get returned => 'Returned';
+
+  @override
+  String get confirmCloseShift => 'Confirm Close Shift';
+
+  @override
+  String get shiftClosed => 'Shift closed';
+
+  @override
+  String get addToLoad => 'Add to Load';
 }

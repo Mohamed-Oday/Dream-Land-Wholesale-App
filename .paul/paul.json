@@ -1,15 +1,15 @@
 {
   "name": "dream-land-shopping",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "milestone": {
-    "name": "v0.2.1 AEGIS Audit Remediation",
-    "version": "0.2.1",
-    "status": "complete"
+    "name": "v0.3 Driver Stock Loading & Notifications",
+    "version": "0.3.0",
+    "status": "in_progress"
   },
   "phase": {
-    "number": 10,
-    "name": "Structural Improvements",
-    "status": "complete"
+    "number": 12,
+    "name": "Push Notifications",
+    "status": "not_started"
   },
   "loop": {
     "plan": null,
@@ -17,7 +17,7 @@
   },
   "timestamps": {
     "created_at": "2026-03-21T00:00:00Z",
-    "updated_at": "2026-03-23T05:30:00Z"
+    "updated_at": "2026-03-24T00:00:00Z"
   },
   "satellite": {
     "groom": true

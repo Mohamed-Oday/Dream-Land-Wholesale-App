@@ -149,7 +149,7 @@ abstract class AppLocalizations {
   /// No description provided for @drivers.
   ///
   /// In ar, this message translates to:
-  /// **'السائقين'**
+  /// **'البائعين'**
   String get drivers;
 
   /// No description provided for @login.
@@ -269,7 +269,7 @@ abstract class AppLocalizations {
   /// No description provided for @driver.
   ///
   /// In ar, this message translates to:
-  /// **'السائق'**
+  /// **'البائع'**
   String get driver;
 
   /// No description provided for @products.
@@ -797,7 +797,7 @@ abstract class AppLocalizations {
   /// No description provided for @noActiveDrivers.
   ///
   /// In ar, this message translates to:
-  /// **'لا يوجد سائقين في الخدمة'**
+  /// **'لا يوجد بائعين في الخدمة'**
   String get noActiveDrivers;
 
   /// No description provided for @lastSeenAgo.
@@ -1091,7 +1091,7 @@ abstract class AppLocalizations {
   /// No description provided for @driverPerformance.
   ///
   /// In ar, this message translates to:
-  /// **'أداء السائق'**
+  /// **'أداء البائع'**
   String get driverPerformance;
 
   /// No description provided for @totalCollected.
@@ -1447,6 +1447,174 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'النتيجة لا يمكن أن تكون سالبة'**
   String get resultCannotBeNegative;
+
+  /// No description provided for @driverLoads.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحميلات البائعين'**
+  String get driverLoads;
+
+  /// No description provided for @loadDriver.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحميل بائع'**
+  String get loadDriver;
+
+  /// No description provided for @selectDriver.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر البائع'**
+  String get selectDriver;
+
+  /// No description provided for @quantityToLoad.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية للتحميل'**
+  String get quantityToLoad;
+
+  /// No description provided for @confirmLoad.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد التحميل'**
+  String get confirmLoad;
+
+  /// No description provided for @loadCreated.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إنشاء التحميل بنجاح'**
+  String get loadCreated;
+
+  /// No description provided for @driverHasActiveLoad.
+  ///
+  /// In ar, this message translates to:
+  /// **'البائع لديه تحميل نشط بالفعل'**
+  String get driverHasActiveLoad;
+
+  /// No description provided for @insufficientStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخزون غير كافٍ'**
+  String get insufficientStock;
+
+  /// No description provided for @loadedBy.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم التحميل بواسطة'**
+  String get loadedBy;
+
+  /// No description provided for @activeLoad.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحميل نشط'**
+  String get activeLoad;
+
+  /// No description provided for @closedLoad.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحميل مغلق'**
+  String get closedLoad;
+
+  /// No description provided for @totalLoaded.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي المحمّل'**
+  String get totalLoaded;
+
+  /// No description provided for @loadReceipt.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيصال التحميل'**
+  String get loadReceipt;
+
+  /// No description provided for @noLoads.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد تحميلات'**
+  String get noLoads;
+
+  /// No description provided for @loadDetails.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل التحميل'**
+  String get loadDetails;
+
+  /// No description provided for @printLoadReceipt.
+  ///
+  /// In ar, this message translates to:
+  /// **'طباعة إيصال التحميل'**
+  String get printLoadReceipt;
+
+  /// No description provided for @movementLoadOut.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحميل بائع (خروج)'**
+  String get movementLoadOut;
+
+  /// No description provided for @myStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخزوني'**
+  String get myStock;
+
+  /// No description provided for @noActiveLoad.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد تحميل نشط'**
+  String get noActiveLoad;
+
+  /// No description provided for @loaded.
+  ///
+  /// In ar, this message translates to:
+  /// **'محمّل'**
+  String get loaded;
+
+  /// No description provided for @sold.
+  ///
+  /// In ar, this message translates to:
+  /// **'مباع'**
+  String get sold;
+
+  /// No description provided for @remaining.
+  ///
+  /// In ar, this message translates to:
+  /// **'متبقي'**
+  String get remaining;
+
+  /// No description provided for @closeShift.
+  ///
+  /// In ar, this message translates to:
+  /// **'إغلاق الوردية'**
+  String get closeShift;
+
+  /// No description provided for @shiftCloseReceipt.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيصال إغلاق الوردية'**
+  String get shiftCloseReceipt;
+
+  /// No description provided for @returned.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرتجع'**
+  String get returned;
+
+  /// No description provided for @confirmCloseShift.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد إغلاق الوردية'**
+  String get confirmCloseShift;
+
+  /// No description provided for @shiftClosed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إغلاق الوردية'**
+  String get shiftClosed;
+
+  /// No description provided for @addToLoad.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة للتحميل'**
+  String get addToLoad;
 }
 
 class _AppLocalizationsDelegate

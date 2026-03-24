@@ -139,6 +139,8 @@ class _ReceiptScaffoldState extends ConsumerState<_ReceiptScaffold> {
       widget.order['status'] = 'cancelled';
       widget.order['discount_status'] = 'none';
       ref.invalidate(productListProvider);
+      ref.invalidate(orderListProvider);
+      ref.invalidate(allOrdersProvider);
 
       setState(() {});
 
@@ -308,7 +310,12 @@ class _ReceiptScaffoldState extends ConsumerState<_ReceiptScaffold> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: FilledButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        // Refresh order list when returning
+                        ref.invalidate(orderListProvider);
+                        ref.invalidate(allOrdersProvider);
+                        Navigator.pop(context);
+                      },
                       style: FilledButton.styleFrom(
                         minimumSize: const Size(0, 48),
                       ),
