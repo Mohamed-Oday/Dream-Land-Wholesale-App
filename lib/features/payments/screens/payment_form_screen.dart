@@ -6,6 +6,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/core/theme/app_colors.dart';
+import 'package:tawzii/core/notifications/notification_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../stores/providers/store_provider.dart';
 import '../providers/payment_provider.dart';
 
@@ -142,6 +144,22 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen> {
 
       // Invalidate store list to refresh balances
       ref.invalidate(storeListProvider);
+
+      // Send notification (fire-and-forget, best-effort)
+      try {
+        final notifService = ref.read(notificationServiceProvider);
+        final userName = ref.read(currentUserProvider)?.name ?? '';
+        notifService.sendNotification(
+          eventType: 'payment_collected',
+          data: {
+            'driver': userName,
+            'amount': amount.toStringAsFixed(2),
+            'store': _selectedStoreName,
+          },
+        );
+      } catch (e) {
+        debugPrint('Payment notification failed (non-blocking): $e');
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

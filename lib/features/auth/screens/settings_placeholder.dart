@@ -8,7 +8,9 @@ import 'package:tawzii/core/theme/app_colors.dart';
 import 'package:tawzii/core/utils/version_utils.dart';
 import 'package:tawzii/features/printing/providers/printer_provider.dart';
 import 'package:tawzii/features/printing/screens/printer_setup_screen.dart';
+import 'package:tawzii/core/notifications/notification_provider.dart';
 import '../providers/auth_provider.dart';
+import 'notification_preferences_screen.dart';
 
 /// Remote config provider — cached, only refetches on invalidate.
 final remoteConfigProvider =
@@ -155,12 +157,33 @@ class SettingsPlaceholder extends ConsumerWidget {
                 ),
               ),
             ),
+            // Notification preferences (owner/admin only — drivers don't receive notifications)
+            if (user?.role != 'driver') ...[
+              const SizedBox(height: 8),
+              Card(
+                child: ListTile(
+                  leading: Icon(Icons.notifications_outlined,
+                      color: theme.colorScheme.onSurfaceVariant),
+                  title: Text(l10n.notifications),
+                  subtitle: Text(l10n.notificationPreferences),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const NotificationPreferencesScreen(),
+                    ),
+                  ),
+                ),
+              ),
+            ],
             const Spacer(),
             // Logout button
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () async {
+                  final notificationService = ref.read(notificationServiceProvider);
+                  await notificationService.unregisterToken(Supabase.instance.client);
                   final authService = ref.read(authServiceProvider);
                   await authService.signOut();
                 },

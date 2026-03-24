@@ -282,5 +282,14 @@
   "returned": "مرتجع",
   "confirmCloseShift": "تأكيد إغلاق الوردية",
   "shiftClosed": "تم إغلاق الوردية",
-  "addToLoad": "إضافة للتحميل"
+  "addToLoad": "إضافة للتحميل",
+  "notifications": "الإشعارات",
+  "notificationPreferences": "تفضيلات الإشعارات",
+  "notifNewOrder": "طلب جديد",
+  "notifPayment": "تحصيل دفعة",
+  "notifDiscount": "طلب خصم",
+  "notifLowStock": "مخزون منخفض",
+  "notifShiftOpened": "بداية وردية",
+  "notifShiftClosed": "نهاية وردية",
+  "notifLoadError": "فشل تحميل التفضيلات"
 }

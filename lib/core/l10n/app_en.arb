@@ -282,5 +282,14 @@
   "returned": "Returned",
   "confirmCloseShift": "Confirm Close Shift",
   "shiftClosed": "Shift closed",
-  "addToLoad": "Add to Load"
+  "addToLoad": "Add to Load",
+  "notifications": "Notifications",
+  "notificationPreferences": "Notification Preferences",
+  "notifNewOrder": "New Order",
+  "notifPayment": "Payment Collected",
+  "notifDiscount": "Discount Request",
+  "notifLowStock": "Low Stock",
+  "notifShiftOpened": "Shift Opened",
+  "notifShiftClosed": "Shift Closed",
+  "notifLoadError": "Failed to load preferences"
 }

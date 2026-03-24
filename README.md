@@ -34,11 +34,30 @@ A mobile-first Arabic (RTL) wholesale distribution management app for B2B food d
 - Payment collection with automatic credit balance tracking
 - Returnable packaging tracking (per product, per store)
 - Store creation in the field with map location picker
+- Driver stock view: loaded, sold, remaining quantities
+- Shift close with return receipt printing
 
 ### Admin
 - Operational dashboard (revenue, orders, payments)
 - Product catalog management
 - Driver account management
+- Load products onto drivers at start of day
+- Add stock to active driver loads mid-shift
+
+### Driver Stock Loading
+- Admin/owner loads products onto drivers with atomic stock deduction
+- Real-time driver stock tracking (loaded - sold - returned)
+- Shift close flow with return quantity entry and receipt printing
+- Orders automatically deduct from driver's loaded stock
+- Load-aware product picker (only shows driver's loaded products)
+- Load receipt + return receipt Bluetooth printing
+
+### Push Notifications
+- Real-time FCM push notifications to owner/admin phones
+- 6 event triggers: new order, payment collected, discount request, low stock, shift opened/closed
+- Notifications delivered even when app is closed (background handling)
+- Per-user notification preferences (toggle which events to receive)
+- Notification preferences screen in settings (owner/admin only)
 
 ### Procurement & Inventory
 - Supplier management
@@ -61,7 +80,8 @@ A mobile-first Arabic (RTL) wholesale distribution management app for B2B food d
 | Layer | Technology |
 |-------|-----------|
 | Mobile | Flutter (Dart) — Android |
-| Backend | Supabase (PostgreSQL + Realtime + Auth + RLS) |
+| Backend | Supabase (PostgreSQL + Realtime + Auth + Edge Functions + RLS) |
+| Notifications | Firebase Cloud Messaging (FCM v1 API) |
 | Local DB | Drift (SQLite) |
 | Maps | OpenStreetMap + flutter_map |
 | Printing | Bluetooth thermal printer (ESC/POS) |
@@ -90,11 +110,15 @@ lib/
 │   ├── printing/           # Bluetooth printer service
 │   ├── packages/           # Returnable packaging tracking
 │   ├── procurement/        # Suppliers, purchase orders
+│   ├── driver_loads/       # Driver stock loading, shift close, receipts
 │   └── discount/           # Discount approval flow
+├── core/
+│   └── notifications/      # FCM service, notification providers
 ├── routing/                # GoRouter with role-based routing
 └── app.dart
 
-supabase/migrations/        # 19 PostgreSQL migrations
+supabase/migrations/        # 23 PostgreSQL migrations
+supabase/functions/          # Edge Functions (send-notification)
 docs/                       # Role-operation matrix
 ```
 
@@ -130,7 +154,7 @@ See [`docs/ROLE-OPERATION-MATRIX.md`](docs/ROLE-OPERATION-MATRIX.md) for the com
    SUPABASE_ANON_KEY=your-anon-key
    ```
 
-3. Run all 19 migrations on your Supabase project (SQL Editor or `supabase db push`)
+3. Run all 23 migrations on your Supabase project (SQL Editor or `supabase db push`)
 
 4. Install dependencies and run:
    ```bash
@@ -161,22 +185,26 @@ flutter test
 
 ## Database
 
-19 PostgreSQL migrations:
+23 PostgreSQL migrations + 1 Edge Function:
 - Core schema (users, stores, products, orders, payments, packages)
-- RPC functions (atomic orders, discount approval, stock management, dashboard)
+- Driver loads & shift management (driver_loads, driver_load_items)
+- FCM token storage & notification preferences
+- RPC functions (atomic orders, discount approval, stock management, dashboard, driver loads)
 - Row-Level Security policies per role
 - SECURITY DEFINER functions with role checks
 - CHECK constraints, auto-updating timestamps, cancellation audit trail
+- Edge Function: send-notification (FCM v1 API with OAuth2)
 
 ## Version History
 
 | Version | Description |
 |---------|-------------|
+| **v0.3** | Driver stock loading, shift management, FCM push notifications with 6 event triggers and preferences |
 | **v0.2.1** | AEGIS audit remediation — security hardening, atomic transactions, 40 tests, dashboard consolidation |
 | **v0.2** | Business intelligence — admin expansion, procurement, stock & inventory |
 | **v0.1** | Core loop — auth, orders, payments, packages, GPS, printing, hardening |
 
-**Totals: 10 phases, 28 plans, 19 migrations, 40 unit tests**
+**Totals: 12 phases, 34 plans, 23 migrations, 1 Edge Function, 40 unit tests**
 
 ## License
 

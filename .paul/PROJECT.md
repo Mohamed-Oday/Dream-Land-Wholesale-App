@@ -12,9 +12,9 @@ Owner gets real-time visibility into wholesale distribution field operations —
 
 | Attribute | Value |
 |-----------|-------|
-| Version | 0.2.0 |
+| Version | 0.3.0 |
 | Status | Pre-production |
-| Last Updated | 2026-03-22 |
+| Last Updated | 2026-03-24 |
 
 ## Requirements
 
@@ -27,10 +27,13 @@ Owner gets real-time visibility into wholesale distribution field operations —
 - [x] Phase 5: Admin Expansion — Admin dashboard, store location picker, driver store creation — v0.2
 - [x] Phase 6: Procurement — Suppliers, purchase orders, profit margins — v0.2
 - [x] Phase 7: Stock & Inventory — Stock tracking, low stock alerts, adjustment, movement history — v0.2
+- [x] Phase 8-10: AEGIS Audit Remediation — Security hardening, atomic operations, tests, structural improvements — v0.2.1
+- [x] Phase 11: Driver Stock Loading — Driver loads, shift close, order integration, add-to-load — v0.3
+- [x] Phase 12: Push Notifications — FCM integration, 6 event triggers, notification preferences — v0.3
 
 ### Active (In Progress)
 
-None — milestone v0.2 complete
+None — milestone v0.3 complete
 
 ### Planned (Next)
 
@@ -131,6 +134,7 @@ To be defined via /paul:discuss-milestone
 |-------|------------|-------|
 | Mobile | Flutter (Dart) | Single Android codebase, strong RTL support |
 | Backend | Supabase Free Tier | Postgres + Realtime + Auth + Edge Functions + RLS |
+| Push Notifications | Firebase Cloud Messaging | FCM v1 API via Supabase Edge Function |
 | Local DB | Drift (SQLite) | Offline-first, type-safe, reactive queries |
 | Maps | OpenStreetMap + flutter_map | Free, no API key |
 | Bluetooth | esc_pos_bluetooth / flutter_blue_plus | TBD based on printer model |
@@ -145,4 +149,4 @@ To be defined via /paul:discuss-milestone
 
 ---
 *PROJECT.md — Updated when requirements or context change*
-*Last updated: 2026-03-22 after v0.2 Business Intelligence & Procurement*
+*Last updated: 2026-03-24 after v0.3 Driver Stock Loading & Notifications*

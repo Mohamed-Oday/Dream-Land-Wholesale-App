@@ -1615,6 +1615,60 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'إضافة للتحميل'**
   String get addToLoad;
+
+  /// No description provided for @notifications.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإشعارات'**
+  String get notifications;
+
+  /// No description provided for @notificationPreferences.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفضيلات الإشعارات'**
+  String get notificationPreferences;
+
+  /// No description provided for @notifNewOrder.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلب جديد'**
+  String get notifNewOrder;
+
+  /// No description provided for @notifPayment.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحصيل دفعة'**
+  String get notifPayment;
+
+  /// No description provided for @notifDiscount.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلب خصم'**
+  String get notifDiscount;
+
+  /// No description provided for @notifLowStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخزون منخفض'**
+  String get notifLowStock;
+
+  /// No description provided for @notifShiftOpened.
+  ///
+  /// In ar, this message translates to:
+  /// **'بداية وردية'**
+  String get notifShiftOpened;
+
+  /// No description provided for @notifShiftClosed.
+  ///
+  /// In ar, this message translates to:
+  /// **'نهاية وردية'**
+  String get notifShiftClosed;
+
+  /// No description provided for @notifLoadError.
+  ///
+  /// In ar, this message translates to:
+  /// **'فشل تحميل التفضيلات'**
+  String get notifLoadError;
 }
 
 class _AppLocalizationsDelegate

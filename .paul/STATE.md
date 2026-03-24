@@ -5,30 +5,28 @@
 See: .paul/PROJECT.md (updated 2026-03-21)
 
 **Core value:** Owner gets real-time visibility into wholesale distribution field operations — orders, payments, returnable packaging, and driver locations — replacing paper-based tracking that causes cash leakage and packaging loss.
-**Current focus:** v0.3 Driver Stock Loading & Notifications
+**Current focus:** Awaiting next milestone
 
 ## Current Position
 
-Milestone: v0.3 Driver Stock Loading & Notifications (v0.3.0)
-Phase: 11 of 12 (Driver Stock Loading & Shifts) — In Progress
-Plan: Phase 11 complete
-Status: Phase 11 DONE — ready for Phase 12
-Last activity: 2026-03-24 — Phase 11 complete (2 plans, driver stock loading lifecycle)
+Milestone: Awaiting next milestone
+Phase: None active
+Plan: None
+Status: Milestone v0.3 complete — ready for next
+Last activity: 2026-03-24 — Milestone v0.3 completed
 
 Progress:
 - Milestone v0.1: [██████████] 100% COMPLETE
 - Milestone v0.2: [██████████] 100% COMPLETE
 - Milestone v0.2.1: [██████████] 100% COMPLETE
-- Milestone v0.3: [█████░░░░░] 50%
-  - Phase 11: [██████████] 100% COMPLETE
-  - Phase 12: [░░░░░░░░░░] 0%
+- Milestone v0.3: [██████████] 100% COMPLETE
 
 ## Loop Position
 
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ✓     [Loop complete — Phase 11 DONE]
+  ○        ○        ○     [Milestone complete — ready for next]
 ```
 
 ## Accumulated Context
@@ -71,6 +69,11 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | Enterprise audit on 10-02: Applied 1 must-have + 1 strongly-recommended | 10-02 | Plan strengthened: COALESCE on all SQL aggregates (NULL → 0/[]), type-safe Dart extraction from RPC response |
 | Enterprise audit on 11-01: Applied 2 must-have + 4 strongly-recommended | 11-01 | Plan strengthened: ALTER stock_movements CHECK constraint, explicit driver_load_items RLS (no FK cascade), FOR UPDATE row lock, driver role+business validation, empty items guard, REVOKE FROM PUBLIC pattern |
 | Enterprise audit on 11-02: Applied 2 must-have + 2 strongly-recommended | 11-02 | Plan strengthened: cancel_order reverses quantity_sold + restores stock_on_hand, close_driver_load business_id fetch + returned qty validation + typo fix, add_to_driver_load business_id fetch |
+| Enterprise audit on 12-01: Applied 2 must-have + 4 strongly-recommended | 12-01 | Plan strengthened: Edge Function input validation (business_id + event_type), task reordering (Edge Function before checkpoint), self-notification exclusion, permission denial handling, best-effort token ops, OAuth2 caching strategy |
+| Edge Function over pg_net for FCM | 12-01 | FCM v1 requires OAuth2 JWT signing, impractical in SQL. First Edge Function in project. |
+| Client-triggered notifications | 12-01 | All events originate from user actions at current scale, no server-side triggers needed |
+| Best-effort token operations | 12-01 | Notification failures never degrade core app functionality (try/catch, non-blocking) |
+| Enterprise audit on 12-02: Applied 1 must-have + 3 strongly-recommended | 12-02 | Plan strengthened: deployment ordering (migration before Edge Function), preferences screen error handling, set_updated_at trigger, driver role exclusion from preferences UI |
 
 ### Deferred Issues
 | Issue | Origin | Effort | Revisit |
@@ -91,14 +94,9 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-24
-Stopped at: Phase 11 complete, session paused
-Next action: /paul:plan for Phase 12 (Push Notifications via FCM)
-Resume file: .paul/HANDOFF-2026-03-24-phase11.md
-Resume context:
-- Phase 11 COMPLETE: 2 plans, 2 migrations (020+021), 11 new screens/files, 19 modified files
-- Bug fixes shipped: stale endDate, 5 missing invalidations, tab-switch refresh, load-aware picker, seller rename, FK fix
-- v0.3 milestone 50% complete (Phase 11 done, Phase 12 remaining)
-- Phase 12 NEXT: Firebase Cloud Messaging — free push notifications
+Stopped at: Milestone v0.3 complete
+Next action: /paul:discuss-milestone or /paul:milestone
+Resume file: .paul/MILESTONES.md
 
 ---
 *STATE.md — Updated after every significant action*

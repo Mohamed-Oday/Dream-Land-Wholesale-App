@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/core/utils/order_calculator.dart';
+import 'package:tawzii/core/notifications/notification_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../driver_loads/providers/driver_load_providers.dart';
 import '../../products/providers/product_provider.dart';
@@ -419,6 +420,34 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
       ref.invalidate(orderListProvider);
       ref.invalidate(driverCurrentLoadProvider);
 
+      // Send notifications (fire-and-forget, best-effort)
+      try {
+        final notifService = ref.read(notificationServiceProvider);
+        final userName = ref.read(currentUserProvider)?.name ?? '';
+        final userBusinessId = ref.read(currentUserProvider)?.businessId ?? '';
+        notifService.sendNotification(
+          eventType: 'new_order',
+          data: {'driver': userName, 'store': _selectedStoreName},
+        );
+        if (_hasDiscount) {
+          notifService.sendNotification(
+            eventType: 'discount_pending',
+            data: {
+              'driver': userName,
+              'amount': _discountAmount.toStringAsFixed(2),
+              'store': _selectedStoreName,
+            },
+          );
+        }
+        notifService.checkAndNotifyLowStock(
+          productIds:
+              _lineItems.map((i) => i.productId).toList(),
+          businessId: userBusinessId,
+        );
+      } catch (e) {
+        debugPrint('Order notification failed (non-blocking): $e');
+      }
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -446,6 +475,7 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
+          ref.read(notificationServiceProvider).unregisterToken(Supabase.instance.client);
           ref.read(authServiceProvider).signOut();
           return;
         }

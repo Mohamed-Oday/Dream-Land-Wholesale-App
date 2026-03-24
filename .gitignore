@@ -46,3 +46,12 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# AEGIS audit state (generated)
+.aegis/
+
+# Firebase credentials (sensitive)
+android/app/google-services.json
+
+# Supabase CLI temp files
+supabase/.temp/

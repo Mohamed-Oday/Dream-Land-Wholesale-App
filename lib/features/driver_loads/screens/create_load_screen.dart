@@ -11,6 +11,7 @@ import 'package:tawzii/features/driver/providers/user_management_provider.dart';
 import 'package:tawzii/features/driver_loads/providers/driver_load_providers.dart';
 import 'package:tawzii/features/driver_loads/screens/load_receipt_screen.dart';
 import 'package:tawzii/features/products/providers/product_provider.dart';
+import 'package:tawzii/core/notifications/notification_provider.dart';
 
 class CreateLoadScreen extends ConsumerStatefulWidget {
   const CreateLoadScreen({super.key});
@@ -342,6 +343,17 @@ class _CreateLoadScreenState extends ConsumerState<CreateLoadScreen> {
 
       ref.invalidate(driverLoadListProvider);
       ref.invalidate(productListProvider);
+
+      // Send notification (fire-and-forget, best-effort)
+      try {
+        final notifService = ref.read(notificationServiceProvider);
+        notifService.sendNotification(
+          eventType: 'shift_opened',
+          data: {'driver': _selectedDriverName},
+        );
+      } catch (e) {
+        debugPrint('Shift opened notification failed (non-blocking): $e');
+      }
 
       // Build load data for receipt
       final loadData = {

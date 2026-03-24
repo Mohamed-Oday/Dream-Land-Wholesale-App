@@ -780,4 +780,31 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get addToLoad => 'إضافة للتحميل';
+
+  @override
+  String get notifications => 'الإشعارات';
+
+  @override
+  String get notificationPreferences => 'تفضيلات الإشعارات';
+
+  @override
+  String get notifNewOrder => 'طلب جديد';
+
+  @override
+  String get notifPayment => 'تحصيل دفعة';
+
+  @override
+  String get notifDiscount => 'طلب خصم';
+
+  @override
+  String get notifLowStock => 'مخزون منخفض';
+
+  @override
+  String get notifShiftOpened => 'بداية وردية';
+
+  @override
+  String get notifShiftClosed => 'نهاية وردية';
+
+  @override
+  String get notifLoadError => 'فشل تحميل التفضيلات';
 }

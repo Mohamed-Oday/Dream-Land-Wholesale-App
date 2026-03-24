@@ -10,6 +10,7 @@ import 'package:tawzii/features/auth/providers/auth_provider.dart';
 import 'package:tawzii/features/driver_loads/providers/driver_load_providers.dart';
 import 'package:tawzii/features/driver_loads/screens/return_receipt_screen.dart';
 import 'package:tawzii/features/products/providers/product_provider.dart';
+import 'package:tawzii/core/notifications/notification_provider.dart';
 
 class ShiftCloseScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> loadData;
@@ -98,6 +99,17 @@ class _ShiftCloseScreenState extends ConsumerState<ShiftCloseScreen> {
       ref.invalidate(driverCurrentLoadProvider);
       ref.invalidate(driverLoadListProvider);
       ref.invalidate(productListProvider);
+
+      // Send notification (fire-and-forget, best-effort)
+      try {
+        final notifService = ref.read(notificationServiceProvider);
+        notifService.sendNotification(
+          eventType: 'shift_closed',
+          data: {'driver': currentUser?.name ?? ''},
+        );
+      } catch (e) {
+        debugPrint('Shift closed notification failed (non-blocking): $e');
+      }
 
       // Build receipt data
       final receiptData = {

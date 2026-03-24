@@ -782,4 +782,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addToLoad => 'Add to Load';
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get notificationPreferences => 'Notification Preferences';
+
+  @override
+  String get notifNewOrder => 'New Order';
+
+  @override
+  String get notifPayment => 'Payment Collected';
+
+  @override
+  String get notifDiscount => 'Discount Request';
+
+  @override
+  String get notifLowStock => 'Low Stock';
+
+  @override
+  String get notifShiftOpened => 'Shift Opened';
+
+  @override
+  String get notifShiftClosed => 'Shift Closed';
+
+  @override
+  String get notifLoadError => 'Failed to load preferences';
 }
