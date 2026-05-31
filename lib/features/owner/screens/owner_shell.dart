@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/features/auth/screens/settings_placeholder.dart';
-import 'package:tawzii/features/dashboard/providers/dashboard_provider.dart';
 import 'package:tawzii/features/dashboard/screens/owner_dashboard_screen.dart';
-import 'package:tawzii/features/orders/providers/order_provider.dart';
 import 'package:tawzii/features/driver/screens/user_management_screen.dart';
 import 'package:tawzii/features/location/screens/driver_map_screen.dart';
+import 'package:tawzii/features/orders/screens/order_list_screen.dart';
 import 'package:tawzii/features/stores/screens/store_list_screen.dart';
 
 class OwnerShell extends ConsumerStatefulWidget {
@@ -25,6 +24,7 @@ class _OwnerShellState extends ConsumerState<OwnerShell> {
 
     final screens = [
       const OwnerDashboardScreen(),
+      const OrderListScreen(isOwner: true),
       const DriverMapScreen(),
       const StoreListScreen(),
       const UserManagementScreen(isOwner: true),
@@ -32,20 +32,25 @@ class _OwnerShellState extends ConsumerState<OwnerShell> {
     ];
 
     return Scaffold(
-      body: screens[_selectedIndex],
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: screens,
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
           setState(() => _selectedIndex = index);
-          // Refresh data for the tab being switched to
-          ref.invalidate(dashboardSummaryProvider);
-          ref.invalidate(allOrdersProvider);
         },
         destinations: [
           NavigationDestination(
             icon: const Icon(Icons.dashboard_outlined),
             selectedIcon: const Icon(Icons.dashboard),
             label: l10n.dashboard,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.receipt_long_outlined),
+            selectedIcon: const Icon(Icons.receipt_long),
+            label: l10n.orders,
           ),
           NavigationDestination(
             icon: const Icon(Icons.map_outlined),

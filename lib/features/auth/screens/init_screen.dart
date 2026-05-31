@@ -82,14 +82,14 @@ class _InitScreenState extends ConsumerState<InitScreen> {
       debugPrint('Auth setup error: ${e.message}');
       if (mounted) {
         setState(() {
-          _errorMessage = 'خطأ في إنشاء الحساب: ${e.message}';
+          _errorMessage = 'فشل إنشاء الحساب — اسم المستخدم قد يكون مستخدماً';
         });
       }
     } catch (e) {
       debugPrint('Setup error: $e');
       if (mounted) {
         setState(() {
-          _errorMessage = 'حدث خطأ: $e';
+          _errorMessage = 'حدث خطأ أثناء الإعداد. تأكد من الاتصال بالإنترنت.';
         });
       }
     } finally {

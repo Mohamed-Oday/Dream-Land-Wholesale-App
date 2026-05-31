@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Blocking screen shown when app version is below min_version from remote_config.
 ///
@@ -12,6 +14,32 @@ class ForceUpdateScreen extends StatelessWidget {
     required this.minVersion,
     required this.downloadUrl,
   });
+
+  Future<void> _openUrl(BuildContext context) async {
+    final uri = Uri.tryParse(downloadUrl);
+    if (uri == null) return;
+
+    try {
+      final canLaunch = await canLaunchUrl(uri);
+      if (canLaunch) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        await Clipboard.setData(ClipboardData(text: downloadUrl));
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم نسخ الرابط. افتح المتصفح والصقه.')),
+          );
+        }
+      }
+    } catch (_) {
+      await Clipboard.setData(ClipboardData(text: downloadUrl));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم نسخ الرابط. افتح المتصفح والصقه.')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +76,15 @@ class ForceUpdateScreen extends StatelessWidget {
                 ),
                 if (downloadUrl.isNotEmpty) ...[
                   const SizedBox(height: 24),
+                  FilledButton.icon(
+                    onPressed: () => _openUrl(context),
+                    icon: const Icon(Icons.open_in_browser),
+                    label: const Text('تحديث التطبيق'),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 52),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   Text(
                     'رابط التحميل:',
                     style: theme.textTheme.titleSmall,

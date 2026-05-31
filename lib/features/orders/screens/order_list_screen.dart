@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/core/theme/app_colors.dart';
 import 'package:tawzii/core/widgets/date_range_filter_bar.dart';
+import '../../auth/screens/settings_placeholder.dart';
 import '../providers/order_provider.dart';
 import 'create_order_screen.dart';
 import 'receipt_preview_screen.dart';
@@ -24,21 +25,35 @@ class OrderListScreen extends ConsumerWidget {
         ref.watch(isOwner ? allOrdersProvider : orderListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.orders)),
-      floatingActionButton: isOwner
-          ? null
-          : FloatingActionButton(
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const CreateOrderScreen(),
+      appBar: AppBar(
+        title: Text(l10n.orders),
+        actions: !isOwner
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.settings_outlined),
+                  tooltip: l10n.settings,
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const SettingsPlaceholder(roleName: 'بائع'),
+                    ),
                   ),
-                );
-                ref.invalidate(orderListProvider);
-              },
-              child: const Icon(Icons.add),
+                ),
+              ]
+            : null,
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const CreateOrderScreen(),
             ),
+          );
+          ref.invalidate(isOwner ? allOrdersProvider : orderListProvider);
+        },
+        child: const Icon(Icons.add),
+      ),
       body: Column(
         children: [
           const DateRangeFilterBar(),

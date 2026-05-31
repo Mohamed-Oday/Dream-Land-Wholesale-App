@@ -2,15 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/features/auth/providers/auth_provider.dart';
-import 'package:tawzii/features/auth/screens/settings_placeholder.dart';
 import 'package:tawzii/features/location/providers/location_provider.dart';
-import 'package:tawzii/features/driver_loads/providers/driver_load_providers.dart';
 import 'package:tawzii/features/driver_loads/screens/driver_stock_screen.dart';
-import 'package:tawzii/features/orders/providers/order_provider.dart';
 import 'package:tawzii/features/orders/screens/order_list_screen.dart';
 import 'package:tawzii/features/packages/screens/package_list_screen.dart';
 import 'package:tawzii/features/payments/screens/payment_list_screen.dart';
-import 'package:tawzii/features/products/providers/product_provider.dart';
 import 'package:tawzii/features/stores/screens/store_list_screen.dart';
 
 class DriverShell extends ConsumerStatefulWidget {
@@ -40,8 +36,8 @@ class _DriverShellState extends ConsumerState<DriverShell> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(l10n.locationPermissionDenied)),
           );
+          setState(() => _toggling = false);
         }
-        setState(() => _toggling = false);
         return;
       }
 
@@ -70,7 +66,7 @@ class _DriverShellState extends ConsumerState<DriverShell> {
       ref.read(isOnDutyProvider.notifier).state = false;
     }
 
-    setState(() => _toggling = false);
+    if (mounted) setState(() => _toggling = false);
   }
 
   @override
@@ -95,13 +91,17 @@ class _DriverShellState extends ConsumerState<DriverShell> {
       const PackageListScreen(),
       const PaymentListScreen(isOwner: false),
       const StoreListScreen(),
-      const SettingsPlaceholder(roleName: 'بائع'),
     ];
 
     return Scaffold(
       body: Column(
         children: [
-          Expanded(child: screens[_selectedIndex]),
+          Expanded(
+            child: IndexedStack(
+              index: _selectedIndex,
+              children: screens,
+            ),
+          ),
           // On-duty toggle banner
           Material(
             color: isOnDuty
@@ -162,10 +162,6 @@ class _DriverShellState extends ConsumerState<DriverShell> {
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
           setState(() => _selectedIndex = index);
-          // Refresh data for the tab being switched to
-          ref.invalidate(orderListProvider);
-          ref.invalidate(driverCurrentLoadProvider);
-          ref.invalidate(productListProvider);
         },
         destinations: [
           NavigationDestination(
@@ -192,11 +188,6 @@ class _DriverShellState extends ConsumerState<DriverShell> {
             icon: const Icon(Icons.store_outlined),
             selectedIcon: const Icon(Icons.store),
             label: l10n.stores,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.settings_outlined),
-            selectedIcon: const Icon(Icons.settings),
-            label: l10n.settings,
           ),
         ],
       ),

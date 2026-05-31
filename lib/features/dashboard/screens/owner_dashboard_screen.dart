@@ -43,41 +43,75 @@ class OwnerDashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(l10n.dashboard),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.local_shipping),
-            tooltip: l10n.driverLoads,
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const LoadListScreen()),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.payments),
-            tooltip: l10n.payments,
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const PaymentListScreen(isOwner: true),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            tooltip: 'إجراءات سريعة',
+            onSelected: (value) {
+              switch (value) {
+                case 'loads':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoadListScreen()),
+                  );
+                case 'payments':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PaymentListScreen(isOwner: true),
+                    ),
+                  );
+                case 'orders':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const OrderListScreen(isOwner: true),
+                    ),
+                  );
+                case 'products':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ProductListScreen()),
+                  );
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'loads',
+                child: ListTile(
+                  leading: const Icon(Icons.local_shipping),
+                  title: Text(l10n.driverLoads),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
               ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.receipt_long),
-            tooltip: l10n.orders,
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const OrderListScreen(isOwner: true),
+              PopupMenuItem(
+                value: 'payments',
+                child: ListTile(
+                  leading: const Icon(Icons.payments),
+                  title: Text(l10n.payments),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
               ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.inventory_2),
-            tooltip: l10n.products,
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ProductListScreen()),
-            ),
+              PopupMenuItem(
+                value: 'orders',
+                child: ListTile(
+                  leading: const Icon(Icons.receipt_long),
+                  title: Text(l10n.orders),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
+              ),
+              PopupMenuItem(
+                value: 'products',
+                child: ListTile(
+                  leading: const Icon(Icons.inventory_2),
+                  title: Text(l10n.products),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
+              ),
+            ],
           ),
         ],
       ),

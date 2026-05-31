@@ -45,33 +45,41 @@ class _NotificationPreferencesScreenState
       final rows = List<Map<String, dynamic>>.from(result as List);
       if (rows.isNotEmpty) {
         final prefs = rows.first;
-        setState(() {
-          _newOrder = prefs['new_order'] as bool? ?? true;
-          _paymentCollected = prefs['payment_collected'] as bool? ?? true;
-          _discountPending = prefs['discount_pending'] as bool? ?? true;
-          _lowStock = prefs['low_stock'] as bool? ?? true;
-          _shiftOpened = prefs['shift_opened'] as bool? ?? true;
-          _shiftClosed = prefs['shift_closed'] as bool? ?? true;
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _newOrder = prefs['new_order'] as bool? ?? true;
+            _paymentCollected = prefs['payment_collected'] as bool? ?? true;
+            _discountPending = prefs['discount_pending'] as bool? ?? true;
+            _lowStock = prefs['low_stock'] as bool? ?? true;
+            _shiftOpened = prefs['shift_opened'] as bool? ?? true;
+            _shiftClosed = prefs['shift_closed'] as bool? ?? true;
+            _isLoading = false;
+          });
+        }
       } else {
-        setState(() => _isLoading = false);
+        if (mounted) setState(() => _isLoading = false);
       }
     } on SocketException catch (_) {
-      setState(() {
-        _isLoading = false;
-        _hasError = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+      }
     } on PostgrestException catch (_) {
-      setState(() {
-        _isLoading = false;
-        _hasError = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+      }
     } catch (_) {
-      setState(() {
-        _isLoading = false;
-        _hasError = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+      }
     }
   }
 

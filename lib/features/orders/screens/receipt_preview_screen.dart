@@ -7,6 +7,7 @@ import 'package:tawzii/core/theme/app_colors.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../printing/providers/printer_provider.dart';
 import '../../products/providers/product_provider.dart';
+import '../../packages/providers/package_provider.dart';
 import '../providers/order_provider.dart';
 
 class ReceiptPreviewScreen extends ConsumerWidget {
@@ -102,6 +103,39 @@ class _ReceiptScaffoldState extends ConsumerState<_ReceiptScaffold> {
   final _receiptKey = GlobalKey();
   bool _isPrinting = false;
   bool _isCancelling = false;
+  int? _packageBalance;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPackageBalance();
+  }
+
+  Future<void> _loadPackageBalance() async {
+    final storeId = widget.order['store_id'] as String?;
+    if (storeId == null) return;
+    final repo = ref.read(packageRepositoryProvider);
+    if (repo == null) return;
+    try {
+      final balances = await repo.getBalancesByStore(storeId);
+      final currentBalance = balances.fold<int>(
+        0,
+        (sum, b) => sum + ((b['balance'] as num?)?.toInt() ?? 0),
+      );
+      // Packages given in this order = sum of all line quantities
+      final lines = widget.order['order_lines'] as List<dynamic>? ?? [];
+      final packagesInOrder = lines.fold<int>(
+        0,
+        (sum, line) =>
+            sum + ((line['quantity'] as num?)?.toInt() ?? 0),
+      );
+      if (mounted) {
+        setState(() => _packageBalance = currentBalance - packagesInOrder);
+      }
+    } catch (e) {
+      debugPrint('Package balance fetch error: $e');
+    }
+  }
 
   Future<void> _cancelOrder() async {
     final l10n = widget.l10n;
@@ -227,7 +261,11 @@ class _ReceiptScaffoldState extends ConsumerState<_ReceiptScaffold> {
         child: RepaintBoundary(
           key: _receiptKey,
           child: _ReceiptCard(
-              order: widget.order, l10n: l10n, theme: theme),
+            order: widget.order,
+            l10n: l10n,
+            theme: theme,
+            packageBalance: _packageBalance,
+          ),
         ),
       ),
       bottomNavigationBar: SafeArea(
@@ -336,11 +374,13 @@ class _ReceiptCard extends StatelessWidget {
   final Map<String, dynamic> order;
   final AppLocalizations l10n;
   final ThemeData theme;
+  final int? packageBalance;
 
   const _ReceiptCard({
     required this.order,
     required this.l10n,
     required this.theme,
+    this.packageBalance,
   });
 
   @override
@@ -422,134 +462,146 @@ class _ReceiptCard extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // Table header
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 4,
-                    child: Text(l10n.products,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.bold)),
-                  ),
-                  const SizedBox(width: 6),
-                  _headerCell('سعر', flex: 2),
-                  const SizedBox(width: 6),
-                  _headerCell('و/ع', flex: 1),
-                  const SizedBox(width: 6),
-                  _headerCell('عبوات', flex: 1),
-                  const SizedBox(width: 6),
-                  _headerCell('وحدات', flex: 2),
-                  const SizedBox(width: 6),
-                  _headerCell(l10n.lineTotal, flex: 3),
-                ],
-              ),
-            ),
-
-            // Line items
-            ...lines.map((line) {
-              final lineMap = line as Map<String, dynamic>;
-              final product = lineMap['products'] as Map<String, dynamic>?;
-              final productName = product?['name'] ?? '';
-              final qty = (lineMap['quantity'] as num?)?.toInt() ?? 0;
-              final orderLineUnitPrice =
-                  (lineMap['unit_price'] as num?)?.toDouble() ?? 0;
-              final lt = (lineMap['line_total'] as num?)?.toDouble() ??
-                  (orderLineUnitPrice * qty);
-
-              final piecePrice =
-                  (product?['unit_price'] as num?)?.toDouble();
-              final upkg =
-                  (product?['units_per_package'] as num?)?.toInt();
-              final totalPieces =
-                  upkg != null ? qty * upkg : null;
-
-              final numStyle = theme.textTheme.bodyMedium?.copyWith(
-                fontFeatures: [const FontFeature.tabularFigures()],
-              );
-
-              return Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: theme.colorScheme.outlineVariant
-                          .withValues(alpha: 0.5),
-                    ),
-                  ),
-                ),
-                child: Row(
+            // Scrollable table
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: 360,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Product name
-                    Expanded(
-                      flex: 4,
-                      child: Text(
-                        productName,
-                        style: numStyle,
+                    // Table header
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 4,
+                            child: Text(l10n.products,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.bold)),
+                          ),
+                          const SizedBox(width: 6),
+                          _headerCell('سعر', flex: 2),
+                          const SizedBox(width: 6),
+                          _headerCell('و/ع', flex: 1),
+                          const SizedBox(width: 6),
+                          _headerCell('عبوات', flex: 1),
+                          const SizedBox(width: 6),
+                          _headerCell('وحدات', flex: 2),
+                          const SizedBox(width: 6),
+                          _headerCell(l10n.lineTotal, flex: 3),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    // Piece price
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        piecePrice != null
-                            ? piecePrice.toStringAsFixed(0)
-                            : orderLineUnitPrice.toStringAsFixed(0),
-                        textAlign: TextAlign.center,
-                        style: numStyle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    // Units/package
-                    Expanded(
-                      flex: 1,
-                      child: Text(
-                        upkg?.toString() ?? '-',
-                        textAlign: TextAlign.center,
-                        style: numStyle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    // Qty (packages)
-                    Expanded(
-                      flex: 1,
-                      child: Text(
-                        '$qty',
-                        textAlign: TextAlign.center,
-                        style: numStyle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    // Total pieces
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        totalPieces?.toString() ?? '$qty',
-                        textAlign: TextAlign.center,
-                        style: numStyle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    // Line total
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        lt.toStringAsFixed(0),
-                        textAlign: TextAlign.end,
-                        style: numStyle,
-                      ),
-                    ),
+
+                    // Line items
+                    ...lines.map((line) {
+                      final lineMap = line as Map<String, dynamic>;
+                      final product = lineMap['products'] as Map<String, dynamic>?;
+                      final productName = product?['name'] ?? '';
+                      final qty = (lineMap['quantity'] as num?)?.toInt() ?? 0;
+                      final orderLineUnitPrice =
+                          (lineMap['unit_price'] as num?)?.toDouble() ?? 0;
+                      final lt = (lineMap['line_total'] as num?)?.toDouble() ??
+                          (orderLineUnitPrice * qty);
+
+                      final piecePrice =
+                          (product?['unit_price'] as num?)?.toDouble();
+                      final upkg =
+                          (product?['units_per_package'] as num?)?.toInt();
+                      final totalPieces =
+                          upkg != null ? qty * upkg : null;
+
+                      final numStyle = theme.textTheme.bodyMedium?.copyWith(
+                        fontFeatures: [const FontFeature.tabularFigures()],
+                      );
+
+                      return Container(
+                        padding:
+                            const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: theme.colorScheme.outlineVariant
+                                  .withValues(alpha: 0.5),
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            // Product name
+                            Expanded(
+                              flex: 4,
+                              child: Text(
+                                productName,
+                                style: numStyle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            // Piece price
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                piecePrice != null
+                                    ? piecePrice.toStringAsFixed(0)
+                                    : orderLineUnitPrice.toStringAsFixed(0),
+                                textAlign: TextAlign.center,
+                                style: numStyle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            // Units/package
+                            Expanded(
+                              flex: 1,
+                              child: Text(
+                                upkg?.toString() ?? '-',
+                                textAlign: TextAlign.center,
+                                style: numStyle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            // Qty (packages)
+                            Expanded(
+                              flex: 1,
+                              child: Text(
+                                '$qty',
+                                textAlign: TextAlign.center,
+                                style: numStyle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            // Total pieces
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                totalPieces?.toString() ?? '$qty',
+                                textAlign: TextAlign.center,
+                                style: numStyle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            // Line total
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                lt.toStringAsFixed(0),
+                                textAlign: TextAlign.end,
+                                style: numStyle,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
                   ],
                 ),
-              );
-            }),
+              ),
+            ),
 
             const SizedBox(height: 16),
 
@@ -589,6 +641,47 @@ class _ReceiptCard extends StatelessWidget {
                 isGrandTotal: true,
               ),
             ),
+            if (packageBalance != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.tertiaryContainer
+                      .withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.inventory_2,
+                        size: 18, color: theme.colorScheme.tertiary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'العبوات المتبقية',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '$packageBalance',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.tertiary,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'عبوة',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),

@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -28,6 +26,7 @@ class DriverStockScreen extends ConsumerWidget {
         child: loadAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
             children: [
               SizedBox(
                 height: MediaQuery.of(context).size.height * 0.7,
@@ -54,6 +53,7 @@ class DriverStockScreen extends ConsumerWidget {
           data: (load) {
             if (load == null) {
               return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 children: [
                   SizedBox(
                     height: MediaQuery.of(context).size.height * 0.7,
@@ -164,7 +164,7 @@ class DriverStockScreen extends ConsumerWidget {
                         final remaining = loaded - sold;
 
                         final numStyle =
-                            theme.textTheme.bodyMedium?.copyWith(
+                            theme.textTheme.bodyLarge?.copyWith(
                           fontFeatures: [
                             const FontFeature.tabularFigures()
                           ],

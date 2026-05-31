@@ -276,8 +276,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmCollection => 'Confirm Collection';
 
   @override
-  String get confirmCollectionMessage =>
-      'Do you want to record this collection?';
+  String get confirmCollectionMessage => 'Do you want to record this collection?';
 
   @override
   String get packagesGiven => 'Packages Given';
@@ -289,8 +288,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get currentPackageBalance => 'Current Package Balance';
 
   @override
-  String get overCollectionWarning =>
-      'Collected amount exceeds current balance';
+  String get overCollectionWarning => 'Collected amount exceeds current balance';
 
   @override
   String get printerSetup => 'Printer Setup';
@@ -314,8 +312,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get printerDisconnected => 'Printer Not Connected';
 
   @override
-  String get noPrintersFound =>
-      'No printers found\nMake sure the printer is on and paired';
+  String get noPrintersFound => 'No printers found\nMake sure the printer is on and paired';
 
   @override
   String get printing => 'Printing...';
@@ -368,8 +365,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get locationPermissionDenied =>
-      'Location permission and GPS must be enabled';
+  String get locationPermissionDenied => 'Location permission and GPS must be enabled';
 
   @override
   String get tapToToggleDuty => 'Tap to toggle duty status';
@@ -408,8 +404,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmApproveDiscount => 'Approve this discount?';
 
   @override
-  String get confirmRejectDiscount =>
-      'Reject this discount? Total will be adjusted.';
+  String get confirmRejectDiscount => 'Reject this discount? Total will be adjusted.';
 
   @override
   String get discountExceedsSubtotal => 'Discount cannot exceed subtotal';
@@ -471,8 +466,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activateUser => 'Activate User';
 
   @override
-  String get confirmDeactivate =>
-      'Deactivate this user? They will be hidden from active lists.';
+  String get confirmDeactivate => 'Deactivate this user? They will be hidden from active lists.';
 
   @override
   String get active => 'Active';
@@ -490,15 +484,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get usernameNoSpaces => 'No spaces';
 
   @override
-  String get discountPendingPrintBlocked =>
-      'Cannot print while discount is pending approval';
+  String get discountPendingPrintBlocked => 'Cannot print while discount is pending approval';
 
   @override
   String get cancelOrder => 'Cancel Order';
 
   @override
-  String get cancelOrderConfirm =>
-      'Are you sure you want to cancel this order? The balance will be reversed.';
+  String get cancelOrderConfirm => 'Are you sure you want to cancel this order? The balance will be reversed.';
 
   @override
   String get orderCancelled => 'Order cancelled';

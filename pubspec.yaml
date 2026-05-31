@@ -49,6 +49,12 @@ dependencies:
   # Environment
   flutter_dotenv: ^5.2.1
 
+  # URL Launcher
+  url_launcher: ^6.3.1
+
+  # Local Preferences
+  shared_preferences: ^2.5.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

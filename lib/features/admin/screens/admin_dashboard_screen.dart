@@ -580,7 +580,7 @@ class _OrderTile extends StatelessWidget {
               statusLabel,
               style: TextStyle(
                 color: statusFg,
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
             ),

@@ -312,8 +312,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get printerDisconnected => 'الطابعة غير متصلة';
 
   @override
-  String get noPrintersFound =>
-      'لم يتم العثور على طابعات\nتأكد من تشغيل الطابعة وإقرانها';
+  String get noPrintersFound => 'لم يتم العثور على طابعات\nتأكد من تشغيل الطابعة وإقرانها';
 
   @override
   String get printing => 'جاري الطباعة...';
@@ -405,12 +404,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get confirmApproveDiscount => 'هل تريد قبول هذا الخصم؟';
 
   @override
-  String get confirmRejectDiscount =>
-      'هل تريد رفض هذا الخصم؟ سيتم تعديل الإجمالي.';
+  String get confirmRejectDiscount => 'هل تريد رفض هذا الخصم؟ سيتم تعديل الإجمالي.';
 
   @override
-  String get discountExceedsSubtotal =>
-      'الخصم لا يمكن أن يتجاوز المجموع الفرعي';
+  String get discountExceedsSubtotal => 'الخصم لا يمكن أن يتجاوز المجموع الفرعي';
 
   @override
   String get discountAlreadyProcessed => 'الخصم تمت معالجته مسبقاً';
@@ -469,8 +466,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get activateUser => 'تفعيل المستخدم';
 
   @override
-  String get confirmDeactivate =>
-      'هل تريد إيقاف هذا المستخدم؟ سيتم إخفاؤه من القوائم النشطة.';
+  String get confirmDeactivate => 'هل تريد إيقاف هذا المستخدم؟ سيتم إخفاؤه من القوائم النشطة.';
 
   @override
   String get active => 'نشط';
@@ -488,15 +484,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get usernameNoSpaces => 'بدون مسافات';
 
   @override
-  String get discountPendingPrintBlocked =>
-      'لا يمكن الطباعة أثناء انتظار الموافقة على الخصم';
+  String get discountPendingPrintBlocked => 'لا يمكن الطباعة أثناء انتظار الموافقة على الخصم';
 
   @override
   String get cancelOrder => 'إلغاء الطلب';
 
   @override
-  String get cancelOrderConfirm =>
-      'هل أنت متأكد من إلغاء هذا الطلب؟ سيتم عكس الرصيد.';
+  String get cancelOrderConfirm => 'هل أنت متأكد من إلغاء هذا الطلب؟ سيتم عكس الرصيد.';
 
   @override
   String get orderCancelled => 'تم إلغاء الطلب';

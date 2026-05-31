@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
@@ -28,227 +29,190 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
   String _selectedStoreName = '';
   final List<LineItem> _lineItems = [];
   final _discountController = TextEditingController();
+  final Map<String, TextEditingController> _qtyControllers = {};
   bool _isLoading = false;
   bool _showDiscount = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadLastStore();
+  }
+
+  @override
+  void dispose() {
+    _discountController.dispose();
+    for (final c in _qtyControllers.values) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _loadLastStore() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastStoreId = prefs.getString('last_store_id');
+    final lastStoreName = prefs.getString('last_store_name');
+    if (lastStoreId != null && lastStoreName != null && mounted) {
+      setState(() {
+        _selectedStoreId = lastStoreId;
+        _selectedStoreName = lastStoreName;
+      });
+    }
+  }
+
+  Future<void> _saveLastStore(String storeId, String storeName) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('last_store_id', storeId);
+    await prefs.setString('last_store_name', storeName);
+  }
+
   double get _subtotal => calculateSubtotal(_lineItems);
-
   double get _taxPercentage => 0;
-
   double get _taxAmount => calculateTax(_subtotal, _taxPercentage);
-
   double get _discountAmount => parseDiscount(_discountController.text);
-
   double get _total => calculateTotal(_subtotal, _taxAmount, _discountAmount);
-
   bool get _hasDiscount => _discountAmount > 0;
-
   bool get _canSubmit =>
       _selectedStoreId != null && _lineItems.isNotEmpty && !_isLoading;
+
+  int _getQuantity(String productId) {
+    for (final item in _lineItems) {
+      if (item.productId == productId) return item.quantity;
+    }
+    return 0;
+  }
+
+  void _setQuantity(
+    String productId,
+    int qty,
+    int maxStock,
+    Map<String, dynamic> product,
+  ) {
+    final clamped = qty.clamp(0, maxStock);
+    setState(() {
+      if (clamped > 0) {
+        final existingIndex =
+            _lineItems.indexWhere((item) => item.productId == productId);
+        if (existingIndex >= 0) {
+          _lineItems[existingIndex].quantity = clamped;
+        } else {
+          _lineItems.add(LineItem(
+            productId: productId,
+            productName: product['name'] ?? '',
+            unitPrice: (product['unit_price'] as num).toDouble(),
+            quantity: clamped,
+            unitsPerPackage: product['units_per_package'] as int?,
+            hasReturnablePackaging:
+                product['has_returnable_packaging'] == true,
+            stockOnHand: maxStock,
+          ));
+        }
+      } else {
+        _lineItems.removeWhere((item) => item.productId == productId);
+      }
+      _qtyControllers[productId]?.text = '$clamped';
+    });
+  }
+
+  void _removeItem(int index) {
+    final productId = _lineItems[index].productId;
+    setState(() {
+      _lineItems.removeAt(index);
+      _qtyControllers[productId]?.text = '0';
+    });
+  }
 
   Future<Map<String, dynamic>?> _showStorePicker(
       BuildContext context, List<Map<String, dynamic>> stores) {
     return showModalBottomSheet<Map<String, dynamic>>(
       context: context,
-      backgroundColor: Colors.white,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (ctx) {
         final l10n = AppLocalizations.of(context)!;
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Theme.of(ctx).colorScheme.onSurfaceVariant
-                    .withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
+        final theme = Theme.of(ctx);
+        final searchController = TextEditingController();
+
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            final filtered = searchController.text.isEmpty
+                ? stores
+                : stores.where((s) {
+                    final name = (s['name'] as String).toLowerCase();
+                    return name
+                        .contains(searchController.text.toLowerCase());
+                  }).toList();
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(l10n.selectStore,
-                  style: Theme.of(ctx).textTheme.titleMedium),
-            ),
-            const Divider(),
-            ...stores.map((s) => ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor:
-                        Theme.of(ctx).colorScheme.primaryContainer,
-                    child: Icon(Icons.store,
-                        color: Theme.of(ctx)
-                            .colorScheme
-                            .onPrimaryContainer),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 12),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.onSurfaceVariant
+                          .withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                  title: Text(s['name'] ?? ''),
-                  subtitle: (s['address'] ?? '').toString().isNotEmpty
-                      ? Text(s['address'] as String)
-                      : null,
-                  onTap: () => Navigator.pop(ctx, s),
-                )),
-            const SizedBox(height: 16),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showProductPicker() {
-    final l10n = AppLocalizations.of(context)!;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.6,
-          minChildSize: 0.3,
-          maxChildSize: 0.85,
-          expand: false,
-          builder: (_, scrollController) {
-            return Consumer(
-              builder: (ctx, ref, _) {
-                final productsAsync = ref.watch(productListProvider);
-                final loadAsync = ref.watch(driverCurrentLoadProvider);
-
-                // Build load inventory map: product_id → remaining qty
-                final Map<String, int> loadStock = {};
-                final bool hasActiveLoad;
-                final loadData = loadAsync.valueOrNull;
-                if (loadData != null) {
-                  hasActiveLoad = true;
-                  final items = loadData['items'] as List<dynamic>? ?? [];
-                  for (final item in items) {
-                    final m = item as Map<String, dynamic>;
-                    final pid = m['product_id'] as String;
-                    final loaded = (m['quantity_loaded'] as num?)?.toInt() ?? 0;
-                    final sold = (m['quantity_sold'] as num?)?.toInt() ?? 0;
-                    loadStock[pid] = loaded - sold;
-                  }
-                } else {
-                  hasActiveLoad = false;
-                }
-
-                return Column(
-                  children: [
-                    // Handle bar
-                    Container(
-                      margin: const EdgeInsets.symmetric(vertical: 12),
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Theme.of(ctx).colorScheme.onSurfaceVariant
-                            .withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        l10n.addProduct,
-                        style: Theme.of(ctx).textTheme.titleMedium,
-                      ),
-                    ),
-                    const Divider(),
-                    Expanded(
-                      child: productsAsync.when(
-                        loading: () =>
-                            const Center(child: CircularProgressIndicator()),
-                        error: (e, _) => Center(child: Text(l10n.error)),
-                        data: (products) => ListView.builder(
-                          controller: scrollController,
-                          itemCount: products.length,
-                          itemBuilder: (_, index) {
-                            final p = products[index];
-                            final productId = p['id'] as String;
-                            final warehouseStock = (p['stock_on_hand'] as num?)?.toInt() ?? 0;
-
-                            // If driver has active load, use load remaining as available stock
-                            final int availableStock;
-                            final bool notInLoad;
-                            if (hasActiveLoad) {
-                              final loadRemaining = loadStock[productId];
-                              if (loadRemaining == null) {
-                                // Product not in driver's load — disable it
-                                availableStock = 0;
-                                notInLoad = true;
-                              } else {
-                                availableStock = loadRemaining;
-                                notInLoad = false;
-                              }
-                            } else {
-                              // No active load — use warehouse stock (backwards compatible)
-                              availableStock = warehouseStock;
-                              notInLoad = false;
-                            }
-
-                            final isDisabled = availableStock <= 0 || notInLoad;
-
-                            return ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: isDisabled
-                                    ? Theme.of(ctx).colorScheme.errorContainer
-                                    : Theme.of(ctx).colorScheme.primaryContainer,
-                                child: Icon(Icons.shopping_bag,
-                                    color: isDisabled
-                                        ? Theme.of(ctx).colorScheme.onErrorContainer
-                                        : Theme.of(ctx).colorScheme.onPrimaryContainer),
-                              ),
-                              title: Text(
-                                p['name'] ?? '',
-                                style: isDisabled
-                                    ? TextStyle(color: Theme.of(ctx).colorScheme.onSurfaceVariant)
-                                    : null,
-                              ),
-                              subtitle: Text(() {
-                                final price = (p['unit_price'] as num).toDouble();
-                                final upkg = p['units_per_package'] as int?;
-                                final stockLabel = hasActiveLoad
-                                    ? (notInLoad ? 'ليس في التحميل' : 'المتبقي: $availableStock')
-                                    : 'المخزون: $warehouseStock';
-                                if (upkg != null) {
-                                  return '${(price * upkg).toStringAsFixed(2)} د.ج/عبوة · $stockLabel';
-                                }
-                                return '${price.toStringAsFixed(2)} د.ج · $stockLabel';
-                              }()),
-                              trailing: notInLoad
-                                  ? Text('غير محمّل',
-                                      style: TextStyle(
-                                        color: Theme.of(ctx).colorScheme.onSurfaceVariant,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 11,
-                                      ))
-                                  : availableStock <= 0
-                                      ? Text('نفذ',
-                                          style: TextStyle(
-                                            color: Theme.of(ctx).colorScheme.error,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 12,
-                                          ))
-                                      : null,
-                              enabled: !isDisabled,
-                              onTap: isDisabled
-                                  ? null
-                                  : () {
-                                      // Override stock_on_hand with load remaining for quantity cap
-                                      if (hasActiveLoad) {
-                                        p['stock_on_hand'] = availableStock;
-                                      }
-                                      _addProduct(p);
-                                      Navigator.pop(ctx);
-                                    },
-                            );
-                          },
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(l10n.selectStore,
+                        style: theme.textTheme.titleMedium),
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: TextField(
+                      controller: searchController,
+                      textAlign: TextAlign.start,
+                      textDirection: TextDirection.rtl,
+                      decoration: InputDecoration(
+                        hintText: 'ابحث باسم المتجر...',
+                        prefixIcon: const Icon(Icons.search),
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceContainerHighest,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
                         ),
                       ),
+                      onChanged: (_) => setModalState(() {}),
                     ),
-                  ],
-                );
-              },
+                  ),
+                  const Divider(),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: filtered.length,
+                      itemBuilder: (_, index) {
+                        final s = filtered[index];
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor:
+                                theme.colorScheme.primaryContainer,
+                            child: Icon(Icons.store,
+                                color: theme.colorScheme.onPrimaryContainer),
+                          ),
+                          title: Text(s['name'] ?? ''),
+                          subtitle: (s['address'] ?? '')
+                                  .toString()
+                                  .isNotEmpty
+                              ? Text(s['address'] as String)
+                              : null,
+                          onTap: () => Navigator.pop(ctx, s),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             );
           },
         );
@@ -256,83 +220,11 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
     );
   }
 
-  void _addProduct(Map<String, dynamic> product) {
-    final stock = (product['stock_on_hand'] as num?)?.toInt() ?? 0;
-
-    // Block if out of stock
-    if (stock <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('نفذ المخزون'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      final existingIndex = _lineItems
-          .indexWhere((item) => item.productId == product['id']);
-      if (existingIndex >= 0) {
-        // Block if already at stock limit
-        if (_lineItems[existingIndex].quantity >= stock) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('الكمية المتاحة: $stock فقط'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-          return;
-        }
-        _lineItems[existingIndex].quantity++;
-      } else {
-        _lineItems.add(LineItem(
-          productId: product['id'],
-          productName: product['name'] ?? '',
-          unitPrice: (product['unit_price'] as num).toDouble(),
-          quantity: 1,
-          unitsPerPackage: product['units_per_package'] as int?,
-          hasReturnablePackaging:
-              product['has_returnable_packaging'] == true,
-          stockOnHand: stock,
-        ));
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _discountController.dispose();
-    super.dispose();
-  }
-
-  void _removeItem(int index) {
-    setState(() => _lineItems.removeAt(index));
-  }
-
-  void _updateQuantity(int index, int delta) {
-    setState(() {
-      final item = _lineItems[index];
-      final newQty = item.quantity + delta;
-      if (newQty >= 1 && newQty <= item.stockOnHand) {
-        item.quantity = newQty;
-      } else if (newQty > item.stockOnHand) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('الكمية المتاحة: ${item.stockOnHand} فقط'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
-    });
-  }
-
   Future<void> _confirmAndSubmit() async {
     if (!_formKey.currentState!.validate() || !_canSubmit) return;
 
     final l10n = AppLocalizations.of(context)!;
 
-    // Confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -343,11 +235,8 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
           children: [
             Text(l10n.confirmOrderMessage),
             const SizedBox(height: 16),
-            _SummaryRow(
-                label: l10n.stores, value: _selectedStoreName),
-            _SummaryRow(
-                label: l10n.items,
-                value: '${_lineItems.length}'),
+            _SummaryRow(label: l10n.stores, value: _selectedStoreName),
+            _SummaryRow(label: l10n.items, value: '${_lineItems.length}'),
             const Divider(),
             _SummaryRow(
               label: l10n.total,
@@ -376,14 +265,15 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
     try {
       final repo = ref.read(orderRepositoryProvider)!;
 
-      final lineItemMaps = _lineItems.map((item) => {
-            'product_id': item.productId,
-            'quantity': item.quantity,
-            'unit_price': item.packagePrice,
-            'line_total': item.lineTotal,
-          }).toList();
+      final lineItemMaps = _lineItems
+          .map((item) => {
+                'product_id': item.productId,
+                'quantity': item.quantity,
+                'unit_price': item.packagePrice,
+                'line_total': item.lineTotal,
+              })
+          .toList();
 
-      // Single atomic RPC — order, lines, balance, packages, stock all in one transaction
       final orderData = await repo.create(
         storeId: _selectedStoreId!,
         subtotal: _subtotal,
@@ -397,12 +287,7 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
 
       if (!mounted) return;
 
-      // Add store info for receipt display
-      orderData['stores'] = {
-        'name': _selectedStoreName,
-      };
-
-      // Add line items to order data for receipt display
+      orderData['stores'] = {'name': _selectedStoreName};
       orderData['order_lines'] = _lineItems
           .map((item) => {
                 'products': {
@@ -418,13 +303,14 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
 
       ref.invalidate(productListProvider);
       ref.invalidate(orderListProvider);
+      ref.invalidate(allOrdersProvider);
       ref.invalidate(driverCurrentLoadProvider);
 
-      // Send notifications (fire-and-forget, best-effort)
       try {
         final notifService = ref.read(notificationServiceProvider);
         final userName = ref.read(currentUserProvider)?.name ?? '';
-        final userBusinessId = ref.read(currentUserProvider)?.businessId ?? '';
+        final userBusinessId =
+            ref.read(currentUserProvider)?.businessId ?? '';
         notifService.sendNotification(
           eventType: 'new_order',
           data: {'driver': userName, 'store': _selectedStoreName},
@@ -440,8 +326,7 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
           );
         }
         notifService.checkAndNotifyLowStock(
-          productIds:
-              _lineItems.map((i) => i.productId).toList(),
+          productIds: _lineItems.map((i) => i.productId).toList(),
           businessId: userBusinessId,
         );
       } catch (e) {
@@ -464,18 +349,21 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
         );
       }
     } on PostgrestException catch (e) {
-      debugPrint('Order save PostgrestException: ${e.message} / ${e.details}');
+      debugPrint(
+          'Order save PostgrestException: ${e.message} / ${e.details}');
       if (mounted) {
-        // Deactivated user: RLS denies all access → show clear message + sign out
         final msg = e.message;
-        if (msg.contains('permission denied') || msg.contains('new row violates row-level security')) {
+        if (msg.contains('permission denied') ||
+            msg.contains('new row violates row-level security')) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text('تم تعطيل حسابك — تواصل مع المالك'),
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
-          ref.read(notificationServiceProvider).unregisterToken(Supabase.instance.client);
+          ref
+              .read(notificationServiceProvider)
+              .unregisterToken(Supabase.instance.client);
           ref.read(authServiceProvider).signOut();
           return;
         }
@@ -506,6 +394,25 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final storesAsync = ref.watch(storeListProvider);
+    final productsAsync = ref.watch(productListProvider);
+    final loadAsync = ref.watch(driverCurrentLoadProvider);
+
+    final Map<String, int> loadStock = {};
+    final bool hasActiveLoad;
+    final loadData = loadAsync.valueOrNull;
+    if (loadData != null) {
+      hasActiveLoad = true;
+      final items = loadData['items'] as List<dynamic>? ?? [];
+      for (final item in items) {
+        final m = item as Map<String, dynamic>;
+        final pid = m['product_id'] as String;
+        final loaded = (m['quantity_loaded'] as num?)?.toInt() ?? 0;
+        final sold = (m['quantity_sold'] as num?)?.toInt() ?? 0;
+        loadStock[pid] = loaded - sold;
+      }
+    } else {
+      hasActiveLoad = false;
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.newOrder)),
@@ -519,7 +426,7 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Store selector — tap to pick from bottom sheet
+                    // Store selector
                     storesAsync.when(
                       loading: () => const LinearProgressIndicator(),
                       error: (e, st) => Text(l10n.error),
@@ -532,7 +439,8 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                                 ? null
                                 : () async {
                                     final selected =
-                                        await _showStorePicker(context, stores);
+                                        await _showStorePicker(
+                                            context, stores);
                                     if (selected != null) {
                                       setState(() {
                                         _selectedStoreId =
@@ -542,6 +450,10 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                                       });
                                       field.didChange(
                                           selected['id'] as String);
+                                      _saveLastStore(
+                                        selected['id'] as String,
+                                        selected['name'] ?? '',
+                                      );
                                     }
                                   },
                             borderRadius: BorderRadius.circular(12),
@@ -564,201 +476,318 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                         },
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
 
-                    // Line items header + add button
-                    Row(
-                      children: [
-                        Text(l10n.products,
-                            style: theme.textTheme.titleSmall),
-                        const Spacer(),
-                        OutlinedButton.icon(
-                          onPressed: _isLoading ? null : _showProductPicker,
-                          icon: const Icon(Icons.add, size: 18),
-                          label: Text(l10n.addProduct),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Line items
-                    if (_lineItems.isEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: theme.colorScheme.outlineVariant,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Center(
-                          child: Text(
-                            l10n.addProduct,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                    // Product grid
+                    productsAsync.when(
+                      loading: () => const Center(
+                          child: CircularProgressIndicator()),
+                      error: (e, _) => Center(child: Text(l10n.error)),
+                      data: (products) {
+                        if (products.isEmpty) {
+                          return Center(
+                            child: Text(
+                              l10n.noData,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
                             ),
+                          );
+                        }
+                        return GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.82,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
                           ),
-                        ),
-                      )
-                    else
-                      ...List.generate(_lineItems.length, (i) {
-                        final item = _lineItems[i];
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              children: [
-                                // Product name + package info + price
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            item.productName,
-                                            style: theme.textTheme.bodyLarge
-                                                ?.copyWith(
-                                                    fontWeight:
-                                                        FontWeight.w500),
-                                          ),
-                                          if (item.unitsPerPackage != null)
-                                            Text(
-                                              '${item.unitsPerPackage} وحدة/عبوة'
-                                              '${item.totalPieces != null ? ' · ${item.totalPieces} وحدة' : ''}',
-                                              style: theme
-                                                  .textTheme.bodySmall
-                                                  ?.copyWith(
-                                                color: theme.colorScheme
-                                                    .onSurfaceVariant,
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
-                                      children: [
-                                        Text(
-                                          '${item.packagePrice.toStringAsFixed(2)} د.ج/عبوة',
-                                          style: theme.textTheme.bodySmall
-                                              ?.copyWith(
-                                            color: theme.colorScheme
-                                                .onSurfaceVariant,
-                                          ),
+                          itemCount: products.length,
+                          itemBuilder: (context, index) {
+                            final p = products[index];
+                            final productId = p['id'] as String;
+                            final warehouseStock =
+                                (p['stock_on_hand'] as num?)?.toInt() ?? 0;
+
+                            final int availableStock;
+                            final bool notInLoad;
+                            if (hasActiveLoad) {
+                              final loadRemaining = loadStock[productId];
+                              if (loadRemaining == null) {
+                                availableStock = 0;
+                                notInLoad = true;
+                              } else {
+                                availableStock = loadRemaining;
+                                notInLoad = false;
+                              }
+                            } else {
+                              availableStock = warehouseStock;
+                              notInLoad = false;
+                            }
+
+                            final isDisabled =
+                                availableStock <= 0 || notInLoad;
+                            final currentQty = _getQuantity(productId);
+                            final price =
+                                (p['unit_price'] as num).toDouble();
+                            final upkg =
+                                p['units_per_package'] as int?;
+                            final packagePrice =
+                                upkg != null ? price * upkg : price;
+
+                            final controller = _qtyControllers
+                                .putIfAbsent(
+                              productId,
+                              () => TextEditingController(
+                                  text: '$currentQty'),
+                            );
+
+                            return Opacity(
+                              opacity: isDisabled ? 0.5 : 1.0,
+                              child: Card(
+                                elevation: currentQty > 0 ? 4 : 2,
+                                shadowColor: theme.colorScheme.shadow
+                                    .withValues(alpha: 0.15),
+                                clipBehavior: Clip.antiAlias,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: currentQty > 0
+                                      ? BorderSide(
+                                          color:
+                                              theme.colorScheme.primary,
+                                          width: 2,
+                                        )
+                                      : BorderSide(
+                                          color: theme
+                                              .colorScheme.outlineVariant
+                                              .withValues(alpha: 0.6),
+                                          width: 1,
                                         ),
-                                        if (item.unitsPerPackage != null)
-                                          Text(
-                                            '${item.unitPrice.toStringAsFixed(2)} د.ج/وحدة',
-                                            style: theme.textTheme.labelSmall
-                                                ?.copyWith(
-                                              color: theme.colorScheme
-                                                  .onSurfaceVariant,
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ],
                                 ),
-                                const SizedBox(height: 8),
-                                // Quantity controls + line total
-                                Row(
-                                  children: [
-                                    // Quantity controls
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                            color: theme
-                                                .colorScheme.outlineVariant),
-                                        borderRadius:
-                                            BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          IconButton(
-                                            icon: const Icon(Icons.remove,
-                                                size: 18),
-                                            onPressed: item.quantity > 1
-                                                ? () =>
-                                                    _updateQuantity(i, -1)
-                                                : null,
-                                            constraints:
-                                                const BoxConstraints(
-                                                    minWidth: 40,
-                                                    minHeight: 40),
-                                            padding: EdgeInsets.zero,
-                                          ),
-                                          SizedBox(
-                                            width: 36,
-                                            child: Text(
-                                              '${item.quantity}',
-                                              textAlign: TextAlign.center,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(10),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              p['name'] ?? '',
+                                              maxLines: 2,
+                                              overflow:
+                                                  TextOverflow.ellipsis,
                                               style: theme
                                                   .textTheme.titleSmall
                                                   ?.copyWith(
-                                                fontWeight: FontWeight.bold,
-                                                fontFeatures: [
-                                                  const FontFeature
-                                                      .tabularFigures()
-                                                ],
+                                                fontWeight:
+                                                    FontWeight.w600,
                                               ),
                                             ),
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(Icons.add,
-                                                size: 18),
-                                            onPressed: item.quantity < item.stockOnHand
-                                                ? () => _updateQuantity(i, 1)
-                                                : null,
-                                            constraints:
-                                                const BoxConstraints(
-                                                    minWidth: 40,
-                                                    minHeight: 40),
-                                            padding: EdgeInsets.zero,
-                                          ),
-                                        ],
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '${packagePrice.toStringAsFixed(2)} د.ج',
+                                              style: theme
+                                                  .textTheme.bodyMedium
+                                                  ?.copyWith(
+                                                color: theme.colorScheme
+                                                    .primary,
+                                                fontWeight:
+                                                    FontWeight.bold,
+                                              ),
+                                            ),
+                                            if (upkg != null)
+                                              Text(
+                                                '$upkg وحدة/عبوة',
+                                                style: theme.textTheme
+                                                    .bodySmall
+                                                    ?.copyWith(
+                                                  color: theme.colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                              ),
+                                            const Spacer(),
+                                            if (notInLoad)
+                                              Text(
+                                                'غير محمّل',
+                                                style: TextStyle(
+                                                  color: theme.colorScheme
+                                                      .onSurfaceVariant,
+                                                  fontSize: 12,
+                                                  fontWeight:
+                                                      FontWeight.w600,
+                                                ),
+                                              )
+                                            else if (availableStock <=
+                                                0)
+                                              Text(
+                                                'نفذ',
+                                                style: TextStyle(
+                                                  color: theme
+                                                      .colorScheme.error,
+                                                  fontSize: 12,
+                                                  fontWeight:
+                                                      FontWeight.w600,
+                                                ),
+                                              )
+                                            else
+                                              Text(
+                                                'متبقي: $availableStock',
+                                                style: TextStyle(
+                                                  color: theme.colorScheme
+                                                      .onSurfaceVariant,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                    const Spacer(),
-                                    // Line total
-                                    Text(
-                                      '${item.lineTotal.toStringAsFixed(2)} د.ج',
-                                      style: theme.textTheme.titleSmall
-                                          ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        fontFeatures: [
-                                          const FontFeature
-                                              .tabularFigures()
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    // Delete button
-                                    IconButton(
-                                      icon: Icon(Icons.delete_outline,
-                                          size: 20,
-                                          color: theme.colorScheme.error),
-                                      onPressed: () => _removeItem(i),
-                                      tooltip: l10n.removeItem,
-                                      constraints: const BoxConstraints(
-                                          minWidth: 40, minHeight: 40),
-                                    ),
-                                  ],
+                                      const SizedBox(height: 8),
+                                      if (!isDisabled)
+                                        Row(
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(
+                                                  Icons
+                                                      .remove_circle_outline,
+                                                  size: 20),
+                                              onPressed: currentQty > 0
+                                                  ? () => _setQuantity(
+                                                        productId,
+                                                        currentQty - 1,
+                                                        availableStock,
+                                                        p,
+                                                      )
+                                                  : null,
+                                              padding: EdgeInsets.zero,
+                                              constraints:
+                                                  const BoxConstraints(
+                                                minWidth: 32,
+                                                minHeight: 32,
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: TextField(
+                                                controller: controller,
+                                                textAlign:
+                                                    TextAlign.center,
+                                                keyboardType:
+                                                    TextInputType.number,
+                                                enabled: !_isLoading,
+                                                decoration:
+                                                    const InputDecoration(
+                                                  isDense: true,
+                                                  contentPadding:
+                                                      EdgeInsets.symmetric(
+                                                          vertical: 4),
+                                                  border:
+                                                      OutlineInputBorder(),
+                                                ),
+                                                onSubmitted: (v) {
+                                                  final n = int.tryParse(
+                                                          v) ??
+                                                      0;
+                                                  _setQuantity(
+                                                    productId,
+                                                    n,
+                                                    availableStock,
+                                                    p,
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(
+                                                  Icons.add_circle_outline,
+                                                  size: 20),
+                                              onPressed: currentQty <
+                                                      availableStock
+                                                  ? () => _setQuantity(
+                                                        productId,
+                                                        currentQty + 1,
+                                                        availableStock,
+                                                        p,
+                                                      )
+                                                  : null,
+                                              padding: EdgeInsets.zero,
+                                              constraints:
+                                                  const BoxConstraints(
+                                                minWidth: 32,
+                                                minHeight: 32,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                    ],
+                                  ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Selected items summary
+                    if (_lineItems.isNotEmpty) ...[
+                      const Divider(),
+                      const SizedBox(height: 8),
+                      ...List.generate(_lineItems.length, (i) {
+                        final item = _lineItems[i];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  item.productName,
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  '${item.quantity} × ${item.packagePrice.toStringAsFixed(2)}',
+                                  textAlign: TextAlign.end,
+                                  style: theme.textTheme.bodyMedium
+                                      ?.copyWith(
+                                    color: theme.colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  '${item.lineTotal.toStringAsFixed(2)} د.ج',
+                                  textAlign: TextAlign.end,
+                                  style: theme.textTheme.bodyMedium
+                                      ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.close,
+                                    size: 18,
+                                    color: theme.colorScheme.error),
+                                onPressed: () => _removeItem(i),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                    minWidth: 32, minHeight: 32),
+                              ),
+                            ],
                           ),
                         );
                       }),
-
-                    // Totals section
-                    if (_lineItems.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      const Divider(),
                       const SizedBox(height: 8),
                       _TotalRow(label: l10n.subtotal, value: _subtotal),
                       if (_taxAmount > 0)
@@ -769,14 +798,18 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                       InkWell(
                         onTap: _isLoading
                             ? null
-                            : () => setState(() => _showDiscount = !_showDiscount),
+                            : () => setState(
+                                () => _showDiscount = !_showDiscount),
                         borderRadius: BorderRadius.circular(8),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 4),
                           child: Row(
                             children: [
-                              Icon(Icons.percent, size: 18,
-                                  color: theme.colorScheme.onSurfaceVariant),
+                              Icon(Icons.percent,
+                                  size: 18,
+                                  color: theme
+                                      .colorScheme.onSurfaceVariant),
                               const SizedBox(width: 8),
                               Text(l10n.discount,
                                   style: theme.textTheme.titleSmall),
@@ -785,7 +818,8 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                                 _showDiscount
                                     ? Icons.expand_less
                                     : Icons.expand_more,
-                                color: theme.colorScheme.onSurfaceVariant,
+                                color: theme
+                                    .colorScheme.onSurfaceVariant,
                               ),
                             ],
                           ),
@@ -796,8 +830,9 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                         TextFormField(
                           controller: _discountController,
                           enabled: !_isLoading,
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
+                          keyboardType:
+                              const TextInputType.numberWithOptions(
+                                  decimal: true),
                           decoration: InputDecoration(
                             labelText: l10n.discountAmount,
                             suffixText: l10n.currencyUnit,
@@ -805,9 +840,13 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                           ),
                           onChanged: (_) => setState(() {}),
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty) return null;
+                            if (v == null || v.trim().isEmpty) {
+                              return null;
+                            }
                             final val = double.tryParse(v.trim());
-                            if (val == null || val < 0) return l10n.error;
+                            if (val == null || val < 0) {
+                              return l10n.error;
+                            }
                             if (val > _subtotal) {
                               return l10n.discountExceedsSubtotal;
                             }
@@ -828,14 +867,15 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                               children: [
                                 Icon(Icons.info_outline,
                                     size: 16,
-                                    color: theme
-                                        .colorScheme.onTertiaryContainer),
+                                    color: theme.colorScheme
+                                        .onTertiaryContainer),
                                 const SizedBox(width: 8),
                                 Text(
                                   l10n.requiresOwnerApproval,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme
-                                        .colorScheme.onTertiaryContainer,
+                                  style: theme.textTheme.bodySmall
+                                      ?.copyWith(
+                                    color: theme.colorScheme
+                                        .onTertiaryContainer,
                                   ),
                                 ),
                               ],
@@ -852,7 +892,9 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
 
                       const SizedBox(height: 4),
                       _TotalRow(
-                          label: l10n.total, value: _total, isTotal: true),
+                          label: l10n.total,
+                          value: _total,
+                          isTotal: true),
                     ],
                   ],
                 ),
@@ -860,9 +902,8 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
             ),
 
             // Submit button
-            Padding(
-              padding:
-                  const EdgeInsets.all(16).copyWith(bottom: 24),
+            SafeArea(
+              minimum: const EdgeInsets.all(16).copyWith(top: 0),
               child: FilledButton(
                 onPressed: _canSubmit ? _confirmAndSubmit : null,
                 style: FilledButton.styleFrom(
@@ -966,4 +1007,3 @@ class _SummaryRow extends StatelessWidget {
     );
   }
 }
-

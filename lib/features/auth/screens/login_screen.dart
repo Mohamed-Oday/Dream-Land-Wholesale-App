@@ -63,10 +63,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } on AuthException catch (e) {
       _failedAttempts++;
       debugPrint('Auth error: ${e.message} (${e.statusCode})');
-      setState(() {
-        _errorMessage = 'اسم المستخدم أو كلمة المرور غير صحيحة\n(${e.message})';
-        _passwordController.clear();
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'اسم المستخدم أو كلمة المرور غير صحيحة';
+          _passwordController.clear();
+        });
+      }
 
       // Throttle after 3 failures
       if (_failedAttempts >= 3) {
@@ -74,10 +76,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     } catch (e) {
       debugPrint('Login error: $e');
-      setState(() {
-        _errorMessage = 'حدث خطأ في الاتصال\n($e)';
-        _passwordController.clear();
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'حدث خطأ في الاتصال';
+          _passwordController.clear();
+        });
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -89,6 +93,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     _throttleSeconds = 30;
     _isThrottled = true;
     _throttleTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
       setState(() {
         _throttleSeconds--;
         if (_throttleSeconds <= 0) {

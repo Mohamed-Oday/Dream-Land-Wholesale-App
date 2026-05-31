@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +12,20 @@ import 'package:tawzii/features/driver_loads/screens/load_receipt_screen.dart';
 import 'package:tawzii/features/products/providers/product_provider.dart';
 import 'package:tawzii/core/notifications/notification_provider.dart';
 
+class _LoadItem {
+  final String productId;
+  final String productName;
+  int quantity;
+  final int stockOnHand;
+
+  _LoadItem({
+    required this.productId,
+    required this.productName,
+    required this.quantity,
+    required this.stockOnHand,
+  });
+}
+
 class CreateLoadScreen extends ConsumerStatefulWidget {
   const CreateLoadScreen({super.key});
 
@@ -25,6 +38,7 @@ class _CreateLoadScreenState extends ConsumerState<CreateLoadScreen> {
   String _selectedDriverName = '';
   final List<_LoadItem> _items = [];
   final _notesController = TextEditingController();
+  final Map<String, TextEditingController> _qtyControllers = {};
   bool _isLoading = false;
 
   bool get _canSubmit =>
@@ -33,197 +47,115 @@ class _CreateLoadScreenState extends ConsumerState<CreateLoadScreen> {
   @override
   void dispose() {
     _notesController.dispose();
+    for (final controller in _qtyControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
-  void _showDriverPicker() {
+  Future<void> _showDriverPicker() async {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final drivers = await ref.read(driversOnlyProvider.future);
+    final activeDrivers = drivers.where((d) => d['active'] == true).toList();
 
-    showModalBottomSheet(
+    if (!mounted) return;
+
+    final searchController = TextEditingController();
+
+    await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
-      backgroundColor: Colors.white,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (ctx) {
-        return Consumer(
-          builder: (ctx, ref, _) {
-            final driversAsync = ref.watch(driversOnlyProvider);
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  margin: const EdgeInsets.symmetric(vertical: 12),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Theme.of(ctx)
-                        .colorScheme
-                        .onSurfaceVariant
-                        .withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(l10n.selectDriver,
-                      style: Theme.of(ctx).textTheme.titleMedium),
-                ),
-                const Divider(),
-                driversAsync.when(
-                  loading: () => const Padding(
-                    padding: EdgeInsets.all(24),
-                    child: CircularProgressIndicator(),
-                  ),
-                  error: (_, __) => Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(l10n.error),
-                  ),
-                  data: (drivers) {
-                    final activeDrivers = drivers
-                        .where((d) => d['active'] == true)
-                        .toList();
-                    if (activeDrivers.isEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(l10n.noUsers),
-                      );
-                    }
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: activeDrivers.map((d) {
-                        return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Theme.of(ctx)
-                                .colorScheme
-                                .primaryContainer,
-                            child: Icon(Icons.person,
-                                color: Theme.of(ctx)
-                                    .colorScheme
-                                    .onPrimaryContainer),
-                          ),
-                          title: Text(d['name'] ?? ''),
-                          subtitle: Text(d['username'] ?? ''),
-                          onTap: () {
-                            setState(() {
-                              _selectedDriverId = d['id'] as String;
-                              _selectedDriverName = d['name'] ?? '';
-                            });
-                            Navigator.pop(ctx);
-                          },
-                        );
-                      }).toList(),
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            final filtered = searchController.text.isEmpty
+                ? activeDrivers
+                : activeDrivers.where((d) {
+                    final name = (d['name'] as String).toLowerCase();
+                    return name
+                        .contains(searchController.text.toLowerCase());
+                  }).toList();
 
-  void _showProductPicker() {
-    final l10n = AppLocalizations.of(context)!;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.6,
-          minChildSize: 0.3,
-          maxChildSize: 0.85,
-          expand: false,
-          builder: (_, scrollController) {
-            return Consumer(
-              builder: (ctx, ref, _) {
-                final productsAsync = ref.watch(productListProvider);
-                return Column(
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.symmetric(vertical: 12),
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Theme.of(ctx)
-                            .colorScheme
-                            .onSurfaceVariant
-                            .withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 12),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.onSurfaceVariant
+                          .withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(l10n.addProducts,
-                          style: Theme.of(ctx).textTheme.titleMedium),
-                    ),
-                    const Divider(),
-                    Expanded(
-                      child: productsAsync.when(
-                        loading: () =>
-                            const Center(child: CircularProgressIndicator()),
-                        error: (_, __) => Center(child: Text(l10n.error)),
-                        data: (products) => ListView.builder(
-                          controller: scrollController,
-                          itemCount: products.length,
-                          itemBuilder: (_, index) {
-                            final p = products[index];
-                            final stock =
-                                (p['stock_on_hand'] as num?)?.toInt() ?? 0;
-                            final isOutOfStock = stock <= 0;
-                            return ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: isOutOfStock
-                                    ? Theme.of(ctx).colorScheme.errorContainer
-                                    : Theme.of(ctx)
-                                        .colorScheme
-                                        .primaryContainer,
-                                child: Icon(Icons.shopping_bag,
-                                    color: isOutOfStock
-                                        ? Theme.of(ctx)
-                                            .colorScheme
-                                            .onErrorContainer
-                                        : Theme.of(ctx)
-                                            .colorScheme
-                                            .onPrimaryContainer),
-                              ),
-                              title: Text(
-                                p['name'] ?? '',
-                                style: isOutOfStock
-                                    ? TextStyle(
-                                        color: Theme.of(ctx)
-                                            .colorScheme
-                                            .onSurfaceVariant)
-                                    : null,
-                              ),
-                              subtitle: Text(
-                                  '${l10n.stockOnHand}: $stock'),
-                              trailing: isOutOfStock
-                                  ? Text(l10n.outOfStock,
-                                      style: TextStyle(
-                                        color: Theme.of(ctx).colorScheme.error,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 12,
-                                      ))
-                                  : null,
-                              enabled: !isOutOfStock,
-                              onTap: isOutOfStock
-                                  ? null
-                                  : () {
-                                      _addProduct(p);
-                                      Navigator.pop(ctx);
-                                    },
-                            );
-                          },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(l10n.selectDriver,
+                        style: theme.textTheme.titleMedium),
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: TextField(
+                      controller: searchController,
+                      textAlign: TextAlign.start,
+                      textDirection: TextDirection.rtl,
+                      decoration: InputDecoration(
+                        hintText: 'ابحث باسم البائع...',
+                        prefixIcon: const Icon(Icons.search),
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceContainerHighest,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
                         ),
                       ),
+                      onChanged: (_) => setModalState(() {}),
                     ),
-                  ],
-                );
-              },
+                  ),
+                  const Divider(),
+                  if (activeDrivers.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(l10n.noUsers),
+                    )
+                  else
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (_, index) {
+                          final d = filtered[index];
+                          return ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor:
+                                  theme.colorScheme.primaryContainer,
+                              child: Icon(Icons.person,
+                                  color: theme.colorScheme.onPrimaryContainer),
+                            ),
+                            title: Text(d['name'] ?? ''),
+                            subtitle: Text(d['username'] ?? ''),
+                            onTap: () {
+                              setState(() {
+                                _selectedDriverId = d['id'] as String;
+                                _selectedDriverName = d['name'] ?? '';
+                              });
+                              Navigator.pop(ctx);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
             );
           },
         );
@@ -231,55 +163,46 @@ class _CreateLoadScreenState extends ConsumerState<CreateLoadScreen> {
     );
   }
 
-  void _addProduct(Map<String, dynamic> product) {
-    final stock = (product['stock_on_hand'] as num?)?.toInt() ?? 0;
-    if (stock <= 0) return;
+  int _getQuantity(String productId) {
+    for (final item in _items) {
+      if (item.productId == productId) return item.quantity;
+    }
+    return 0;
+  }
 
+  void _setQuantity(
+    String productId,
+    int qty,
+    int maxStock,
+    Map<String, dynamic> product,
+  ) {
+    final clamped = qty.clamp(0, maxStock);
     setState(() {
-      final existingIndex =
-          _items.indexWhere((item) => item.productId == product['id']);
-      if (existingIndex >= 0) {
-        if (_items[existingIndex].quantity >= stock) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${l10n.stockOnHand}: $stock'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-          return;
+      if (clamped > 0) {
+        final existingIndex =
+            _items.indexWhere((item) => item.productId == productId);
+        if (existingIndex >= 0) {
+          _items[existingIndex].quantity = clamped;
+        } else {
+          _items.add(_LoadItem(
+            productId: productId,
+            productName: product['name'] ?? '',
+            quantity: clamped,
+            stockOnHand: maxStock,
+          ));
         }
-        _items[existingIndex].quantity++;
       } else {
-        _items.add(_LoadItem(
-          productId: product['id'] as String,
-          productName: product['name'] ?? '',
-          quantity: 1,
-          stockOnHand: stock,
-        ));
+        _items.removeWhere((item) => item.productId == productId);
       }
+      _qtyControllers[productId]?.text = '$clamped';
     });
   }
 
-  AppLocalizations get l10n => AppLocalizations.of(context)!;
-
   void _removeItem(int index) {
-    setState(() => _items.removeAt(index));
-  }
-
-  void _updateQuantity(int index, int delta) {
+    final productId = _items[index].productId;
     setState(() {
-      final item = _items[index];
-      final newQty = item.quantity + delta;
-      if (newQty >= 1 && newQty <= item.stockOnHand) {
-        item.quantity = newQty;
-      } else if (newQty > item.stockOnHand) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${l10n.stockOnHand}: ${item.stockOnHand}'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
+      _items.removeAt(index);
+      _qtyControllers[productId]?.text = '0';
     });
   }
 
@@ -289,7 +212,6 @@ class _CreateLoadScreenState extends ConsumerState<CreateLoadScreen> {
     final l10n = AppLocalizations.of(context)!;
     final currentUser = ref.read(currentUserProvider);
 
-    // Confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -344,7 +266,6 @@ class _CreateLoadScreenState extends ConsumerState<CreateLoadScreen> {
       ref.invalidate(driverLoadListProvider);
       ref.invalidate(productListProvider);
 
-      // Send notification (fire-and-forget, best-effort)
       try {
         final notifService = ref.read(notificationServiceProvider);
         notifService.sendNotification(
@@ -355,7 +276,6 @@ class _CreateLoadScreenState extends ConsumerState<CreateLoadScreen> {
         debugPrint('Shift opened notification failed (non-blocking): $e');
       }
 
-      // Build load data for receipt
       final loadData = {
         'id': loadId,
         'driver_name': _selectedDriverName,
@@ -421,239 +341,316 @@ class _CreateLoadScreenState extends ConsumerState<CreateLoadScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final productsAsync = ref.watch(productListProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.loadDriver)),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Driver picker
-                  InkWell(
-                    onTap: _isLoading ? null : _showDriverPicker,
-                    borderRadius: BorderRadius.circular(12),
-                    child: InputDecorator(
-                      decoration: InputDecoration(
-                        labelText: l10n.selectDriver,
-                        prefixIcon: const Icon(Icons.person),
-                        suffixIcon: const Icon(Icons.arrow_drop_down),
-                      ),
-                      child: Text(
-                        _selectedDriverName.isEmpty
-                            ? ''
-                            : _selectedDriverName,
-                        style: theme.textTheme.bodyLarge,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Products header + add button
-                  Row(
-                    children: [
-                      Text(l10n.products,
-                          style: theme.textTheme.titleSmall),
-                      const Spacer(),
-                      OutlinedButton.icon(
-                        onPressed: _isLoading ? null : _showProductPicker,
-                        icon: const Icon(Icons.add, size: 18),
-                        label: Text(l10n.addProducts),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Item list
-                  if (_items.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                            color: theme.colorScheme.outlineVariant),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
+      body: Form(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Driver picker
+                    InkWell(
+                      onTap: _isLoading ? null : _showDriverPicker,
+                      borderRadius: BorderRadius.circular(12),
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: l10n.selectDriver,
+                          prefixIcon: const Icon(Icons.person),
+                          suffixIcon: const Icon(Icons.arrow_drop_down),
+                        ),
                         child: Text(
-                          l10n.addProducts,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
+                          _selectedDriverName.isEmpty
+                              ? ''
+                              : _selectedDriverName,
+                          style: theme.textTheme.bodyLarge,
                         ),
                       ),
-                    )
-                  else
-                    ...List.generate(_items.length, (i) {
-                      final item = _items[i];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          item.productName,
-                                          style: theme.textTheme.bodyLarge
-                                              ?.copyWith(
-                                                  fontWeight:
-                                                      FontWeight.w500),
-                                        ),
-                                        Text(
-                                          '${l10n.stockOnHand}: ${item.stockOnHand}',
-                                          style: theme.textTheme.bodySmall
-                                              ?.copyWith(
-                                            color: theme.colorScheme
-                                                .onSurfaceVariant,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: Icon(Icons.delete_outline,
-                                        size: 20,
-                                        color: theme.colorScheme.error),
-                                    onPressed: () => _removeItem(i),
-                                    tooltip: l10n.removeItem,
-                                    constraints: const BoxConstraints(
-                                        minWidth: 40, minHeight: 40),
-                                  ),
-                                ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Product grid
+                    productsAsync.when(
+                      loading: () => const Center(
+                          child: CircularProgressIndicator()),
+                      error: (e, _) => Center(child: Text(l10n.error)),
+                      data: (products) {
+                        if (products.isEmpty) {
+                          return Center(
+                            child: Text(
+                              l10n.noData,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
                               ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Text(l10n.quantityToLoad,
-                                      style: theme.textTheme.bodySmall),
-                                  const Spacer(),
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                          color: theme
-                                              .colorScheme.outlineVariant),
-                                      borderRadius:
-                                          BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.remove,
-                                              size: 18),
-                                          onPressed: item.quantity > 1
-                                              ? () =>
-                                                  _updateQuantity(i, -1)
-                                              : null,
-                                          constraints: const BoxConstraints(
-                                              minWidth: 40,
-                                              minHeight: 40),
-                                          padding: EdgeInsets.zero,
-                                        ),
-                                        SizedBox(
-                                          width: 36,
-                                          child: Text(
-                                            '${item.quantity}',
-                                            textAlign: TextAlign.center,
-                                            style: theme
-                                                .textTheme.titleSmall
-                                                ?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              fontFeatures: [
-                                                const FontFeature
-                                                    .tabularFigures()
-                                              ],
+                            ),
+                          );
+                        }
+                        return GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.82,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                          ),
+                          itemCount: products.length,
+                          itemBuilder: (context, index) {
+                            final p = products[index];
+                            final productId = p['id'] as String;
+                            final stock =
+                                (p['stock_on_hand'] as num?)?.toInt() ?? 0;
+                            final isDisabled = stock <= 0;
+                            final currentQty = _getQuantity(productId);
+
+                            final controller = _qtyControllers
+                                .putIfAbsent(
+                              productId,
+                              () => TextEditingController(
+                                  text: '$currentQty'),
+                            );
+
+                            return Opacity(
+                              opacity: isDisabled ? 0.5 : 1.0,
+                              child: Card(
+                                clipBehavior: Clip.antiAlias,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: currentQty > 0
+                                      ? BorderSide(
+                                          color:
+                                              theme.colorScheme.primary,
+                                          width: 2,
+                                        )
+                                      : BorderSide.none,
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(10),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              p['name'] ?? '',
+                                              maxLines: 2,
+                                              overflow:
+                                                  TextOverflow.ellipsis,
+                                              style: theme
+                                                  .textTheme.titleSmall
+                                                  ?.copyWith(
+                                                fontWeight:
+                                                    FontWeight.w600,
+                                              ),
                                             ),
-                                          ),
+                                            const Spacer(),
+                                            if (stock <= 0)
+                                              Text(
+                                                'نفذ',
+                                                style: TextStyle(
+                                                  color: theme
+                                                      .colorScheme.error,
+                                                  fontSize: 12,
+                                                  fontWeight:
+                                                      FontWeight.w600,
+                                                ),
+                                              )
+                                            else
+                                              Text(
+                                                'مخزون: $stock',
+                                                style: TextStyle(
+                                                  color: theme.colorScheme
+                                                      .onSurfaceVariant,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                          ],
                                         ),
-                                        IconButton(
-                                          icon: const Icon(Icons.add,
-                                              size: 18),
-                                          onPressed:
-                                              item.quantity < item.stockOnHand
-                                                  ? () =>
-                                                      _updateQuantity(i, 1)
+                                      ),
+                                      const SizedBox(height: 8),
+                                      if (!isDisabled)
+                                        Row(
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(
+                                                  Icons
+                                                      .remove_circle_outline,
+                                                  size: 20),
+                                              onPressed: currentQty > 0
+                                                  ? () => _setQuantity(
+                                                        productId,
+                                                        currentQty - 1,
+                                                        stock,
+                                                        p,
+                                                      )
                                                   : null,
-                                          constraints: const BoxConstraints(
-                                              minWidth: 40,
-                                              minHeight: 40),
-                                          padding: EdgeInsets.zero,
+                                              padding: EdgeInsets.zero,
+                                              constraints:
+                                                  const BoxConstraints(
+                                                minWidth: 32,
+                                                minHeight: 32,
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: TextField(
+                                                controller: controller,
+                                                textAlign:
+                                                    TextAlign.center,
+                                                keyboardType:
+                                                    TextInputType.number,
+                                                enabled: !_isLoading,
+                                                decoration:
+                                                    const InputDecoration(
+                                                  isDense: true,
+                                                  contentPadding:
+                                                      EdgeInsets.symmetric(
+                                                          vertical: 4),
+                                                  border:
+                                                      OutlineInputBorder(),
+                                                ),
+                                                onSubmitted: (v) {
+                                                  final n = int.tryParse(
+                                                          v) ??
+                                                      0;
+                                                  _setQuantity(
+                                                    productId,
+                                                    n,
+                                                    stock,
+                                                    p,
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(
+                                                  Icons.add_circle_outline,
+                                                  size: 20),
+                                              onPressed: currentQty <
+                                                      stock
+                                                  ? () => _setQuantity(
+                                                        productId,
+                                                        currentQty + 1,
+                                                        stock,
+                                                        p,
+                                                      )
+                                                  : null,
+                                              padding: EdgeInsets.zero,
+                                              constraints:
+                                                  const BoxConstraints(
+                                                minWidth: 32,
+                                                minHeight: 32,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
+                                    ],
                                   ),
-                                ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Selected items summary
+                    if (_items.isNotEmpty) ...[
+                      const Divider(),
+                      const SizedBox(height: 8),
+                      ...List.generate(_items.length, (i) {
+                        final item = _items[i];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  item.productName,
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  '${item.quantity} عبوة',
+                                  textAlign: TextAlign.end,
+                                  style: theme.textTheme.bodyMedium
+                                      ?.copyWith(
+                                    color: theme.colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.close,
+                                    size: 18,
+                                    color: theme.colorScheme.error),
+                                onPressed: () => _removeItem(i),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                    minWidth: 32, minHeight: 32),
                               ),
                             ],
                           ),
+                        );
+                      }),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // Notes
+                    if (_items.isNotEmpty) ...[
+                      TextField(
+                        controller: _notesController,
+                        enabled: !_isLoading,
+                        decoration: InputDecoration(
+                          labelText: l10n.purchaseNotes,
+                          prefixIcon: const Icon(Icons.note),
                         ),
-                      );
-                    }),
-
-                  // Notes field
-                  if (_items.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _notesController,
-                      enabled: !_isLoading,
-                      decoration: InputDecoration(
-                        labelText: l10n.purchaseNotes,
-                        prefixIcon: const Icon(Icons.note),
+                        maxLines: 2,
                       ),
-                      maxLines: 2,
-                    ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
-          ),
 
-          // Submit button
-          Padding(
-            padding: const EdgeInsets.all(16).copyWith(bottom: 24),
-            child: FilledButton(
-              onPressed: _canSubmit ? _confirmAndSubmit : null,
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(double.infinity, 52),
+            // Submit button
+            Padding(
+              padding: const EdgeInsets.all(16).copyWith(bottom: 24),
+              child: FilledButton(
+                onPressed: _canSubmit ? _confirmAndSubmit : null,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 52),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white),
+                      )
+                    : Text(
+                        l10n.confirmLoad,
+                        style: const TextStyle(fontSize: 16),
+                      ),
               ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
-                    )
-                  : Text(
-                      l10n.confirmLoad,
-                      style: const TextStyle(fontSize: 16),
-                    ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
-}
-
-class _LoadItem {
-  final String productId;
-  final String productName;
-  int quantity;
-  final int stockOnHand;
-
-  _LoadItem({
-    required this.productId,
-    required this.productName,
-    required this.quantity,
-    required this.stockOnHand,
-  });
 }

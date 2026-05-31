@@ -195,32 +195,7 @@ class _StoreFormScreenState extends ConsumerState<StoreFormScreen> {
               ),
 
               // --- Map Location Picker ---
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Icon(Icons.map_outlined,
-                      size: 20, color: colorScheme.primary),
-                  const SizedBox(width: 8),
-                  Text(
-                    l10n.storeLocation,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              if (!hasMarker)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    l10n.tapToSetLocation,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 16),
               Card(
                 elevation: 0,
                 color: colorScheme.surfaceContainerLow,
@@ -228,65 +203,84 @@ class _StoreFormScreenState extends ConsumerState<StoreFormScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: SizedBox(
-                  height: 200,
-                  child: FlutterMap(
-                    options: MapOptions(
-                      initialCenter: hasMarker
-                          ? LatLng(_selectedLat!, _selectedLng!)
-                          : _mapCenter,
-                      initialZoom: hasMarker || _locationResolved ? 15 : 13,
-                      onTap: (_, point) {
-                        if (!_isLoading) {
-                          setState(() {
-                            _selectedLat = point.latitude;
-                            _selectedLng = point.longitude;
-                          });
-                        }
-                      },
+                child: ExpansionTile(
+                  leading: Icon(Icons.map_outlined, color: colorScheme.primary),
+                  title: Text(
+                    l10n.storeLocation,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
-                    children: [
-                      TileLayer(
-                        urlTemplate:
-                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        userAgentPackageName: 'com.dreamland.tawzii',
-                      ),
-                      if (hasMarker)
-                        MarkerLayer(
-                          markers: [
-                            Marker(
-                              point: LatLng(_selectedLat!, _selectedLng!),
-                              width: 40,
-                              height: 40,
-                              child: Icon(
-                                Icons.location_pin,
-                                color: AppColors.error,
-                                size: 40,
-                              ),
-                            ),
-                          ],
-                        ),
-                      const SimpleAttributionWidget(
-                        source: Text('OpenStreetMap contributors'),
-                      ),
-                    ],
                   ),
+                  subtitle: hasMarker
+                      ? Text('تم تحديد الموقع',
+                          style: theme.textTheme.bodySmall)
+                      : Text(l10n.tapToSetLocation,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          )),
+                  initiallyExpanded: hasMarker,
+                  children: [
+                    SizedBox(
+                      height: 200,
+                      child: FlutterMap(
+                        options: MapOptions(
+                          initialCenter: hasMarker
+                              ? LatLng(_selectedLat!, _selectedLng!)
+                              : _mapCenter,
+                          initialZoom: hasMarker || _locationResolved ? 15 : 13,
+                          onTap: (_, point) {
+                            if (!_isLoading) {
+                              setState(() {
+                                _selectedLat = point.latitude;
+                                _selectedLng = point.longitude;
+                              });
+                            }
+                          },
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate:
+                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            userAgentPackageName: 'com.dreamland.tawzii',
+                          ),
+                          if (hasMarker)
+                            MarkerLayer(
+                              markers: [
+                                Marker(
+                                  point: LatLng(_selectedLat!, _selectedLng!),
+                                  width: 40,
+                                  height: 40,
+                                  child: Icon(
+                                    Icons.location_pin,
+                                    color: AppColors.error,
+                                    size: 40,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          const SimpleAttributionWidget(
+                            source: Text('OpenStreetMap contributors'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (hasMarker)
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TextButton.icon(
+                          icon: const Icon(Icons.close, size: 18),
+                          label: Text(l10n.removeLocation),
+                          onPressed: _isLoading
+                              ? null
+                              : () => setState(() {
+                                    _selectedLat = null;
+                                    _selectedLng = null;
+                                  }),
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              if (hasMarker)
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: TextButton.icon(
-                    icon: const Icon(Icons.close, size: 18),
-                    label: Text(l10n.removeLocation),
-                    onPressed: _isLoading
-                        ? null
-                        : () => setState(() {
-                              _selectedLat = null;
-                              _selectedLng = null;
-                            }),
-                  ),
-                ),
 
               const SizedBox(height: 8),
               if (_errorMessage != null)

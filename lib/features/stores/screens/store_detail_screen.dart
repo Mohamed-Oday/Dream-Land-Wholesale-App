@@ -413,13 +413,12 @@ class StoreDetailScreen extends ConsumerWidget {
                                     message: l10n.noPackageActivity);
                               }
 
-                              // Join product names from product list
-                              final productList =
-                                  products.valueOrNull ?? [];
-                              final productMap = {
-                                for (final p in productList)
-                                  p['id'] as String: p['name'] as String? ?? ''
-                              };
+                              // Sum all balances into one total
+                              final totalPackages = balances.fold<int>(
+                                0,
+                                (sum, b) =>
+                                    sum + ((b['balance'] as num?)?.toInt() ?? 0),
+                              );
 
                               return Card(
                                 elevation: 0,
@@ -428,39 +427,47 @@ class StoreDetailScreen extends ConsumerWidget {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 clipBehavior: Clip.antiAlias,
-                                child: Column(
-                                  children: [
-                                    for (int i = 0;
-                                        i < balances.length;
-                                        i++) ...[
-                                      ListTile(
-                                        leading: Icon(Icons.inventory_2,
-                                            color: colorScheme.tertiary),
-                                        title: Text(
-                                          productMap[balances[i]
-                                                      ['product_id']] ??
-                                              '${l10n.products} #${i + 1}',
-                                          style:
-                                              theme.textTheme.titleSmall,
-                                        ),
-                                        trailing: Text(
-                                          '${balances[i]['balance'] ?? 0} ${l10n.packageUnit}',
-                                          style: theme.textTheme.titleSmall
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 24,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.inventory_2,
+                                          color: colorScheme.tertiary,
+                                          size: 32),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Text(
+                                          'إجمالي العبوات',
+                                          style: theme.textTheme.titleMedium
                                               ?.copyWith(
-                                            color: colorScheme.tertiary,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                       ),
-                                      if (i < balances.length - 1)
-                                        Divider(
-                                          height: 1,
-                                          indent: 56,
-                                          color:
-                                              colorScheme.outlineVariant,
+                                      Text(
+                                        '$totalPackages',
+                                        style: theme.textTheme.headlineSmall
+                                            ?.copyWith(
+                                          color: colorScheme.tertiary,
+                                          fontWeight: FontWeight.bold,
+                                          fontFeatures: const [
+                                            FontFeature.tabularFigures()
+                                          ],
                                         ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        l10n.packageUnit,
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                          color: colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
                                     ],
-                                  ],
+                                  ),
                                 ),
                               );
                             },

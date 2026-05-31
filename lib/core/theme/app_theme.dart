@@ -33,21 +33,21 @@ abstract final class AppTheme {
       onSurface: AppColors.ink,
       onSurfaceVariant: AppColors.charcoal,
       outline: AppColors.slate,
-      outlineVariant: const Color(0xFFE0E0E0),
+      outlineVariant: seedScheme.outlineVariant,
       error: AppColors.error,
       onError: AppColors.onPrimary,
-      errorContainer: const Color(0xFFFCE4E4),
+      errorContainer: seedScheme.errorContainer,
       tertiary: AppColors.info,
       onTertiary: AppColors.onPrimary,
-      tertiaryContainer: const Color(0xFFD6E8F0),
+      tertiaryContainer: seedScheme.tertiaryContainer,
       onTertiaryContainer: AppColors.info,
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: AppColors.mist,
-      canvasColor: AppColors.onPrimary,
+      scaffoldBackgroundColor: colorScheme.surface,
+      canvasColor: colorScheme.surface,
       fontFamily: 'Cairo',
       // Large tap targets for field use (one-handed, sunlight)
       materialTapTargetSize: MaterialTapTargetSize.padded,
@@ -88,77 +88,77 @@ abstract final class AppTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        color: AppColors.onPrimary,
+        color: colorScheme.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: const Color(0xFFE0E0E0)),
+          side: BorderSide(color: colorScheme.outlineVariant),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.onPrimary,
+        fillColor: colorScheme.surface,
         floatingLabelBehavior: FloatingLabelBehavior.auto,
         floatingLabelAlignment: FloatingLabelAlignment.start,
         floatingLabelStyle: TextStyle(
           fontFamily: 'Cairo',
           fontSize: 14,
           fontWeight: FontWeight.w500,
-          color: AppColors.charcoal,
-          backgroundColor: AppColors.mist,
+          color: colorScheme.onSurfaceVariant,
+          backgroundColor: colorScheme.surface,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: const Color(0xFFE0E0E0)),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: const Color(0xFFE0E0E0)),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.primary, width: 2),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.onPrimary,
-        foregroundColor: AppColors.ink,
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
         elevation: 0,
         scrolledUnderElevation: 0.5,
       ),
       dropdownMenuTheme: DropdownMenuThemeData(
         menuStyle: MenuStyle(
-          backgroundColor: WidgetStatePropertyAll(AppColors.onPrimary),
+          backgroundColor: WidgetStatePropertyAll(colorScheme.surface),
           surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
         ),
       ),
       popupMenuTheme: PopupMenuThemeData(
-        color: AppColors.onPrimary,
+        color: colorScheme.surface,
         surfaceTintColor: Colors.transparent,
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: AppColors.onPrimary,
+        backgroundColor: colorScheme.surface,
         surfaceTintColor: Colors.transparent,
       ),
-      bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: Colors.white,
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: colorScheme.surface,
         surfaceTintColor: Colors.transparent,
       ),
       listTileTheme: const ListTileThemeData(
         tileColor: Colors.transparent,
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.onPrimary,
-        selectedColor: AppColors.lightGold,
-        side: BorderSide(color: const Color(0xFFE0E0E0)),
+        backgroundColor: colorScheme.surface,
+        selectedColor: colorScheme.primaryContainer,
+        side: BorderSide(color: colorScheme.outlineVariant),
       ),
       navigationBarTheme: NavigationBarThemeData(
         height: 72,
-        backgroundColor: AppColors.onPrimary,
+        backgroundColor: colorScheme.surface,
         surfaceTintColor: Colors.transparent,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        indicatorColor: AppColors.lightGold,
+        indicatorColor: colorScheme.primaryContainer,
       ),
     );
   }

@@ -27,42 +27,66 @@ class LoadListScreen extends ConsumerWidget {
           await ref.read(driverLoadListProvider.future);
         },
         child: loadsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline,
-                    size: 48, color: theme.colorScheme.error),
-                const SizedBox(height: 16),
-                Text(l10n.error, style: theme.textTheme.bodyLarge),
-                const SizedBox(height: 16),
-                FilledButton.tonal(
-                  onPressed: () => ref.invalidate(driverLoadListProvider),
-                  child: Text(l10n.retry),
+          loading: () => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.7,
+                child: const Center(child: CircularProgressIndicator()),
+              ),
+            ],
+          ),
+          error: (e, _) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.7,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline,
+                          size: 48, color: theme.colorScheme.error),
+                      const SizedBox(height: 16),
+                      Text(l10n.error, style: theme.textTheme.bodyLarge),
+                      const SizedBox(height: 16),
+                      FilledButton.tonal(
+                        onPressed: () => ref.invalidate(driverLoadListProvider),
+                        child: Text(l10n.retry),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
           data: (loads) {
             if (loads.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.local_shipping_outlined,
-                        size: 64,
-                        color: theme.colorScheme.onSurfaceVariant
-                            .withValues(alpha: 0.4)),
-                    const SizedBox(height: 16),
-                    Text(
-                      l10n.noLoads,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.7,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.local_shipping_outlined,
+                              size: 64,
+                              color: theme.colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.4)),
+                          const SizedBox(height: 16),
+                          Text(
+                            l10n.noLoads,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               );
             }
 
