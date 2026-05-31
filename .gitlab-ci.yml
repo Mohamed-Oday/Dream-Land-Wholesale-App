@@ -1,4 +1,10 @@
-image: cirrusci/flutter:stable
+# GitLab CI for Flutter Android APK build
+# 1. Push this repo to GitLab
+# 2. Go to Settings → CI/CD → Variables, add:
+#    SUPABASE_URL, SUPABASE_ANON_KEY, GOOGLE_SERVICES_JSON
+# 3. Build starts automatically on push
+
+image: ghcr.io/cirruslabs/flutter:stable
 
 variables:
   GRADLE_OPTS: "-Xmx2g -Dorg.gradle.daemon=false"
@@ -11,6 +17,7 @@ before_script:
   - echo "$SUPABASE_ANON_KEY" >> .env
   - mkdir -p android/app/src/release
   - echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+  - flutter config --no-analytics
   - flutter pub get
 
 build_apk:
@@ -18,6 +25,7 @@ build_apk:
   script:
     - flutter build apk --release
   artifacts:
+    name: "tawzii-$CI_COMMIT_SHORT_SHA"
     paths:
       - build/app/outputs/flutter-apk/app-release.apk
     expire_in: 1 week
