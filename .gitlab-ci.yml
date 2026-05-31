@@ -1,0 +1,23 @@
+image: cirrusci/flutter:stable
+
+variables:
+  GRADLE_OPTS: "-Xmx2g -Dorg.gradle.daemon=false"
+
+stages:
+  - build
+
+before_script:
+  - echo "$SUPABASE_URL" > .env
+  - echo "$SUPABASE_ANON_KEY" >> .env
+  - mkdir -p android/app/src/release
+  - echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+  - flutter pub get
+
+build_apk:
+  stage: build
+  script:
+    - flutter build apk --release
+  artifacts:
+    paths:
+      - build/app/outputs/flutter-apk/app-release.apk
+    expire_in: 1 week
