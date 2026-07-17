@@ -1,491 +1,471 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-
-import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
-import 'package:tawzii/core/theme/app_colors.dart';
+import 'package:tawzii/core/theme/app_theme.dart';
+import 'package:tawzii/core/ui/money_text.dart';
+import 'package:tawzii/core/ui/section_label.dart';
+import 'package:tawzii/core/ui/state_blocks.dart';
+import 'package:tawzii/core/ui/status_dot.dart';
+import 'package:tawzii/core/ui/surface_card.dart';
+import 'package:tawzii/core/ui/tawzii_row.dart';
 import 'package:tawzii/features/auth/providers/auth_provider.dart';
 import 'package:tawzii/features/orders/providers/order_provider.dart';
+import 'package:tawzii/features/orders/screens/create_order_screen.dart';
 import 'package:tawzii/features/packages/providers/package_provider.dart';
+import 'package:tawzii/features/packages/widgets/package_collection_sheet.dart';
 import 'package:tawzii/features/payments/providers/payment_provider.dart';
-import 'package:tawzii/features/products/providers/product_provider.dart';
+import 'package:tawzii/features/payments/screens/payment_form_screen.dart';
+import 'package:tawzii/features/receipts/screens/receipt_screen.dart';
 import 'package:tawzii/features/stores/providers/store_provider.dart';
 import 'package:tawzii/features/stores/screens/store_form_screen.dart';
 
+/// Local (feature-scoped) providers so the hub can refresh after field actions.
+final _storeByIdProvider = FutureProvider.autoDispose
+    .family<Map<String, dynamic>?, String>((ref, storeId) async {
+  final repo = ref.watch(storeRepositoryProvider);
+  if (repo == null) return null;
+  return repo.getById(storeId);
+});
+
+final _paymentsByStoreProvider = FutureProvider.autoDispose
+    .family<List<Map<String, dynamic>>, String>((ref, storeId) async {
+  final repo = ref.watch(paymentRepositoryProvider);
+  if (repo == null) return [];
+  return repo.getByStore(storeId);
+});
+
+final _packageBalancesByStoreProvider = FutureProvider.autoDispose
+    .family<List<Map<String, dynamic>>, String>((ref, storeId) async {
+  final repo = ref.watch(packageRepositoryProvider);
+  if (repo == null) return [];
+  return repo.getBalancesByStore(storeId);
+});
+
+/// 4b — Store detail: THE VISIT HUB.
+/// Debt hero + the two field actions in the thumb zone; order entry starts here.
 class StoreDetailScreen extends ConsumerWidget {
   final String storeId;
 
   const StoreDetailScreen({super.key, required this.storeId});
 
+  void _refreshAll(WidgetRef ref) {
+    ref.invalidate(_storeByIdProvider(storeId));
+    ref.invalidate(_paymentsByStoreProvider(storeId));
+    ref.invalidate(_packageBalancesByStoreProvider(storeId));
+    ref.invalidate(ordersByStoreProvider(storeId));
+    ref.invalidate(storeListProvider);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final currencyFormat = NumberFormat('#,##0.00', 'ar');
+    final t = TawziiTokens.of(context);
     final dateFormat = DateFormat('dd/MM HH:mm');
 
-    final storeRepo = ref.watch(storeRepositoryProvider);
+    final storeAsync = ref.watch(_storeByIdProvider(storeId));
     final orders = ref.watch(ordersByStoreProvider(storeId));
-    final products = ref.watch(productListProvider);
+    final payments = ref.watch(_paymentsByStoreProvider(storeId));
+    final packageBalances =
+        ref.watch(_packageBalancesByStoreProvider(storeId));
 
-    return FutureBuilder<Map<String, dynamic>>(
-      future: storeRepo?.getById(storeId),
-      builder: (context, storeSnap) {
-        final store = storeSnap.data;
-        final storeName = store?['name'] as String? ?? l10n.storeDetails;
+    final store = storeAsync.valueOrNull;
+    final storeName = store?['name'] as String? ?? l10n.storeDetails;
+    final currentUser = ref.watch(currentUserProvider);
+    final canAdjust =
+        currentUser?.isOwner == true || currentUser?.isAdmin == true;
 
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(storeName),
-            actions: [
-              if (store != null)
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  tooltip: l10n.edit,
-                  onPressed: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => StoreFormScreen(store: store),
-                      ),
-                    );
-                    ref.invalidate(storeListProvider);
-                  },
-                ),
-            ],
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(storeName),
+        actions: [
+          if (store != null)
+            TextButton(
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => StoreFormScreen(store: store),
+                  ),
+                );
+                _refreshAll(ref);
+              },
+              child: Text(l10n.edit),
+            ),
+        ],
+      ),
+      body: storeAsync.when(
+        loading: () => const Padding(
+          padding: EdgeInsetsDirectional.all(18),
+          child: SkeletonList(count: 6),
+        ),
+        error: (_, _) => Padding(
+          padding: const EdgeInsetsDirectional.all(18),
+          child: ErrorRetryRow(
+            onRetry: () => ref.invalidate(_storeByIdProvider(storeId)),
           ),
-          body: storeSnap.connectionState == ConnectionState.waiting
-              ? const Center(child: CircularProgressIndicator())
-              : store == null
-                  ? Center(child: Text(l10n.error))
-                  : RefreshIndicator(
-                      onRefresh: () async {
-                        ref.invalidate(ordersByStoreProvider(storeId));
-                      },
-                      child: ListView(
-                        padding: const EdgeInsets.all(16),
-                        children: [
-                          // --- Store Info Card ---
-                          Card(
-                            elevation: 0,
-                            color: colorScheme.surfaceContainerLow,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                children: [
-                                  if ((store['address'] ?? '')
-                                      .toString()
-                                      .isNotEmpty)
-                                    _InfoRow(
-                                      icon: Icons.location_on_outlined,
-                                      label: l10n.address,
-                                      value: store['address'] as String,
-                                      theme: theme,
-                                    ),
-                                  if ((store['phone'] ?? '')
-                                      .toString()
-                                      .isNotEmpty) ...[
-                                    const SizedBox(height: 8),
-                                    _InfoRow(
-                                      icon: Icons.phone_outlined,
-                                      label: l10n.phone,
-                                      value: store['phone'] as String,
-                                      theme: theme,
-                                    ),
-                                  ],
-                                  if ((store['contact_person'] ?? '')
-                                      .toString()
-                                      .isNotEmpty) ...[
-                                    const SizedBox(height: 8),
-                                    _InfoRow(
-                                      icon: Icons.person_outline,
-                                      label: l10n.contactPerson,
-                                      value:
-                                          store['contact_person'] as String,
-                                      theme: theme,
-                                    ),
-                                  ],
-                                  const SizedBox(height: 12),
-                                  const Divider(height: 1),
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(l10n.balance,
-                                          style: theme.textTheme.titleSmall),
-                                      Text(
-                                        '${currencyFormat.format((store['credit_balance'] as num?)?.toDouble() ?? 0)} ${l10n.currencyUnit}',
-                                        style: theme.textTheme.titleMedium
-                                            ?.copyWith(
-                                          color: ((store['credit_balance']
-                                                          as num?)
-                                                      ?.toDouble() ??
-                                                  0) >
-                                              0
-                                              ? colorScheme.error
-                                              : AppColors.success,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  // Adjust Balance button (owner/admin only)
-                                  if (ref.watch(currentUserProvider)?.isOwner == true ||
-                                      ref.watch(currentUserProvider)?.isAdmin == true) ...[
-                                    const SizedBox(height: 12),
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: OutlinedButton.icon(
-                                        onPressed: () => _showAdjustBalanceDialog(
-                                          context, ref, storeId, store,
-                                        ),
-                                        icon: const Icon(Icons.account_balance_wallet, size: 18),
-                                        label: Text(l10n.adjustBalance),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ),
+        ),
+        data: (store) {
+          if (store == null) {
+            return Padding(
+              padding: const EdgeInsetsDirectional.all(18),
+              child: ErrorRetryRow(
+                onRetry: () => ref.invalidate(_storeByIdProvider(storeId)),
+              ),
+            );
+          }
 
-                          // --- Store Location Map ---
-                          if (store['gps_lat'] != null &&
-                              store['gps_lng'] != null) ...[
-                            const SizedBox(height: 16),
-                            _SectionHeader(
-                              title: l10n.storeLocation,
-                              icon: Icons.map_outlined,
-                              iconColor: colorScheme.primary,
+          final balance =
+              ((store['credit_balance'] as num?) ?? 0).toDouble();
+          final hasDebt = balance > 0;
+          final subtitle = [
+            if ((store['address'] ?? '').toString().isNotEmpty)
+              store['address'],
+            if ((store['phone'] ?? '').toString().isNotEmpty)
+              '\u2066${store['phone']}\u2069',
+            if ((store['contact_person'] ?? '').toString().isNotEmpty)
+              store['contact_person'],
+          ].join(' · ');
+
+          final totalPackages = packageBalances.valueOrNull?.fold<int>(
+                0,
+                (sum, b) => sum + ((b['balance'] as num?)?.toInt() ?? 0),
+              ) ??
+              0;
+
+          return RefreshIndicator(
+            onRefresh: () async => _refreshAll(ref),
+            child: ListView(
+              padding: const EdgeInsetsDirectional.fromSTEB(18, 8, 18, 24),
+              children: [
+                if (subtitle.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(bottom: 14),
+                    child: Text(
+                      subtitle,
+                      style: TextStyle(
+                          fontSize: 12, color: t.textSecondary),
+                    ),
+                  ),
+
+                // --- Debt hero ---
+                Text(
+                  'الرصيد المستحق',
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
+                const SizedBox(height: 4),
+                Money(
+                  balance,
+                  size: MoneySize.hero,
+                  tint: hasDebt ? MoneyTint.danger : MoneyTint.neutral,
+                  showDot: hasDebt,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'عبوات لدى المتجر: \u2066$totalPackages\u2069',
+                  style: TextStyle(fontSize: 12, color: t.textMuted),
+                ),
+                if (canAdjust)
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TextButton(
+                      onPressed: () =>
+                          _showAdjustBalanceDialog(context, ref, store),
+                      child: Text(l10n.adjustBalance),
+                    ),
+                  ),
+                const SizedBox(height: 8),
+
+                // --- The two field actions (thumb zone) ---
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(0, 52),
+                        ),
+                        onPressed: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const CreateOrderScreen()),
+                          );
+                          _refreshAll(ref);
+                        },
+                        child: const Text('طلب جديد'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          side:
+                              BorderSide(color: t.borderStrong, width: 2),
+                          minimumSize: const Size(0, 52),
+                        ),
+                        onPressed: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const PaymentFormScreen()),
+                          );
+                          _refreshAll(ref);
+                        },
+                        child: const Text('تحصيل دفعة'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // --- Returnable packages ---
+                SurfaceCard(
+                  hardened: true,
+                  padding: const EdgeInsetsDirectional.fromSTEB(
+                      14, 11, 14, 11),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'عبوات قابلة للاسترجاع',
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600),
                             ),
-                            const SizedBox(height: 8),
-                            Card(
-                              elevation: 0,
-                              color: colorScheme.surfaceContainerLow,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              clipBehavior: Clip.antiAlias,
-                              child: SizedBox(
-                                height: 200,
-                                child: FlutterMap(
-                                  options: MapOptions(
-                                    initialCenter: LatLng(
-                                      (store['gps_lat'] as num).toDouble(),
-                                      (store['gps_lng'] as num).toDouble(),
-                                    ),
-                                    initialZoom: 15,
-                                  ),
-                                  children: [
-                                    TileLayer(
-                                      urlTemplate:
-                                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                      userAgentPackageName:
-                                          'com.dreamland.tawzii',
-                                    ),
-                                    MarkerLayer(
-                                      markers: [
-                                        Marker(
-                                          point: LatLng(
-                                            (store['gps_lat'] as num)
-                                                .toDouble(),
-                                            (store['gps_lng'] as num)
-                                                .toDouble(),
-                                          ),
-                                          width: 40,
-                                          height: 40,
-                                          child: const Icon(
-                                            Icons.location_pin,
-                                            color: Colors.red,
-                                            size: 40,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SimpleAttributionWidget(
-                                      source:
-                                          Text('OpenStreetMap contributors'),
-                                    ),
-                                  ],
-                                ),
+                            packageBalances.when(
+                              loading: () => Text('…',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: t.textMuted)),
+                              error: (_, _) => Text(l10n.error,
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: t.textMuted)),
+                              data: (_) => Text(
+                                'الإجمالي: \u2066$totalPackages\u2069 ${l10n.packageUnit}',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: t.textSecondary),
                               ),
                             ),
                           ],
+                        ),
+                      ),
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          side:
+                              BorderSide(color: t.borderStrong, width: 2),
+                          minimumSize: const Size(0, 40),
+                          padding: const EdgeInsetsDirectional
+                              .symmetric(horizontal: 14),
+                        ),
+                        onPressed: () async {
+                          await showPackageCollectionSheet(
+                            context,
+                            storeId: storeId,
+                            storeName: store['name'] as String?,
+                          );
+                          _refreshAll(ref);
+                        },
+                        child: const Text('تحصيل العبوات',
+                            style: TextStyle(fontSize: 13)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
 
-                          const SizedBox(height: 24),
-
-                          // --- Recent Orders ---
-                          _SectionHeader(
-                            title: l10n.recentOrders,
-                            icon: Icons.receipt_long,
-                            iconColor: colorScheme.primary,
-                          ),
-                          const SizedBox(height: 8),
-                          orders.when(
-                            data: (list) {
-                              if (list.isEmpty) {
-                                return _EmptySection(
-                                    message: l10n.noOrdersForStore);
-                              }
-                              return Column(
-                                children: list.map((order) {
-                                  final total = (order['total'] as num?)
-                                          ?.toDouble() ??
-                                      0;
-                                  final status =
-                                      order['status'] as String? ??
-                                          'created';
-                                  final discountStatus =
-                                      order['discount_status'] as String? ??
-                                          'none';
-                                  final createdAt = DateTime.tryParse(
-                                      order['created_at'] as String? ?? '');
-
-                                  return Card(
-                                    elevation: 0,
-                                    margin:
-                                        const EdgeInsets.only(bottom: 8),
-                                    child: ListTile(
-                                      leading: Icon(Icons.receipt_long,
-                                          color: colorScheme.primary),
-                                      title: Text(
-                                        '${currencyFormat.format(total)} ${l10n.currencyUnit}',
-                                        style: theme.textTheme.titleSmall,
-                                      ),
-                                      subtitle: Text(
-                                        createdAt != null
-                                            ? dateFormat
-                                                .format(createdAt.toLocal())
-                                            : '',
-                                        style: theme.textTheme.bodySmall,
-                                      ),
-                                      trailing: Wrap(
-                                        spacing: 4,
-                                        children: [
-                                          _MiniChip(
-                                            label: status == 'delivered'
-                                                ? l10n.statusDelivered
-                                                : status == 'cancelled'
-                                                    ? l10n.statusCancelled
-                                                    : l10n.statusCreated,
-                                            color: status == 'delivered'
-                                                ? AppColors.success
-                                                : status == 'cancelled'
-                                                    ? AppColors.error
-                                                    : AppColors.primary,
-                                          ),
-                                          if (discountStatus != 'none')
-                                            _MiniChip(
-                                              label: discountStatus ==
-                                                      'pending'
-                                                  ? l10n.discountPending
-                                                  : discountStatus ==
-                                                          'approved'
-                                                      ? l10n
-                                                          .discountApproved
-                                                      : l10n
-                                                          .discountRejected,
-                                              color: discountStatus ==
-                                                      'pending'
-                                                  ? AppColors.warning
-                                                  : discountStatus ==
-                                                          'approved'
-                                                      ? AppColors.success
-                                                      : AppColors.error,
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              );
-                            },
-                            loading: () => const Padding(
-                              padding: EdgeInsets.all(24),
-                              child:
-                                  Center(child: CircularProgressIndicator()),
+                // --- Store location (GPS map never mirrors) ---
+                if (store['gps_lat'] != null &&
+                    store['gps_lng'] != null) ...[
+                  SectionLabel(l10n.storeLocation),
+                  SurfaceCard(
+                    padding: EdgeInsetsDirectional.zero,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: SizedBox(
+                        height: 180,
+                        child: FlutterMap(
+                          options: MapOptions(
+                            initialCenter: LatLng(
+                              (store['gps_lat'] as num).toDouble(),
+                              (store['gps_lng'] as num).toDouble(),
                             ),
-                            error: (_, _) =>
-                                _EmptySection(message: l10n.error),
+                            initialZoom: 15,
                           ),
-
-                          const SizedBox(height: 24),
-
-                          // --- Recent Payments ---
-                          _SectionHeader(
-                            title: l10n.recentPayments,
-                            icon: Icons.payments,
-                            iconColor: AppColors.success,
-                          ),
-                          const SizedBox(height: 8),
-                          FutureBuilder<List<Map<String, dynamic>>>(
-                            future: ref
-                                .watch(paymentRepositoryProvider)
-                                ?.getByStore(storeId),
-                            builder: (context, snap) {
-                              if (snap.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const Padding(
-                                  padding: EdgeInsets.all(24),
-                                  child: Center(
-                                      child: CircularProgressIndicator()),
-                                );
-                              }
-                              final payments = snap.data ?? [];
-                              if (payments.isEmpty) {
-                                return _EmptySection(
-                                    message: l10n.noPaymentsForStore);
-                              }
-                              return Column(
-                                children: payments.take(10).map((payment) {
-                                  final amount = (payment['amount'] as num?)
-                                          ?.toDouble() ??
-                                      0;
-                                  final driver = payment['users']
-                                      as Map<String, dynamic>?;
-                                  final driverName =
-                                      driver?['name'] as String? ?? '';
-                                  final createdAt = DateTime.tryParse(
-                                      payment['created_at'] as String? ??
-                                          '');
-
-                                  return Card(
-                                    elevation: 0,
-                                    margin:
-                                        const EdgeInsets.only(bottom: 8),
-                                    child: ListTile(
-                                      leading: Icon(Icons.payments,
-                                          color: AppColors.success),
-                                      title: Text(
-                                        '${currencyFormat.format(amount)} ${l10n.currencyUnit}',
-                                        style: theme.textTheme.titleSmall,
-                                      ),
-                                      subtitle: Text(
-                                        [
-                                          if (driverName.isNotEmpty)
-                                            driverName,
-                                          if (createdAt != null)
-                                            dateFormat.format(
-                                                createdAt.toLocal()),
-                                        ].join(' · '),
-                                        style: theme.textTheme.bodySmall,
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              );
-                            },
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          // --- Package Balances ---
-                          _SectionHeader(
-                            title: l10n.packageBalances,
-                            icon: Icons.inventory_2,
-                            iconColor: colorScheme.tertiary,
-                          ),
-                          const SizedBox(height: 8),
-                          FutureBuilder<List<Map<String, dynamic>>>(
-                            future: ref
-                                .watch(packageRepositoryProvider)
-                                ?.getBalancesByStore(storeId),
-                            builder: (context, snap) {
-                              if (snap.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const Padding(
-                                  padding: EdgeInsets.all(24),
-                                  child: Center(
-                                      child: CircularProgressIndicator()),
-                                );
-                              }
-                              final balances = snap.data ?? [];
-                              if (balances.isEmpty) {
-                                return _EmptySection(
-                                    message: l10n.noPackageActivity);
-                              }
-
-                              // Sum all balances into one total
-                              final totalPackages = balances.fold<int>(
-                                0,
-                                (sum, b) =>
-                                    sum + ((b['balance'] as num?)?.toInt() ?? 0),
-                              );
-
-                              return Card(
-                                elevation: 0,
-                                color: colorScheme.surfaceContainerLow,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                clipBehavior: Clip.antiAlias,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 24,
+                          children: [
+                            TileLayer(
+                              urlTemplate:
+                                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              userAgentPackageName:
+                                  'com.dreamland.tawzii',
+                            ),
+                            MarkerLayer(
+                              markers: [
+                                Marker(
+                                  point: LatLng(
+                                    (store['gps_lat'] as num)
+                                        .toDouble(),
+                                    (store['gps_lng'] as num)
+                                        .toDouble(),
                                   ),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.inventory_2,
-                                          color: colorScheme.tertiary,
-                                          size: 32),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Text(
-                                          'إجمالي العبوات',
-                                          style: theme.textTheme.titleMedium
-                                              ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                      Text(
-                                        '$totalPackages',
-                                        style: theme.textTheme.headlineSmall
-                                            ?.copyWith(
-                                          color: colorScheme.tertiary,
-                                          fontWeight: FontWeight.bold,
-                                          fontFeatures: const [
-                                            FontFeature.tabularFigures()
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        l10n.packageUnit,
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                          color: colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
+                                  width: 40,
+                                  height: 40,
+                                  child: Icon(
+                                    Icons.location_pin,
+                                    color: t.danger,
+                                    size: 40,
                                   ),
                                 ),
-                              );
-                            },
-                          ),
-
-                          const SizedBox(height: 24),
-                        ],
+                              ],
+                            ),
+                            const SimpleAttributionWidget(
+                              source:
+                                  Text('OpenStreetMap contributors'),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-        );
-      },
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // --- Recent orders ---
+                SectionLabel(l10n.recentOrders),
+                orders.when(
+                  loading: () =>
+                      const SurfaceCard(child: SkeletonList(count: 3)),
+                  error: (_, _) => ErrorRetryRow(
+                    onRetry: () =>
+                        ref.invalidate(ordersByStoreProvider(storeId)),
+                  ),
+                  data: (list) {
+                    if (list.isEmpty) {
+                      return _EmptySection(message: l10n.noOrdersForStore);
+                    }
+                    return SurfaceCard(
+                      child: Column(
+                        children: list.map((order) {
+                          final total =
+                              ((order['total'] as num?) ?? 0).toDouble();
+                          final status =
+                              order['status'] as String? ?? 'created';
+                          final discountStatus =
+                              order['discount_status'] as String? ??
+                                  'none';
+                          final createdAt = DateTime.tryParse(
+                              order['created_at'] as String? ?? '');
+
+                          final statusLabel = status == 'delivered'
+                              ? l10n.statusDelivered
+                              : status == 'cancelled'
+                                  ? l10n.statusCancelled
+                                  : l10n.statusCreated;
+                          final discountLabel = discountStatus == 'pending'
+                              ? l10n.discountPending
+                              : discountStatus == 'approved'
+                                  ? l10n.discountApproved
+                                  : discountStatus == 'rejected'
+                                      ? l10n.discountRejected
+                                      : null;
+
+                          return TawziiRow(
+                            leading: StatusDot(
+                              status == 'delivered'
+                                  ? StatusKind.success
+                                  : status == 'cancelled'
+                                      ? StatusKind.danger
+                                      : StatusKind.info,
+                            ),
+                            title: createdAt != null
+                                ? '\u2066${dateFormat.format(createdAt.toLocal())}\u2069'
+                                : statusLabel,
+                            subtitle: [
+                              statusLabel,
+                              ?discountLabel,
+                            ].join(' · '),
+                            trailing: Money(total),
+                            onTap: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ReceiptScreen.order(
+                                      orderId: order['id'] as String),
+                                ),
+                              );
+                              _refreshAll(ref);
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // --- Recent payments ---
+                SectionLabel(l10n.recentPayments),
+                payments.when(
+                  loading: () =>
+                      const SurfaceCard(child: SkeletonList(count: 2)),
+                  error: (_, _) => ErrorRetryRow(
+                    onRetry: () => ref
+                        .invalidate(_paymentsByStoreProvider(storeId)),
+                  ),
+                  data: (list) {
+                    if (list.isEmpty) {
+                      return _EmptySection(
+                          message: l10n.noPaymentsForStore);
+                    }
+                    return SurfaceCard(
+                      child: Column(
+                        children: list.take(10).map((payment) {
+                          final amount =
+                              ((payment['amount'] as num?) ?? 0)
+                                  .toDouble();
+                          final driver = payment['users']
+                              as Map<String, dynamic>?;
+                          final driverName =
+                              driver?['name'] as String? ?? '';
+                          final createdAt = DateTime.tryParse(
+                              payment['created_at'] as String? ?? '');
+
+                          return TawziiRow(
+                            leading:
+                                const StatusDot(StatusKind.success),
+                            title: driverName.isNotEmpty
+                                ? driverName
+                                : l10n.recentPayments,
+                            subtitle: createdAt != null
+                                ? '\u2066${dateFormat.format(createdAt.toLocal())}\u2069'
+                                : null,
+                            trailing: Money(amount,
+                                tint: MoneyTint.success),
+                          );
+                        }).toList(),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
   void _showAdjustBalanceDialog(
     BuildContext context,
     WidgetRef ref,
-    String storeId,
     Map<String, dynamic> store,
   ) {
     final l10n = AppLocalizations.of(context)!;
@@ -495,164 +475,111 @@ class StoreDetailScreen extends ConsumerWidget {
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.adjustBalance),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.positiveAddsCredit,
-                style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+      builder: (ctx) {
+        final t = TawziiTokens.of(ctx);
+        return AlertDialog(
+          title: Text(l10n.adjustBalance),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.positiveAddsCredit,
+                  style:
+                      TextStyle(fontSize: 12, color: t.textSecondary),
                 ),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: amountCtrl,
-                keyboardType: const TextInputType.numberWithOptions(
-                    signed: true, decimal: true),
-                decoration: InputDecoration(
-                  labelText: l10n.adjustmentAmount,
-                  suffixText: l10n.currencyUnit,
+                const SizedBox(height: 12),
+                Text(
+                  l10n.adjustmentAmount,
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: t.textSecondary),
                 ),
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return l10n.error;
-                  final val = double.tryParse(v.trim());
-                  if (val == null || val == 0) return l10n.error;
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: reasonCtrl,
-                decoration: InputDecoration(
-                  labelText: l10n.adjustmentReason,
+                const SizedBox(height: 5),
+                TextFormField(
+                  controller: amountCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(
+                      signed: true, decimal: true),
+                  decoration: InputDecoration(
+                    suffixText: l10n.currencyUnit,
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return l10n.error;
+                    final val = double.tryParse(v.trim());
+                    if (val == null || val == 0) return l10n.error;
+                    return null;
+                  },
                 ),
-                maxLines: 2,
-                validator: (v) {
-                  if (v == null || v.trim().length < 3) {
-                    return l10n.adjustmentReasonRequired;
+                const SizedBox(height: 12),
+                Text(
+                  l10n.adjustmentReason,
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: t.textSecondary),
+                ),
+                const SizedBox(height: 5),
+                TextFormField(
+                  controller: reasonCtrl,
+                  maxLines: 2,
+                  validator: (v) {
+                    if (v == null || v.trim().length < 3) {
+                      return l10n.adjustmentReasonRequired;
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () async {
+                if (!formKey.currentState!.validate()) return;
+                Navigator.pop(ctx);
+
+                final amount = double.parse(amountCtrl.text.trim());
+                final reason = reasonCtrl.text.trim();
+
+                try {
+                  final storeRepo = ref.read(storeRepositoryProvider)!;
+                  final result = await storeRepo.adjustBalance(
+                    storeId: storeId,
+                    amount: amount,
+                    reason: reason,
+                  );
+
+                  if (context.mounted) {
+                    final prev = result['previous_balance'];
+                    final next = result['new_balance'];
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                            '${l10n.adjustmentSuccess}: \u2066$prev\u2069 → \u2066$next\u2069'),
+                      ),
+                    );
+                    _refreshAll(ref);
                   }
-                  return null;
-                },
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () async {
-              if (!formKey.currentState!.validate()) return;
-              Navigator.pop(ctx);
-
-              final amount = double.parse(amountCtrl.text.trim());
-              final reason = reasonCtrl.text.trim();
-
-              try {
-                final storeRepo = ref.read(storeRepositoryProvider)!;
-                final result = await storeRepo.adjustBalance(
-                  storeId: storeId,
-                  amount: amount,
-                  reason: reason,
-                );
-
-                if (context.mounted) {
-                  final prev = result['previous_balance'];
-                  final next = result['new_balance'];
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                          '${l10n.adjustmentSuccess}: $prev → $next'),
-                      backgroundColor: AppColors.success,
-                    ),
-                  );
-                  // Force rebuild to show new balance
-                  (context as Element).markNeedsBuild();
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('${l10n.error}: $e')),
+                    );
+                  }
                 }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${l10n.error}: $e'),
-                      backgroundColor: AppColors.error,
-                    ),
-                  );
-                }
-              }
-            },
-            child: Text(l10n.confirmAdjustment),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final ThemeData theme;
-
-  const _InfoRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.theme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  )),
-              Text(value, style: theme.textTheme.bodyMedium),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Color iconColor;
-
-  const _SectionHeader({
-    required this.title,
-    required this.icon,
-    required this.iconColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: iconColor),
-        const SizedBox(width: 8),
-        Text(title,
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w600)),
-      ],
+              },
+              child: Text(l10n.confirmAdjustment),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -664,38 +591,14 @@ class _EmptySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final t = TawziiTokens.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsetsDirectional.symmetric(vertical: 16),
       child: Center(
         child: Text(
           message,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+          style: TextStyle(fontSize: 13, color: t.textMuted),
         ),
-      ),
-    );
-  }
-}
-
-class _MiniChip extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _MiniChip({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600),
       ),
     );
   }

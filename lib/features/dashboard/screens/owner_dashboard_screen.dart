@@ -5,28 +5,52 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
-import 'package:tawzii/core/theme/app_colors.dart';
+import 'package:tawzii/core/theme/app_theme.dart';
+import 'package:tawzii/core/ui/hero_number.dart';
+import 'package:tawzii/core/ui/money_text.dart';
+import 'package:tawzii/core/ui/section_label.dart';
+import 'package:tawzii/core/ui/state_blocks.dart';
+import 'package:tawzii/core/ui/status_dot.dart';
+import 'package:tawzii/core/ui/surface_card.dart';
+import 'package:tawzii/core/ui/tawzii_row.dart';
 import 'package:tawzii/features/auth/providers/auth_provider.dart';
 import 'package:tawzii/features/dashboard/providers/dashboard_provider.dart';
-import 'package:tawzii/features/dashboard/widgets/kpi_card.dart';
 import 'package:tawzii/features/orders/providers/order_provider.dart';
 import 'package:tawzii/features/orders/screens/order_list_screen.dart';
-import 'package:tawzii/features/stores/screens/store_detail_screen.dart';
 import 'package:tawzii/features/payments/screens/payment_list_screen.dart';
 import 'package:tawzii/features/products/providers/product_provider.dart';
-import 'package:tawzii/features/products/screens/product_form_screen.dart';
+import 'package:tawzii/features/products/screens/product_detail_screen.dart';
 import 'package:tawzii/features/products/screens/product_list_screen.dart';
 import 'package:tawzii/features/driver_loads/screens/load_list_screen.dart';
+import 'package:tawzii/features/stores/screens/store_detail_screen.dart';
 
-class OwnerDashboardScreen extends ConsumerWidget {
+/// Owner dashboard — canvas 2b "Queue-first": the decision queue (pending
+/// discounts with a draining RTL countdown) sits ABOVE the revenue hero,
+/// followed by debtors / package / low-stock lists as status-dot rows.
+class OwnerDashboardScreen extends ConsumerStatefulWidget {
   const OwnerDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+  ConsumerState<OwnerDashboardScreen> createState() =>
+      _OwnerDashboardScreenState();
+}
 
+class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
+  /// Last time the summary loaded successfully — shown on stale/offline hero.
+  DateTime? _lastUpdated;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final t = TawziiTokens.of(context);
+
+    ref.listen(dashboardSummaryProvider, (previous, next) {
+      if (next.hasValue && !next.isLoading) {
+        _lastUpdated = DateTime.now();
+      }
+    });
+
+    final summary = ref.watch(dashboardSummaryProvider);
     final revenue = ref.watch(todayRevenueProvider);
     final orderCount = ref.watch(todayOrderCountProvider);
     final purchases = ref.watch(todayPurchasesProvider);
@@ -36,12 +60,34 @@ class OwnerDashboardScreen extends ConsumerWidget {
     final pendingDiscounts = ref.watch(pendingDiscountsProvider);
     final lowStockProducts = ref.watch(lowStockProductsProvider);
 
-    final numberFormat = NumberFormat('#,##0', 'ar');
-    final currencyFormat = NumberFormat('#,##0.00', 'ar');
+    final initialLoading = summary.isLoading && !summary.hasValue;
+    final failed = summary.hasError && !summary.isLoading;
+    // Stale: refresh failed but we still hold the previous numbers.
+    final stale = failed && summary.hasValue;
+    final offline = failed && _isNetworkError(summary.error);
+    final lastUpdatedLabel = _lastUpdated == null
+        ? null
+        : DateFormat('HH:mm').format(_lastUpdated!);
+
+    final dateLabel = DateFormat('EEEE d MMMM', 'ar').format(DateTime.now());
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.dashboard),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.dashboard),
+            Text(
+              dateLabel,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                height: 1.4,
+                color: t.textMuted,
+              ),
+            ),
+          ],
+        ),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
@@ -70,444 +116,348 @@ class OwnerDashboardScreen extends ConsumerWidget {
                 case 'products':
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const ProductListScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const ProductListScreen(),
+                    ),
                   );
               }
             },
             itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'loads',
-                child: ListTile(
-                  leading: const Icon(Icons.local_shipping),
-                  title: Text(l10n.driverLoads),
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                ),
-              ),
-              PopupMenuItem(
-                value: 'payments',
-                child: ListTile(
-                  leading: const Icon(Icons.payments),
-                  title: Text(l10n.payments),
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                ),
-              ),
-              PopupMenuItem(
-                value: 'orders',
-                child: ListTile(
-                  leading: const Icon(Icons.receipt_long),
-                  title: Text(l10n.orders),
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                ),
-              ),
-              PopupMenuItem(
-                value: 'products',
-                child: ListTile(
-                  leading: const Icon(Icons.inventory_2),
-                  title: Text(l10n.products),
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                ),
-              ),
+              PopupMenuItem(value: 'loads', child: Text(l10n.driverLoads)),
+              PopupMenuItem(value: 'payments', child: Text(l10n.payments)),
+              PopupMenuItem(value: 'orders', child: Text(l10n.orders)),
+              PopupMenuItem(value: 'products', child: Text(l10n.products)),
             ],
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(todayRevenueProvider);
-          ref.invalidate(todayOrderCountProvider);
-          ref.invalidate(todayPurchasesProvider);
-          ref.invalidate(todayProfitProvider);
-          ref.invalidate(topDebtorsProvider);
-          ref.invalidate(packageAlertsProvider);
-          ref.invalidate(pendingDiscountsProvider);
-          ref.invalidate(lowStockProductsProvider);
-          await Future.wait([
-            ref.read(todayRevenueProvider.future),
-            ref.read(todayOrderCountProvider.future),
-            ref.read(todayPurchasesProvider.future),
-            ref.read(todayProfitProvider.future),
-            ref.read(topDebtorsProvider.future),
-            ref.read(packageAlertsProvider.future),
-            ref.read(pendingDiscountsProvider.future),
-            ref.read(lowStockProductsProvider.future),
-          ]);
-        },
+        onRefresh: _refreshAll,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 24),
           children: [
-            // --- KPI Cards Row ---
-            Row(
-              children: [
-                Expanded(
-                  child: revenue.when(
-                    data: (value) => KpiCard(
+            // ---- offline / stale banner (2d) -------------------------------
+            if (stale || (failed && !summary.hasValue)) ...[
+              if (offline)
+                OfflineBanner(lastSyncedLabel: lastUpdatedLabel)
+              else
+                SurfaceCard(
+                  child: ErrorRetryRow(
+                    title: 'تعذّر تحميل اللوحة',
+                    message: lastUpdatedLabel == null
+                        ? 'تحقق من الاتصال ثم أعد المحاولة'
+                        : 'تحقق من الاتصال — الأرقام المعروضة محفوظة من \u2066$lastUpdatedLabel\u2069',
+                    onRetry: _retryAll,
+                  ),
+                ),
+              const SizedBox(height: 14),
+            ],
+
+            if (initialLoading)
+              ..._buildSkeleton()
+            else if (failed && !summary.hasValue)
+              const SizedBox.shrink()
+            else ...[
+              // ---- decision queue (above the hero, 2b) ---------------------
+              ..._buildDecisionQueue(
+                context,
+                pendingDiscounts,
+                paused: stale,
+              ),
+
+              // ---- revenue hero + borderless stat row ----------------------
+              Padding(
+                padding: const EdgeInsetsDirectional.only(
+                    start: 2, end: 2, top: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    HeroNumber(
                       label: l10n.todayRevenue,
-                      value: '${currencyFormat.format(value)} ${l10n.currencyUnit}',
-                      icon: Icons.payments_outlined,
+                      value: revenue.valueOrNull ?? 0,
+                      stale: stale,
+                      lastUpdatedLabel: lastUpdatedLabel,
                     ),
-                    loading: () => _buildShimmerCard(context),
-                    error: (_, _) => _buildErrorCard(
-                      context,
-                      l10n.todayRevenue,
-                      Icons.payments_outlined,
+                    const SizedBox(height: 10),
+                    _StatRow(
+                      stale: stale,
+                      profitLabel: l10n.todayProfit,
+                      profit: profit.valueOrNull ?? 0,
+                      purchasesLabel: l10n.todayPurchases,
+                      purchases: purchases.valueOrNull ?? 0,
+                      ordersLabel: l10n.orders,
+                      orderCount: orderCount.valueOrNull ?? 0,
                     ),
-                  ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: orderCount.when(
-                    data: (value) => KpiCard(
-                      label: l10n.todayOrders,
-                      value: numberFormat.format(value),
-                      icon: Icons.receipt_long_outlined,
-                    ),
-                    loading: () => _buildShimmerCard(context),
-                    error: (_, _) => _buildErrorCard(
+              ),
+
+              // ---- empty day (2d) ------------------------------------------
+              if (!stale &&
+                  orderCount.valueOrNull == 0 &&
+                  (revenue.valueOrNull ?? 0) == 0 &&
+                  !orderCount.isLoading) ...[
+                const SizedBox(height: 14),
+                SurfaceCard(
+                  child: EmptyState(
+                    title: 'لا توجد طلبات اليوم',
+                    message: 'ستظهر أول عملية بيع هنا فور تسجيلها من البائعين',
+                    ctaLabel: 'تحميل بائع',
+                    onCta: () => Navigator.push(
                       context,
-                      l10n.todayOrders,
-                      Icons.receipt_long_outlined,
+                      MaterialPageRoute(builder: (_) => const LoadListScreen()),
                     ),
                   ),
                 ),
               ],
-            ),
 
-            const SizedBox(height: 12),
+              const SizedBox(height: 22),
 
-            // --- KPI Cards Row 2 (Purchases + Profit) ---
-            Row(
-              children: [
-                Expanded(
-                  child: purchases.when(
-                    data: (value) => KpiCard(
-                      label: l10n.todayPurchases,
-                      value: '${currencyFormat.format(value)} ${l10n.currencyUnit}',
-                      icon: Icons.shopping_cart_outlined,
-                    ),
-                    loading: () => _buildShimmerCard(context),
-                    error: (_, _) => _buildErrorCard(
-                      context,
-                      l10n.todayPurchases,
-                      Icons.shopping_cart_outlined,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: profit.when(
-                    data: (value) => KpiCard(
-                      label: l10n.todayProfit,
-                      value: '${currencyFormat.format(value)} ${l10n.currencyUnit}',
-                      icon: Icons.trending_up_outlined,
-                      valueColor: value >= 0 ? AppColors.success : AppColors.error,
-                    ),
-                    loading: () => _buildShimmerCard(context),
-                    error: (_, _) => _buildErrorCard(
-                      context,
-                      l10n.todayProfit,
-                      Icons.trending_up_outlined,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // --- Pending Discounts Section ---
-            _SectionHeader(
-              title: l10n.pendingDiscounts,
-              icon: Icons.percent,
-              iconColor: colorScheme.tertiary,
-            ),
-            const SizedBox(height: 8),
-            pendingDiscounts.when(
-              data: (items) {
-                if (items.isEmpty) {
-                  return _EmptyState(
-                    icon: Icons.check_circle_outline,
-                    message: l10n.noPendingDiscounts,
-                    color: Colors.green,
-                  );
-                }
-                return Card(
-                  elevation: 0,
-                  color: colorScheme.surfaceContainerLow,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Column(
-                    children: [
-                      for (int i = 0; i < items.length; i++) ...[
-                        _PendingDiscountTile(
-                          order: items[i],
-                          onApprove: () => _handleApprove(context, ref, items[i]),
-                          onReject: () => _handleReject(context, ref, items[i]),
-                          currencyFormat: currencyFormat,
-                        ),
-                        if (i < items.length - 1)
-                          Divider(height: 1, indent: 72, color: colorScheme.outlineVariant),
-                      ],
-                    ],
-                  ),
-                );
-              },
-              loading: () => _buildShimmerList(context, 2),
-              error: (_, _) => _buildErrorSection(context, l10n.retry, () {
-                ref.invalidate(pendingDiscountsProvider);
-              }),
-            ),
-
-            const SizedBox(height: 24),
-
-            // --- Top Debtors Section ---
-            _SectionHeader(
-              title: l10n.topDebtors,
-              icon: Icons.warning_amber_rounded,
-              iconColor: colorScheme.error,
-            ),
-            const SizedBox(height: 8),
-            debtors.when(
-              data: (stores) {
-                if (stores.isEmpty) {
-                  return _EmptyState(
-                    icon: Icons.check_circle_outline,
-                    message: l10n.noDebts,
-                    color: Colors.green,
-                  );
-                }
-                return Card(
-                  elevation: 0,
-                  color: colorScheme.surfaceContainerLow,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Column(
-                    children: [
-                      for (int i = 0; i < stores.length; i++) ...[
-                        ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
-                          ),
-                          leading: CircleAvatar(
-                            backgroundColor:
-                                colorScheme.errorContainer,
-                            radius: 20,
-                            child: Icon(
-                              Icons.store,
-                              color: colorScheme.onErrorContainer,
-                              size: 20,
+              // ---- top debtors ---------------------------------------------
+              SectionLabel(l10n.topDebtors),
+              debtors.when(
+                data: (stores) {
+                  if (stores.isEmpty) {
+                    return SurfaceCard(
+                      child: EmptyState(
+                        title: l10n.noDebts,
+                        message: 'كل المتاجر سدّدت مستحقاتها',
+                      ),
+                    );
+                  }
+                  return SurfaceCard(
+                    child: Column(
+                      children: [
+                        for (int i = 0; i < stores.length; i++)
+                          TawziiRow(
+                            leading: const StatusDot(StatusKind.danger),
+                            title: stores[i]['name'] as String? ?? '',
+                            trailing: Money(
+                              _toDouble(stores[i]['credit_balance']),
+                              tint: MoneyTint.danger,
                             ),
-                          ),
-                          title: Text(
-                            stores[i]['name'] as String? ?? '',
-                            style: theme.textTheme.titleSmall,
-                          ),
-                          trailing: Text(
-                            '${currencyFormat.format(_toDouble(stores[i]['credit_balance']))} ${l10n.currencyUnit}',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              color: colorScheme.error,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => StoreDetailScreen(
-                                storeId: stores[i]['id'] as String,
-                              ),
-                            ),
-                          ),
-                        ),
-                        if (i < stores.length - 1)
-                          Divider(height: 1, indent: 72, color: colorScheme.outlineVariant),
-                      ],
-                    ],
-                  ),
-                );
-              },
-              loading: () => _buildShimmerList(context, 3),
-              error: (error, _) => _buildErrorSection(context, l10n.retry, () {
-                ref.invalidate(topDebtorsProvider);
-              }),
-            ),
-
-            const SizedBox(height: 24),
-
-            // --- Package Alerts Section ---
-            Row(
-              children: [
-                Expanded(
-                  child: _SectionHeader(
-                    title: '${l10n.packageAlerts} (>${ref.watch(packageAlertThresholdProvider)})',
-                    icon: Icons.inventory_2_outlined,
-                    iconColor: colorScheme.tertiary,
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.tune, size: 20, color: colorScheme.onSurfaceVariant),
-                  tooltip: l10n.alertThreshold,
-                  onPressed: () => _showThresholdDialog(context, ref),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            alerts.when(
-              data: (stores) {
-                final threshold = ref.watch(packageAlertThresholdProvider);
-                final filtered = stores.where((s) =>
-                    _toInt(s['total_outstanding']) >= threshold).toList();
-                if (filtered.isEmpty) {
-                  return _EmptyState(
-                    icon: Icons.check_circle_outline,
-                    message: l10n.allPackagesReturned,
-                    color: Colors.green,
-                  );
-                }
-                return Card(
-                  elevation: 0,
-                  color: colorScheme.surfaceContainerLow,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Column(
-                    children: [
-                      for (int i = 0; i < filtered.length; i++) ...[
-                        ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
-                          ),
-                          leading: CircleAvatar(
-                            backgroundColor:
-                                colorScheme.tertiaryContainer,
-                            radius: 20,
-                            child: Icon(
-                              Icons.inventory_2,
-                              color: colorScheme.onTertiaryContainer,
-                              size: 20,
-                            ),
-                          ),
-                          title: Text(
-                            filtered[i]['store_name'] as String? ?? '',
-                            style: theme.textTheme.titleSmall,
-                          ),
-                          trailing: Text(
-                            '${numberFormat.format(_toInt(filtered[i]['total_outstanding']))} ${l10n.packageUnit}',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              color: colorScheme.tertiary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        if (i < filtered.length - 1)
-                          Divider(height: 1, indent: 72, color: colorScheme.outlineVariant),
-                      ],
-                    ],
-                  ),
-                );
-              },
-              loading: () => _buildShimmerList(context, 3),
-              error: (error, _) => _buildErrorSection(context, l10n.retry, () {
-                ref.invalidate(packageAlertsProvider);
-              }),
-            ),
-
-            const SizedBox(height: 24),
-
-            // --- Low Stock Alerts Section ---
-            _SectionHeader(
-              title: l10n.lowStockAlerts,
-              icon: Icons.warning_amber,
-              iconColor: colorScheme.error,
-            ),
-            const SizedBox(height: 8),
-            lowStockProducts.when(
-              data: (products) {
-                if (products.isEmpty) {
-                  return _EmptyState(
-                    icon: Icons.check_circle_outline,
-                    message: l10n.noLowStock,
-                    color: Colors.green,
-                  );
-                }
-                return Card(
-                  elevation: 0,
-                  color: colorScheme.surfaceContainerLow,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Column(
-                    children: [
-                      for (int i = 0; i < products.length; i++) ...[
-                        ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
-                          ),
-                          leading: CircleAvatar(
-                            backgroundColor: colorScheme.errorContainer,
-                            radius: 20,
-                            child: Icon(
-                              Icons.inventory_outlined,
-                              color: colorScheme.onErrorContainer,
-                              size: 20,
-                            ),
-                          ),
-                          title: Text(
-                            products[i]['name'] as String? ?? '',
-                            style: theme.textTheme.titleSmall,
-                          ),
-                          trailing: Text(
-                            '${numberFormat.format(_toInt(products[i]['stock_on_hand']))} وحدة',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              color: colorScheme.error,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          onTap: () async {
-                            await Navigator.push(
+                            showDivider: i < stores.length - 1,
+                            onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => ProductFormScreen(
-                                  product: products[i],
+                                builder: (_) => StoreDetailScreen(
+                                  storeId: stores[i]['id'] as String,
                                 ),
                               ),
-                            );
-                            ref.invalidate(lowStockProductsProvider);
-                            ref.invalidate(productListProvider);
-                          },
-                        ),
-                        if (i < products.length - 1)
-                          Divider(height: 1, indent: 72, color: colorScheme.outlineVariant),
+                            ),
+                          ),
                       ],
-                    ],
+                    ),
+                  );
+                },
+                loading: () =>
+                    const SurfaceCard(child: SkeletonList(count: 3)),
+                error: (_, _) => SurfaceCard(
+                  child: ErrorRetryRow(
+                    onRetry: () => ref.invalidate(dashboardSummaryProvider),
                   ),
-                );
-              },
-              loading: () => _buildShimmerList(context, 2),
-              error: (_, _) => _buildErrorSection(context, l10n.retry, () {
-                ref.invalidate(lowStockProductsProvider);
-              }),
-            ),
+                ),
+              ),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 22),
+
+              // ---- package alerts ------------------------------------------
+              SectionLabel(
+                '${l10n.packageAlerts} (>${ref.watch(packageAlertThresholdProvider)})',
+                trailing: IconButton(
+                  icon: Icon(Icons.tune, size: 18, color: t.textSecondary),
+                  visualDensity: VisualDensity.compact,
+                  tooltip: l10n.alertThreshold,
+                  onPressed: () => _showThresholdDialog(context),
+                ),
+              ),
+              alerts.when(
+                data: (stores) {
+                  final threshold = ref.watch(packageAlertThresholdProvider);
+                  final filtered = stores
+                      .where((s) => _toInt(s['total_outstanding']) >= threshold)
+                      .toList();
+                  if (filtered.isEmpty) {
+                    return SurfaceCard(
+                      child: EmptyState(
+                        title: l10n.allPackagesReturned,
+                        message: 'لا توجد عبوات خارج المستودع فوق الحد',
+                      ),
+                    );
+                  }
+                  return SurfaceCard(
+                    child: Column(
+                      children: [
+                        for (int i = 0; i < filtered.length; i++)
+                          TawziiRow(
+                            leading: const StatusDot(StatusKind.info),
+                            title:
+                                filtered[i]['store_name'] as String? ?? '',
+                            trailing: _CountBadge(
+                              count:
+                                  _toInt(filtered[i]['total_outstanding']),
+                              unit: l10n.packageUnit,
+                              color: t.info,
+                            ),
+                            showDivider: i < filtered.length - 1,
+                          ),
+                      ],
+                    ),
+                  );
+                },
+                loading: () =>
+                    const SurfaceCard(child: SkeletonList(count: 3)),
+                error: (_, _) => SurfaceCard(
+                  child: ErrorRetryRow(
+                    onRetry: () => ref.invalidate(packageAlertsProvider),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 22),
+
+              // ---- low stock -----------------------------------------------
+              SectionLabel(l10n.lowStockAlerts),
+              lowStockProducts.when(
+                data: (products) {
+                  if (products.isEmpty) {
+                    return SurfaceCard(
+                      child: EmptyState(
+                        title: l10n.noLowStock,
+                        message: 'كل المنتجات فوق حد التنبيه',
+                      ),
+                    );
+                  }
+                  return SurfaceCard(
+                    child: Column(
+                      children: [
+                        for (int i = 0; i < products.length; i++)
+                          TawziiRow(
+                            leading: const StatusDot(StatusKind.warning),
+                            title: products[i]['name'] as String? ?? '',
+                            trailing: _CountBadge(
+                              count: _toInt(products[i]['stock_on_hand']),
+                              unit: 'متبقي',
+                              unitFirst: true,
+                              color: t.warning,
+                            ),
+                            showDivider: i < products.length - 1,
+                            onTap: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ProductDetailScreen(
+                                    product: products[i],
+                                  ),
+                                ),
+                              );
+                              ref.invalidate(dashboardSummaryProvider);
+                              ref.invalidate(productListProvider);
+                            },
+                          ),
+                      ],
+                    ),
+                  );
+                },
+                loading: () =>
+                    const SurfaceCard(child: SkeletonList(count: 2)),
+                error: (_, _) => SurfaceCard(
+                  child: ErrorRetryRow(
+                    onRetry: () => ref.invalidate(dashboardSummaryProvider),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  void _showThresholdDialog(BuildContext context, WidgetRef ref) {
+  // ---- decision queue -------------------------------------------------------
+
+  List<Widget> _buildDecisionQueue(
+    BuildContext context,
+    AsyncValue<List<Map<String, dynamic>>> pendingDiscounts, {
+    required bool paused,
+  }) {
+    final t = TawziiTokens.of(context);
+    final items = pendingDiscounts.valueOrNull ?? const [];
+    if (items.isEmpty) return const [];
+
+    return [
+      Padding(
+        padding: const EdgeInsetsDirectional.only(
+            start: 2, end: 2, bottom: 8, top: 4),
+        child: Text(
+          'يتطلب قرارك الآن · \u2066${items.length}\u2069',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.6,
+            height: 1.4,
+            color: t.warning,
+          ),
+        ),
+      ),
+      SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        clipBehavior: Clip.none,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (int i = 0; i < items.length; i++) ...[
+              _DiscountCard(
+                order: items[i],
+                paused: paused,
+                onApprove: () => _handleApprove(items[i]),
+                onReject: () => _handleReject(items[i]),
+              ),
+              if (i < items.length - 1) const SizedBox(width: 10),
+            ],
+          ],
+        ),
+      ),
+      const SizedBox(height: 14),
+    ];
+  }
+
+  // ---- skeleton (2d) --------------------------------------------------------
+
+  List<Widget> _buildSkeleton() {
+    return const [
+      SurfaceCard(child: SkeletonList(count: 2)),
+      SizedBox(height: 14),
+      SurfaceCard(child: SkeletonList(count: 3)),
+      SizedBox(height: 14),
+      SurfaceCard(child: SkeletonList(count: 3)),
+    ];
+  }
+
+  // ---- actions --------------------------------------------------------------
+
+  Future<void> _refreshAll() async {
+    ref.invalidate(dashboardSummaryProvider);
+    ref.invalidate(packageAlertsProvider);
+    ref.invalidate(pendingDiscountsProvider);
+    try {
+      await Future.wait([
+        ref.read(dashboardSummaryProvider.future),
+        ref.read(packageAlertsProvider.future),
+        ref.read(pendingDiscountsProvider.future),
+      ]);
+    } catch (_) {
+      // Errors surface through the providers' AsyncValue states.
+    }
+  }
+
+  void _retryAll() {
+    ref.invalidate(dashboardSummaryProvider);
+    ref.invalidate(packageAlertsProvider);
+    ref.invalidate(pendingDiscountsProvider);
+  }
+
+  void _showThresholdDialog(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final current = ref.read(packageAlertThresholdProvider);
     final controller = TextEditingController(text: '$current');
@@ -521,7 +471,7 @@ class OwnerDashboardScreen extends ConsumerWidget {
           keyboardType: TextInputType.number,
           autofocus: true,
           decoration: InputDecoration(
-            labelText: l10n.alertThreshold,
+            hintText: l10n.alertThreshold,
             suffixText: l10n.packageUnit,
           ),
         ),
@@ -545,24 +495,7 @@ class OwnerDashboardScreen extends ConsumerWidget {
     );
   }
 
-  double _toDouble(dynamic value) {
-    if (value is num) return value.toDouble();
-    if (value is String) return double.tryParse(value) ?? 0.0;
-    return 0.0;
-  }
-
-  int _toInt(dynamic value) {
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-    if (value is String) return int.tryParse(value) ?? 0;
-    return 0;
-  }
-
-  Future<void> _handleApprove(
-    BuildContext context,
-    WidgetRef ref,
-    Map<String, dynamic> order,
-  ) async {
+  Future<void> _handleApprove(Map<String, dynamic> order) async {
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -581,21 +514,21 @@ class OwnerDashboardScreen extends ConsumerWidget {
         ],
       ),
     );
-    if (confirmed != true || !context.mounted) return;
+    if (confirmed != true || !mounted) return;
 
     try {
       final repo = ref.read(orderRepositoryProvider)!;
       final user = ref.read(currentUserProvider)!;
       await repo.approveDiscount(order['id'] as String, user.id);
       ref.invalidate(pendingDiscountsProvider);
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.discountApproved)),
         );
       }
     } catch (e) {
       ref.invalidate(pendingDiscountsProvider);
-      if (context.mounted) {
+      if (mounted) {
         final msg = e.toString().contains('discount_already_processed')
             ? l10n.discountAlreadyProcessed
             : l10n.error;
@@ -606,11 +539,7 @@ class OwnerDashboardScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _handleReject(
-    BuildContext context,
-    WidgetRef ref,
-    Map<String, dynamic> order,
-  ) async {
+  Future<void> _handleReject(Map<String, dynamic> order) async {
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -623,30 +552,27 @@ class OwnerDashboardScreen extends ConsumerWidget {
             child: Text(l10n.cancel),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(l10n.confirm),
           ),
         ],
       ),
     );
-    if (confirmed != true || !context.mounted) return;
+    if (confirmed != true || !mounted) return;
 
     try {
       final repo = ref.read(orderRepositoryProvider)!;
       await repo.rejectDiscount(order['id'] as String);
       ref.invalidate(pendingDiscountsProvider);
-      ref.invalidate(topDebtorsProvider);
-      if (context.mounted) {
+      ref.invalidate(dashboardSummaryProvider);
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.discountRejected)),
         );
       }
     } catch (e) {
       ref.invalidate(pendingDiscountsProvider);
-      if (context.mounted) {
+      if (mounted) {
         final msg = e.toString().contains('discount_already_processed')
             ? l10n.discountAlreadyProcessed
             : l10n.error;
@@ -657,161 +583,230 @@ class OwnerDashboardScreen extends ConsumerWidget {
     }
   }
 
-  Widget _buildShimmerCard(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: const SizedBox(height: 100),
-    );
+  // ---- helpers --------------------------------------------------------------
+
+  static bool _isNetworkError(Object? error) {
+    if (error == null) return false;
+    final s = error.toString().toLowerCase();
+    return s.contains('socketexception') ||
+        s.contains('failed host lookup') ||
+        s.contains('clientexception') ||
+        s.contains('connection') ||
+        s.contains('timeout') ||
+        s.contains('network');
   }
 
-  Widget _buildErrorCard(BuildContext context, String label, IconData icon) {
-    return KpiCard(
-      label: label,
-      value: '--',
-      icon: icon,
-    );
+  static double _toDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
   }
 
-  Widget _buildShimmerList(BuildContext context, int count) {
-    final cs = Theme.of(context).colorScheme;
-    return Card(
-      elevation: 0,
-      color: cs.surfaceContainerLow.withValues(alpha: 0.5),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        children: List.generate(count, (i) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        height: 14,
-                        width: 120,
-                        decoration: BoxDecoration(
-                          color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  height: 14,
-                  width: 60,
-                  decoration: BoxDecoration(
-                    color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildErrorSection(
-      BuildContext context, String retryLabel, VoidCallback onRetry) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Card(
-      elevation: 0,
-      color: colorScheme.errorContainer.withValues(alpha: 0.3),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(Icons.error_outline, color: colorScheme.error),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                retryLabel,
-                style: TextStyle(color: colorScheme.error),
-              ),
-            ),
-            TextButton(
-              onPressed: onRetry,
-              child: Text(retryLabel),
-            ),
-          ],
-        ),
-      ),
-    );
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Color iconColor;
+// ---------------------------------------------------------------------------
+// Secondary borderless stat row beneath the hero (profit / purchases / orders).
+// ---------------------------------------------------------------------------
 
-  const _SectionHeader({
-    required this.title,
-    required this.icon,
-    required this.iconColor,
+class _StatRow extends StatelessWidget {
+  const _StatRow({
+    required this.stale,
+    required this.profitLabel,
+    required this.profit,
+    required this.purchasesLabel,
+    required this.purchases,
+    required this.ordersLabel,
+    required this.orderCount,
   });
+
+  final bool stale;
+  final String profitLabel;
+  final double profit;
+  final String purchasesLabel;
+  final double purchases;
+  final String ordersLabel;
+  final int orderCount;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
+    final t = TawziiTokens.of(context);
+    final labelStyle = TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w400,
+      height: 1.5,
+      color: t.textSecondary,
+    );
+    const numberOverride = TextStyle(fontSize: 13, height: 1.5);
+
+    return Wrap(
+      spacing: 18,
+      runSpacing: 4,
       children: [
-        Icon(icon, size: 20, color: iconColor),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(profitLabel, style: labelStyle),
+            const SizedBox(width: 5),
+            Money(
+              profit,
+              size: MoneySize.body,
+              showUnit: false,
+              tint: stale
+                  ? MoneyTint.neutral
+                  : (profit >= 0 ? MoneyTint.success : MoneyTint.danger),
+              color: stale ? t.textSecondary : null,
+              numberStyle: numberOverride,
+            ),
+          ],
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(purchasesLabel, style: labelStyle),
+            const SizedBox(width: 5),
+            Money(
+              purchases,
+              size: MoneySize.body,
+              showUnit: false,
+              color: stale ? t.textSecondary : null,
+              numberStyle: numberOverride,
+            ),
+          ],
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(ordersLabel, style: labelStyle),
+            const SizedBox(width: 5),
+            Text(
+              '\u2066${Money.format(orderCount)}\u2069',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                height: 1.5,
+                color: stale ? t.textSecondary : t.textPrimary,
+                fontFeatures: const [
+                  FontFeature.tabularFigures(),
+                  FontFeature.slashedZero(),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 }
 
-class _PendingDiscountTile extends StatefulWidget {
-  final Map<String, dynamic> order;
-  final VoidCallback onApprove;
-  final VoidCallback onReject;
-  final NumberFormat currencyFormat;
+// ---------------------------------------------------------------------------
+// Trailing count badge for non-money numbers (packages / stock remaining).
+// ---------------------------------------------------------------------------
 
-  const _PendingDiscountTile({
-    required this.order,
-    required this.onApprove,
-    required this.onReject,
-    required this.currencyFormat,
+class _CountBadge extends StatelessWidget {
+  const _CountBadge({
+    required this.count,
+    required this.unit,
+    required this.color,
+    this.unitFirst = false,
   });
 
+  final int count;
+  final String unit;
+  final Color color;
+
+  /// true renders 'متبقي 5' style; false renders '14 عبوة' style.
+  final bool unitFirst;
+
   @override
-  State<_PendingDiscountTile> createState() => _PendingDiscountTileState();
+  Widget build(BuildContext context) {
+    final t = TawziiTokens.of(context);
+    final number = Text(
+      '\u2066${Money.format(count)}\u2069',
+      style: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        height: 1.5,
+        color: color,
+        fontFeatures: const [
+          FontFeature.tabularFigures(),
+          FontFeature.slashedZero(),
+        ],
+      ),
+    );
+    final label = Text(
+      unit,
+      style: TextStyle(fontSize: 13, height: 1.5, color: t.textSecondary),
+    );
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: unitFirst
+          ? [label, const SizedBox(width: 4), number]
+          : [number, const SizedBox(width: 4), label],
+    );
+  }
 }
 
-class _PendingDiscountTileState extends State<_PendingDiscountTile> {
+// ---------------------------------------------------------------------------
+// Pending-discount decision card — accentSoft surface, draining RTL countdown
+// (red only in the final 60s; paused while offline).
+// ---------------------------------------------------------------------------
+
+class _DiscountCard extends StatefulWidget {
+  const _DiscountCard({
+    required this.order,
+    required this.paused,
+    required this.onApprove,
+    required this.onReject,
+  });
+
+  final Map<String, dynamic> order;
+
+  /// Offline/stale: countdown display freezes ("قيد الانتظار — غير متصل").
+  final bool paused;
+
+  final VoidCallback onApprove;
+  final VoidCallback onReject;
+
+  static const int _windowSeconds = 180;
+
+  @override
+  State<_DiscountCard> createState() => _DiscountCardState();
+}
+
+class _DiscountCardState extends State<_DiscountCard> {
   Timer? _timer;
-  int _remainingSeconds = 0;
+  int _remainingSeconds = _DiscountCard._windowSeconds;
   bool _expired = false;
 
   @override
   void initState() {
     super.initState();
     _updateRemaining();
+    if (!widget.paused) _startTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant _DiscountCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.paused != oldWidget.paused) {
+      if (widget.paused) {
+        _timer?.cancel();
+      } else {
+        _updateRemaining();
+        _startTimer();
+      }
+    }
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
     _timer = Timer.periodic(
       const Duration(seconds: 1),
       (_) => _updateRemaining(),
@@ -819,16 +814,18 @@ class _PendingDiscountTileState extends State<_PendingDiscountTile> {
   }
 
   void _updateRemaining() {
-    final createdAt = DateTime.tryParse(
-        widget.order['created_at'] as String? ?? '');
+    final createdAt =
+        DateTime.tryParse(widget.order['created_at'] as String? ?? '');
     if (createdAt == null) return;
 
-    final elapsed = DateTime.now().toUtc().difference(createdAt);
-    final remaining = const Duration(minutes: 3) - elapsed;
+    final elapsed = DateTime.now().toUtc().difference(createdAt.toUtc());
+    final remaining =
+        const Duration(seconds: _DiscountCard._windowSeconds) - elapsed;
 
     if (remaining.isNegative || remaining.inSeconds <= 0) {
       _timer?.cancel();
       _expired = true;
+      _remainingSeconds = 0;
     } else {
       _remainingSeconds = remaining.inSeconds;
     }
@@ -843,103 +840,164 @@ class _PendingDiscountTileState extends State<_PendingDiscountTile> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final t = TawziiTokens.of(context);
     final l10n = AppLocalizations.of(context)!;
 
     final store = widget.order['stores'] as Map<String, dynamic>?;
-    final storeName = store?['name'] ?? '';
+    final storeName = store?['name'] as String? ?? '';
     final driver = widget.order['users'] as Map<String, dynamic>?;
-    final driverName = driver?['name'] ?? '';
-    final discount =
-        (widget.order['discount'] as num?)?.toDouble() ?? 0;
+    final driverName = driver?['name'] as String? ?? '';
+    final discount = (widget.order['discount'] as num?)?.toDouble() ?? 0;
+    final total = (widget.order['total'] as num?)?.toDouble() ?? 0;
 
-    String timeText;
-    Color timeColor;
-    if (_expired) {
-      timeText = l10n.discountRejected;
-      timeColor = colorScheme.error;
+    final finalMinute = !_expired && _remainingSeconds <= 60;
+    final fraction = _expired
+        ? 0.0
+        : (_remainingSeconds / _DiscountCard._windowSeconds).clamp(0.0, 1.0);
+
+    // Countdown label.
+    final String timeText;
+    final Color timeColor;
+    if (widget.paused) {
+      timeText = 'متوقف مؤقتاً';
+      timeColor = t.textMuted;
+    } else if (_expired) {
+      timeText = 'انتهت المهلة';
+      timeColor = t.textMuted;
     } else {
       final mins = _remainingSeconds ~/ 60;
       final secs = (_remainingSeconds % 60).toString().padLeft(2, '0');
       timeText = l10n.timeRemaining(mins, secs);
-      timeColor = colorScheme.tertiary;
+      timeColor = finalMinute ? t.danger : t.warning;
     }
 
-    return ListTile(
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: CircleAvatar(
-        backgroundColor: colorScheme.tertiaryContainer,
-        radius: 20,
-        child: Icon(Icons.percent,
-            color: colorScheme.onTertiaryContainer, size: 20),
+    final barColor = widget.paused
+        ? t.borderStrong
+        : (finalMinute ? t.danger : t.accent);
+
+    final detailStyle =
+        TextStyle(fontSize: 13, height: 1.6, color: t.textSecondary);
+
+    return Container(
+      width: 296,
+      padding: const EdgeInsetsDirectional.fromSTEB(15, 14, 15, 12),
+      decoration: BoxDecoration(
+        color: t.accentSoft,
+        borderRadius: BorderRadius.circular(14),
       ),
-      title: Text(storeName, style: theme.textTheme.titleSmall),
-      subtitle: Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '$driverName · ${widget.currencyFormat.format(discount)} ${l10n.currencyUnit}',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      storeName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        height: 1.5,
+                        color: t.textPrimary,
+                      ),
+                    ),
+                    if (driverName.isNotEmpty)
+                      Text(
+                        driverName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.5,
+                          color: t.textSecondary,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                timeText,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  height: 1.6,
+                  color: timeColor,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text('${l10n.discount} ', style: detailStyle),
+              Money(
+                discount,
+                size: MoneySize.body,
+                showUnit: false,
+                numberStyle: const TextStyle(fontSize: 13),
+              ),
+              if (total > 0) ...[
+                Text(' من ', style: detailStyle),
+                Money(
+                  total,
+                  size: MoneySize.body,
+                  numberStyle: const TextStyle(fontSize: 13),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 10),
+          // Draining countdown bar — anchored to the start edge, so in RTL it
+          // drains from the left (mirrored automatically).
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              height: 4,
+              color: t.borderStrong.withValues(alpha: 0.45),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: FractionallySizedBox(
+                  widthFactor: fraction,
+                  child: Container(color: barColor),
+                ),
+              ),
             ),
           ),
-          Text(
-            timeText,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: timeColor,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-        ],
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.check_circle),
-            color: Colors.green,
-            onPressed: _expired ? null : widget.onApprove,
-            tooltip: l10n.approveDiscount,
-          ),
-          IconButton(
-            icon: const Icon(Icons.cancel),
-            color: colorScheme.error,
-            onPressed: _expired ? null : widget.onReject,
-            tooltip: l10n.rejectDiscount,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  final IconData icon;
-  final String message;
-  final Color color;
-
-  const _EmptyState({
-    required this.icon,
-    required this.message,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Column(
-        children: [
-          Icon(icon, size: 40, color: color.withValues(alpha: 0.6)),
-          const SizedBox(height: 8),
-          Text(
-            message,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton(
+                  onPressed: _expired ? null : widget.onApprove,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 40),
+                    padding:
+                        const EdgeInsetsDirectional.symmetric(horizontal: 12),
+                  ),
+                  child: const Text('قبول'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _expired ? null : widget.onReject,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 40),
+                    padding:
+                        const EdgeInsetsDirectional.symmetric(horizontal: 12),
+                  ),
+                  child: const Text('رفض'),
+                ),
+              ),
+            ],
           ),
         ],
       ),

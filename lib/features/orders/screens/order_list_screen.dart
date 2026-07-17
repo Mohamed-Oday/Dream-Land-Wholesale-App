@@ -5,22 +5,103 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
-import 'package:tawzii/core/theme/app_colors.dart';
 import 'package:tawzii/core/widgets/date_range_filter_bar.dart';
-import '../../auth/screens/settings_placeholder.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/ui/money_text.dart';
+import '../../../core/ui/state_blocks.dart';
+import '../../../core/ui/status_dot.dart';
+import '../../../core/ui/surface_card.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../auth/screens/settings_screen.dart';
 import '../providers/order_provider.dart';
 import 'create_order_screen.dart';
-import 'receipt_preview_screen.dart';
+import '../../receipts/screens/receipt_screen.dart';
 
-class OrderListScreen extends ConsumerWidget {
+/// Order list (canvas 6d): status-dot rows, inline owner/admin actions
+/// (edit · print · cancel) on tap-expanded rows, pending-discount rows with
+/// countdown drain, cancelled rows struck through, create via FAB.
+/// Driver sees own orders as Field-Kit hardened rows, no inline actions.
+class OrderListScreen extends ConsumerStatefulWidget {
   final bool isOwner;
 
   const OrderListScreen({super.key, this.isOwner = false});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<OrderListScreen> createState() => _OrderListScreenState();
+}
+
+class _OrderListScreenState extends ConsumerState<OrderListScreen> {
+  bool _pendingOnly = false;
+  String? _expandedOrderId;
+
+  bool get isOwner => widget.isOwner;
+
+  void _invalidate() {
+    ref.invalidate(isOwner ? allOrdersProvider : orderListProvider);
+  }
+
+  Future<void> _openReceipt(String orderId) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ReceiptScreen.order(orderId: orderId),
+      ),
+    );
+    _invalidate();
+  }
+
+  Future<void> _cancelOrder(Map<String, dynamic> order) async {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
+    final t = TawziiTokens.of(context);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.cancelOrder),
+        content: Text(l10n.cancelOrderConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: t.danger,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(l10n.confirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      final repo = ref.read(orderRepositoryProvider)!;
+      await repo.cancelOrder(order['id'] as String);
+      if (!mounted) return;
+      _invalidate();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.orderCancelled)),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${l10n.error}: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final t = TawziiTokens.of(context);
+    final currentUser = ref.watch(currentUserProvider);
+    final canManage = currentUser != null &&
+        (currentUser.isOwner || currentUser.isAdmin) &&
+        isOwner;
     final ordersAsync =
         ref.watch(isOwner ? allOrdersProvider : orderListProvider);
 
@@ -35,7 +116,8 @@ class OrderListScreen extends ConsumerWidget {
                   onPressed: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const SettingsPlaceholder(roleName: 'بائع'),
+                      builder: (_) =>
+                          const SettingsScreen(roleName: 'بائع'),
                     ),
                   ),
                 ),
@@ -46,270 +128,441 @@ class OrderListScreen extends ConsumerWidget {
         onPressed: () async {
           await Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => const CreateOrderScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => const CreateOrderScreen()),
           );
-          ref.invalidate(isOwner ? allOrdersProvider : orderListProvider);
+          _invalidate();
         },
         child: const Icon(Icons.add),
       ),
       body: Column(
         children: [
           const DateRangeFilterBar(),
-          Expanded(child: ordersAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('خطأ في تحميل الطلبات', style: theme.textTheme.bodyLarge),
-              const SizedBox(height: 8),
-              FilledButton.tonal(
-                onPressed: () => ref.invalidate(
-                    isOwner ? allOrdersProvider : orderListProvider),
-                child: Text(l10n.retry),
-              ),
-            ],
-          ),
-        ),
-        data: (orders) {
-          if (orders.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+          Expanded(
+            child: ordersAsync.when(
+              loading: () => ListView(
+                padding: const EdgeInsetsDirectional.all(18),
                 children: [
-                  Icon(Icons.receipt_long_outlined,
-                      size: 64, color: theme.colorScheme.onSurfaceVariant),
-                  const SizedBox(height: 16),
-                  Text(l10n.noOrders, style: theme.textTheme.titleMedium),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.emptyOrderMessage,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
+                  if (isOwner)
+                    const SurfaceCard(child: SkeletonList(count: 6))
+                  else
+                    const SkeletonList(count: 5, hardened: true),
                 ],
               ),
-            );
-          }
+              error: (e, _) => Center(
+                child: ErrorRetryRow(onRetry: _invalidate),
+              ),
+              data: (orders) {
+                final pendingCount = orders
+                    .where((o) => o['discount_status'] == 'pending')
+                    .length;
+                final visible = _pendingOnly
+                    ? orders
+                        .where((o) => o['discount_status'] == 'pending')
+                        .toList()
+                    : orders;
 
-          return RefreshIndicator(
-            onRefresh: () async => ref
-                .invalidate(isOwner ? allOrdersProvider : orderListProvider),
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)
-                  .copyWith(bottom: 80),
-              itemCount: orders.length,
-              itemBuilder: (context, index) {
-                final order = orders[index];
-                return _OrderCard(
-                  order: order,
-                  isOwner: isOwner,
-                  onExpired: () => ref.invalidate(
-                      isOwner ? allOrdersProvider : orderListProvider),
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            ReceiptPreviewScreen(orderId: order['id']),
-                      ),
-                    );
-                    ref.invalidate(
-                        isOwner ? allOrdersProvider : orderListProvider);
-                  },
+                if (orders.isEmpty) {
+                  return EmptyState(
+                    title: l10n.noOrders,
+                    message: l10n.emptyOrderMessage,
+                    ctaLabel: 'طلب جديد',
+                    onCta: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const CreateOrderScreen()),
+                      );
+                      _invalidate();
+                    },
+                  );
+                }
+
+                return RefreshIndicator(
+                  onRefresh: () async => _invalidate(),
+                  child: ListView(
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                        18, 12, 18, 96),
+                    children: [
+                      // Pending-discount filter chip
+                      if (pendingCount > 0 || _pendingOnly)
+                        Padding(
+                          padding:
+                              const EdgeInsetsDirectional.only(bottom: 12),
+                          child: Row(
+                            children: [
+                              InkWell(
+                                onTap: () => setState(
+                                    () => _pendingOnly = !_pendingOnly),
+                                borderRadius: BorderRadius.circular(999),
+                                child: Container(
+                                  height: 36,
+                                  padding: const EdgeInsetsDirectional
+                                      .symmetric(horizontal: 14),
+                                  decoration: BoxDecoration(
+                                    color: _pendingOnly
+                                        ? t.accentSoft
+                                        : Colors.transparent,
+                                    border: Border.all(
+                                      color: _pendingOnly
+                                          ? t.accent
+                                          : t.borderStrong,
+                                    ),
+                                    borderRadius:
+                                        BorderRadius.circular(999),
+                                  ),
+                                  alignment: AlignmentDirectional.center,
+                                  child: Text(
+                                    'خصم معلق · \u2066$pendingCount\u2069',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: t.warning,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (visible.isEmpty)
+                        const EmptyState(
+                          title: 'لا توجد خصومات معلقة',
+                          message: 'ستظهر الطلبات ذات الخصم المعلق هنا',
+                        )
+                      else if (isOwner)
+                        SurfaceCard(
+                          child: Column(
+                            children: [
+                              for (var i = 0; i < visible.length; i++)
+                                _OrderRow(
+                                  order: visible[i],
+                                  isOwner: true,
+                                  canManage: canManage,
+                                  showDivider: i < visible.length - 1,
+                                  expanded: _expandedOrderId ==
+                                      visible[i]['id'],
+                                  onTap: () {
+                                    final id =
+                                        visible[i]['id'] as String;
+                                    if (canManage) {
+                                      setState(() => _expandedOrderId =
+                                          _expandedOrderId == id
+                                              ? null
+                                              : id);
+                                    } else {
+                                      _openReceipt(id);
+                                    }
+                                  },
+                                  onEdit: () => _openReceipt(
+                                      visible[i]['id'] as String),
+                                  onPrint: () => _openReceipt(
+                                      visible[i]['id'] as String),
+                                  onCancel: () =>
+                                      _cancelOrder(visible[i]),
+                                  onExpired: _invalidate,
+                                ),
+                            ],
+                          ),
+                        )
+                      else
+                        Column(
+                          children: [
+                            for (final order in visible) ...[
+                              _OrderRow(
+                                order: order,
+                                isOwner: false,
+                                canManage: false,
+                                hardened: true,
+                                expanded: false,
+                                onTap: () =>
+                                    _openReceipt(order['id'] as String),
+                                onExpired: _invalidate,
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+                          ],
+                        ),
+                    ],
+                  ),
                 );
               },
             ),
-          );
-        },
-      )),
+          ),
         ],
       ),
     );
   }
 }
 
-class _OrderCard extends StatelessWidget {
-  final Map<String, dynamic> order;
-  final bool isOwner;
-  final VoidCallback onTap;
-  final VoidCallback? onExpired;
+// ---------------------------------------------------------------------------
+// Order row
+// ---------------------------------------------------------------------------
 
-  const _OrderCard({
+class _OrderRow extends StatelessWidget {
+  const _OrderRow({
     required this.order,
     required this.isOwner,
+    required this.canManage,
+    required this.expanded,
     required this.onTap,
+    this.hardened = false,
+    this.showDivider = false,
+    this.onEdit,
+    this.onPrint,
+    this.onCancel,
     this.onExpired,
   });
 
+  final Map<String, dynamic> order;
+  final bool isOwner;
+  final bool canManage;
+  final bool expanded;
+  final bool hardened;
+  final bool showDivider;
+  final VoidCallback onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onPrint;
+  final VoidCallback? onCancel;
+  final VoidCallback? onExpired;
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final t = TawziiTokens.of(context);
     final l10n = AppLocalizations.of(context)!;
 
     final store = order['stores'] as Map<String, dynamic>?;
-    final storeName = store?['name'] ?? '';
+    final storeName = store?['name'] as String? ?? '';
     final driverData = order['users'] as Map<String, dynamic>?;
-    final driverName = driverData?['name'] ?? '';
+    final driverName = driverData?['name'] as String? ?? '';
     final total = (order['total'] as num?)?.toDouble() ?? 0;
     final status = order['status'] as String? ?? 'created';
+    final discountStatus = order['discount_status'] as String? ?? 'none';
+    final isCancelled = status == 'cancelled';
+    final isPendingDiscount = discountStatus == 'pending';
     final createdAt = order['created_at'] as String?;
+    final dt =
+        createdAt == null ? null : DateTime.tryParse(createdAt)?.toLocal();
+    final time = dt == null ? '' : DateFormat('HH:mm').format(dt);
 
-    String formattedDate = '';
-    if (createdAt != null) {
-      try {
-        final dt = DateTime.parse(createdAt).toLocal();
-        formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(dt);
-      } catch (_) {
-        formattedDate = createdAt;
-      }
+    if (isPendingDiscount) {
+      return _PendingDiscountRow(
+        order: order,
+        storeName: storeName,
+        driverName: driverName,
+        onTap: onTap,
+        onExpired: onExpired,
+        hardened: hardened,
+        showDivider: showDivider,
+      );
     }
 
-    return RepaintBoundary(
-      child: Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              // Store icon
-              CircleAvatar(
-                backgroundColor: theme.colorScheme.primaryContainer,
-                child: Icon(Icons.store,
-                    color: theme.colorScheme.onPrimaryContainer),
-              ),
-              const SizedBox(width: 12),
-              // Order info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      storeName,
-                      style: theme.textTheme.titleSmall
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 4),
-                    if (isOwner && driverName.isNotEmpty) ...[
-                      Text(
-                        '${l10n.driver}: $driverName',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                    ],
-                    Text(
-                      formattedDate,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Total + status
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+    final subtitleParts = <String>[
+      if (isOwner && driverName.isNotEmpty) driverName,
+      if (isCancelled) 'ملغي — عُكس الرصيد' else if (time.isNotEmpty) '\u2066$time\u2069',
+      if (status == 'delivered') l10n.statusDelivered,
+    ];
+
+    final dot = isCancelled
+        ? const StatusDot(StatusKind.muted)
+        : StatusDot(StatusKind.success, size: hardened ? 10 : 8);
+
+    final money = Money(
+      total,
+      color: isCancelled ? t.textMuted : null,
+      numberStyle: isCancelled
+          ? const TextStyle(decoration: TextDecoration.lineThrough)
+          : null,
+    );
+
+    final mainRow = ConstrainedBox(
+      constraints: BoxConstraints(minHeight: hardened ? 56 : 48),
+      child: Padding(
+        padding: EdgeInsetsDirectional.symmetric(
+          horizontal: hardened ? 14 : 12,
+          vertical: hardened ? 9 : 7,
+        ),
+        child: Row(
+          children: [
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 11),
+              child: dot,
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${total.toStringAsFixed(2)} د.ج',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontFeatures: [const FontFeature.tabularFigures()],
+                    storeName,
+                    style: TextStyle(
+                      fontSize: hardened ? 16 : 15,
+                      fontWeight:
+                          hardened ? FontWeight.w600 : FontWeight.w500,
+                      height: 1.5,
+                      color: t.textPrimary,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 6),
-                  _StatusChip(status: status, l10n: l10n),
-                  if (order['discount_status'] != null &&
-                      order['discount_status'] != 'none') ...[
-                    const SizedBox(height: 4),
-                    _DiscountStatusChip(
-                      discountStatus: order['discount_status'] as String,
-                      l10n: l10n,
-                      createdAt: order['created_at'] as String?,
-                      onExpired: onExpired,
+                  if (subtitleParts.isNotEmpty)
+                    Text(
+                      subtitleParts.join(' · '),
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 1.5,
+                        color: hardened ? t.textSecondary : t.textMuted,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ],
                 ],
               ),
-            ],
-          ),
+            ),
+            Padding(
+              padding: const EdgeInsetsDirectional.only(start: 11),
+              child: money,
+            ),
+          ],
         ),
       ),
-    ));
+    );
+
+    Widget content = mainRow;
+
+    // Expanded inline actions (owner/admin only)
+    if (expanded && canManage) {
+      content = Column(
+        children: [
+          mainRow,
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(31, 0, 12, 10),
+            child: Row(
+              children: [
+                _ActionButton(label: 'تعديل', onTap: onEdit),
+                const SizedBox(width: 8),
+                _ActionButton(label: 'طباعة', onTap: onPrint),
+                const SizedBox(width: 8),
+                if (status == 'created')
+                  _ActionButton(
+                    label: l10n.cancelOrder,
+                    onTap: onCancel,
+                    danger: true,
+                  ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (hardened) {
+      return Container(
+        decoration: BoxDecoration(
+          color: t.surface,
+          border: Border.all(color: t.borderStrong, width: 2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(10),
+            child: content,
+          ),
+        ),
+      );
+    }
+
+    final row = Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: content,
+      ),
+    );
+
+    if (!showDivider) return row;
+    return Column(
+      children: [
+        row,
+        Padding(
+          padding: const EdgeInsetsDirectional.symmetric(horizontal: 12),
+          child: Divider(height: 1, thickness: 1, color: t.border),
+        ),
+      ],
+    );
   }
 }
 
-class _StatusChip extends StatelessWidget {
-  final String status;
-  final AppLocalizations l10n;
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.label,
+    required this.onTap,
+    this.danger = false,
+  });
 
-  const _StatusChip({required this.status, required this.l10n});
+  final String label;
+  final VoidCallback? onTap;
+  final bool danger;
 
   @override
   Widget build(BuildContext context) {
-    final Color bgColor;
-    final Color fgColor;
-    final String label;
-
-    switch (status) {
-      case 'delivered':
-        bgColor = AppColors.success.withValues(alpha: 0.12);
-        fgColor = AppColors.success;
-        label = l10n.statusDelivered;
-      case 'cancelled':
-        bgColor = AppColors.error.withValues(alpha: 0.12);
-        fgColor = AppColors.error;
-        label = l10n.statusCancelled;
-      default:
-        bgColor = AppColors.primary.withValues(alpha: 0.12);
-        fgColor = AppColors.primary;
-        label = l10n.statusCreated;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: fgColor,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
+    final t = TawziiTokens.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        height: 40,
+        padding: const EdgeInsetsDirectional.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          border: danger ? null : Border.all(color: t.borderStrong),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        alignment: AlignmentDirectional.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: danger ? t.danger : t.textPrimary,
+          ),
         ),
       ),
     );
   }
 }
 
-class _DiscountStatusChip extends StatefulWidget {
-  final String discountStatus;
-  final AppLocalizations l10n;
-  final String? createdAt;
-  final VoidCallback? onExpired;
+// ---------------------------------------------------------------------------
+// Pending-discount row with countdown drain (3-minute window)
+// ---------------------------------------------------------------------------
 
-  const _DiscountStatusChip({
-    required this.discountStatus,
-    required this.l10n,
-    this.createdAt,
+class _PendingDiscountRow extends StatefulWidget {
+  const _PendingDiscountRow({
+    required this.order,
+    required this.storeName,
+    required this.driverName,
+    required this.onTap,
     this.onExpired,
+    this.hardened = false,
+    this.showDivider = false,
   });
 
+  final Map<String, dynamic> order;
+  final String storeName;
+  final String driverName;
+  final VoidCallback onTap;
+  final VoidCallback? onExpired;
+  final bool hardened;
+  final bool showDivider;
+
   @override
-  State<_DiscountStatusChip> createState() => _DiscountStatusChipState();
+  State<_PendingDiscountRow> createState() => _PendingDiscountRowState();
 }
 
-class _DiscountStatusChipState extends State<_DiscountStatusChip> {
+class _PendingDiscountRowState extends State<_PendingDiscountRow> {
+  static const _windowSeconds = 3 * 60;
   Timer? _timer;
   int _remainingSeconds = 0;
   bool _expired = false;
@@ -317,12 +570,6 @@ class _DiscountStatusChipState extends State<_DiscountStatusChip> {
   @override
   void initState() {
     super.initState();
-    if (widget.discountStatus == 'pending' && widget.createdAt != null) {
-      _startCountdown();
-    }
-  }
-
-  void _startCountdown() {
     _updateRemaining();
     _timer = Timer.periodic(
       const Duration(seconds: 1),
@@ -331,8 +578,13 @@ class _DiscountStatusChipState extends State<_DiscountStatusChip> {
   }
 
   void _updateRemaining() {
+    final createdAt = widget.order['created_at'] as String?;
+    if (createdAt == null) {
+      _timer?.cancel();
+      return;
+    }
     try {
-      final created = DateTime.parse(widget.createdAt!).toLocal();
+      final created = DateTime.parse(createdAt).toLocal();
       final expiresAt = created.add(const Duration(minutes: 3));
       final remaining = expiresAt.difference(DateTime.now());
 
@@ -359,53 +611,103 @@ class _DiscountStatusChipState extends State<_DiscountStatusChip> {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveStatus = _expired ? 'rejected' : widget.discountStatus;
+    final t = TawziiTokens.of(context);
 
-    final Color bgColor;
-    final Color fgColor;
-    final String label;
+    final discount =
+        (widget.order['discount'] as num?)?.toDouble() ?? 0;
+    final mins = _remainingSeconds ~/ 60;
+    final secs = _remainingSeconds % 60;
+    final countdown = '$mins:${secs.toString().padLeft(2, '0')}';
+    final progress =
+        (_remainingSeconds / _windowSeconds).clamp(0.0, 1.0);
 
-    switch (effectiveStatus) {
-      case 'pending':
-        bgColor = AppColors.warning.withValues(alpha: 0.12);
-        fgColor = AppColors.warning;
-        final mins = _remainingSeconds ~/ 60;
-        final secs = _remainingSeconds % 60;
-        label = '$mins:${secs.toString().padLeft(2, '0')} ${widget.l10n.discountPending}';
-      case 'approved':
-        bgColor = AppColors.success.withValues(alpha: 0.12);
-        fgColor = AppColors.success;
-        label = widget.l10n.discountApproved;
-      case 'rejected':
-        bgColor = AppColors.error.withValues(alpha: 0.12);
-        fgColor = AppColors.error;
-        label = widget.l10n.discountRejected;
-      default:
-        return const SizedBox.shrink();
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+    final content = Container(
+      color: t.accentSoft,
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 11, 14, 11),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.percent, size: 10, color: fgColor),
-          const SizedBox(width: 3),
-          Text(
-            label,
-            style: TextStyle(
-              color: fgColor,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              fontFeatures: const [FontFeature.tabularFigures()],
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${widget.storeName} — خصم \u2066${Money.format(discount)}\u2069',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: t.textPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (widget.driverName.isNotEmpty)
+                      Text(
+                        widget.driverName,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: t.textSecondary,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Text(
+                'متبقي \u2066$countdown\u2069',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: t.warning,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Countdown drain — mirrors in RTL automatically via FractionallySizedBox
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              height: 4,
+              color: t.borderStrong,
+              child: FractionallySizedBox(
+                alignment: AlignmentDirectional.centerStart,
+                widthFactor: progress,
+                child: Container(color: t.accent),
+              ),
             ),
           ),
         ],
       ),
+    );
+
+    final tappable = Material(
+      color: Colors.transparent,
+      child: InkWell(onTap: widget.onTap, child: content),
+    );
+
+    if (widget.hardened) {
+      return Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: t.borderStrong, width: 2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: tappable,
+      );
+    }
+
+    if (!widget.showDivider) return tappable;
+    return Column(
+      children: [
+        tappable,
+        Padding(
+          padding: const EdgeInsetsDirectional.symmetric(horizontal: 12),
+          child: Divider(height: 1, thickness: 1, color: t.border),
+        ),
+      ],
     );
   }
 }

@@ -5,9 +5,10 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
-import 'package:tawzii/core/theme/app_colors.dart';
+import 'package:tawzii/core/theme/app_theme.dart';
 import '../providers/store_provider.dart';
 
+/// 4d — Store form: quiet labels above the inputs, GPS slot, pinned save CTA.
 class StoreFormScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic>? store;
 
@@ -131,188 +132,190 @@ class _StoreFormScreenState extends ConsumerState<StoreFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final t = TawziiTokens.of(context);
     final l10n = AppLocalizations.of(context)!;
-    final colorScheme = theme.colorScheme;
     final hasMarker = _selectedLat != null && _selectedLng != null;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isEditing ? 'تعديل المتجر' : 'إضافة متجر'),
+        title: Text(widget.isEditing ? 'تعديل المتجر' : 'متجر جديد'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.fromSTEB(18, 8, 18, 24),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              _FieldLabel('اسم المتجر'),
               TextFormField(
                 controller: _nameController,
                 enabled: !_isLoading,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'اسم المتجر',
-                  prefixIcon: Icon(Icons.store_outlined),
-                ),
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'مطلوب' : null,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _addressController,
-                enabled: !_isLoading,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'العنوان',
-                  prefixIcon: Icon(Icons.location_on_outlined),
-                  hintText: 'اختياري',
-                ),
-              ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+              _FieldLabel('الهاتف'),
               TextFormField(
                 controller: _phoneController,
                 enabled: !_isLoading,
                 keyboardType: TextInputType.phone,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'رقم الهاتف',
-                  prefixIcon: Icon(Icons.phone_outlined),
-                  hintText: 'اختياري',
-                ),
+                textDirection: TextDirection.ltr,
+                decoration: const InputDecoration(hintText: 'اختياري'),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+              _FieldLabel('جهة الاتصال'),
               TextFormField(
                 controller: _contactController,
                 enabled: !_isLoading,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(hintText: 'اختياري'),
+              ),
+              const SizedBox(height: 12),
+              _FieldLabel('الحي / العنوان'),
+              TextFormField(
+                controller: _addressController,
+                enabled: !_isLoading,
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _save(),
-                decoration: const InputDecoration(
-                  labelText: 'جهة الاتصال',
-                  prefixIcon: Icon(Icons.person_outline),
-                  hintText: 'اختياري',
-                ),
+                decoration: const InputDecoration(hintText: 'اختياري'),
               ),
+              const SizedBox(height: 12),
 
-              // --- Map Location Picker ---
-              const SizedBox(height: 16),
-              Card(
-                elevation: 0,
-                color: colorScheme.surfaceContainerLow,
-                shape: RoundedRectangleBorder(
+              // --- GPS slot (map never mirrors) ---
+              _FieldLabel(l10n.storeLocation),
+              Container(
+                height: 180,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  border: Border.all(color: t.borderStrong, width: 2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: ExpansionTile(
-                  leading: Icon(Icons.map_outlined, color: colorScheme.primary),
-                  title: Text(
-                    l10n.storeLocation,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                child: FlutterMap(
+                  options: MapOptions(
+                    initialCenter: hasMarker
+                        ? LatLng(_selectedLat!, _selectedLng!)
+                        : _mapCenter,
+                    initialZoom: hasMarker || _locationResolved ? 15 : 13,
+                    onTap: (_, point) {
+                      if (!_isLoading) {
+                        setState(() {
+                          _selectedLat = point.latitude;
+                          _selectedLng = point.longitude;
+                        });
+                      }
+                    },
                   ),
-                  subtitle: hasMarker
-                      ? Text('تم تحديد الموقع',
-                          style: theme.textTheme.bodySmall)
-                      : Text(l10n.tapToSetLocation,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          )),
-                  initiallyExpanded: hasMarker,
                   children: [
-                    SizedBox(
-                      height: 200,
-                      child: FlutterMap(
-                        options: MapOptions(
-                          initialCenter: hasMarker
-                              ? LatLng(_selectedLat!, _selectedLng!)
-                              : _mapCenter,
-                          initialZoom: hasMarker || _locationResolved ? 15 : 13,
-                          onTap: (_, point) {
-                            if (!_isLoading) {
-                              setState(() {
-                                _selectedLat = point.latitude;
-                                _selectedLng = point.longitude;
-                              });
-                            }
-                          },
-                        ),
-                        children: [
-                          TileLayer(
-                            urlTemplate:
-                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName: 'com.dreamland.tawzii',
-                          ),
-                          if (hasMarker)
-                            MarkerLayer(
-                              markers: [
-                                Marker(
-                                  point: LatLng(_selectedLat!, _selectedLng!),
-                                  width: 40,
-                                  height: 40,
-                                  child: Icon(
-                                    Icons.location_pin,
-                                    color: AppColors.error,
-                                    size: 40,
-                                  ),
-                                ),
-                              ],
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.dreamland.tawzii',
+                    ),
+                    if (hasMarker)
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: LatLng(_selectedLat!, _selectedLng!),
+                            width: 40,
+                            height: 40,
+                            child: Icon(
+                              Icons.location_pin,
+                              color: t.danger,
+                              size: 40,
                             ),
-                          const SimpleAttributionWidget(
-                            source: Text('OpenStreetMap contributors'),
                           ),
                         ],
                       ),
+                    const SimpleAttributionWidget(
+                      source: Text('OpenStreetMap contributors'),
                     ),
-                    if (hasMarker)
-                      Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: TextButton.icon(
-                          icon: const Icon(Icons.close, size: 18),
-                          label: Text(l10n.removeLocation),
-                          onPressed: _isLoading
-                              ? null
-                              : () => setState(() {
-                                    _selectedLat = null;
-                                    _selectedLng = null;
-                                  }),
-                        ),
-                      ),
                   ],
                 ),
               ),
-
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
+              if (hasMarker)
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () => setState(() {
+                              _selectedLat = null;
+                              _selectedLng = null;
+                            }),
+                    child: Text(l10n.removeLocation),
+                  ),
+                )
+              else
+                Text(
+                  l10n.tapToSetLocation,
+                  style: TextStyle(fontSize: 12, color: t.textMuted),
+                ),
               if (_errorMessage != null)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsetsDirectional.only(top: 12),
                   child: Text(
                     _errorMessage!,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(color: theme.colorScheme.error),
+                    style: TextStyle(fontSize: 13, color: t.textSecondary),
                     textAlign: TextAlign.center,
                   ),
                 ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _isLoading ? null : _save,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 52),
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
-                      )
-                    : Text(
-                        widget.isEditing ? 'حفظ التعديلات' : 'إضافة المتجر',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-              ),
             ],
           ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          padding: const EdgeInsetsDirectional.fromSTEB(18, 12, 18, 18),
+          decoration: BoxDecoration(
+            color: t.surface,
+            border: Border(
+              top: BorderSide(color: t.borderStrong, width: 2),
+            ),
+          ),
+          child: FilledButton(
+            onPressed: _isLoading ? null : _save,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(double.infinity, 56),
+            ),
+            child: _isLoading
+                ? SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: t.onAccent),
+                  )
+                : Text(
+                    widget.isEditing ? 'حفظ التعديلات' : 'حفظ المتجر',
+                    style: const TextStyle(
+                        fontSize: 17, fontWeight: FontWeight.w700),
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FieldLabel extends StatelessWidget {
+  final String text;
+
+  const _FieldLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    final t = TawziiTokens.of(context);
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(bottom: 5),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: t.textSecondary,
         ),
       ),
     );

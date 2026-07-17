@@ -6,8 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
+import 'package:tawzii/core/theme/app_theme.dart';
+import 'package:tawzii/core/ui/status_dot.dart';
 import 'package:tawzii/features/location/providers/location_provider.dart';
 
+/// Live driver map. The map itself NEVER mirrors in RTL — tiles, markers and
+/// coordinates stay in their geographic orientation.
 class DriverMapScreen extends ConsumerStatefulWidget {
   const DriverMapScreen({super.key});
 
@@ -63,8 +67,7 @@ class _DriverMapScreenState extends ConsumerState<DriverMapScreen> {
     Map<String, dynamic> location,
   ) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final t = TawziiTokens.of(context);
 
     final driverName = location['driver_name'] as String? ?? '';
     final timestamp = DateTime.tryParse(location['timestamp'] as String? ?? '');
@@ -74,33 +77,31 @@ class _DriverMapScreenState extends ConsumerState<DriverMapScreen> {
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
       builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(8, 8, 8, 24),
-        child: ListTile(
-          leading: CircleAvatar(
-            backgroundColor: colorScheme.primaryContainer,
-            child: Text(
-              driverName.isNotEmpty ? driverName[0].toUpperCase() : '?',
-              style: TextStyle(
-                color: colorScheme.onPrimaryContainer,
-                fontWeight: FontWeight.w700,
+        padding: const EdgeInsetsDirectional.fromSTEB(18, 8, 18, 24),
+        child: Row(
+          children: [
+            const StatusDot(StatusKind.success, size: 10),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    driverName,
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    l10n.lastSeenAgo(minutesAgo),
+                    style: TextStyle(fontSize: 12, color: t.textMuted),
+                  ),
+                ],
               ),
             ),
-          ),
-          title: Text(driverName, style: theme.textTheme.titleMedium),
-          subtitle: Text(
-            l10n.lastSeenAgo(minutesAgo),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          trailing: Icon(
-            Icons.location_on,
-            color: colorScheme.primary,
-          ),
+          ],
         ),
       ),
     );
@@ -109,71 +110,78 @@ class _DriverMapScreenState extends ConsumerState<DriverMapScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final t = TawziiTokens.of(context);
     final locations = ref.watch(driverLocationsProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.map)),
       body: Stack(
         children: [
-          // Map
-          FlutterMap(
-            mapController: _mapController,
-            options: const MapOptions(
-              initialCenter: LatLng(36.7, 3.0),
-              initialZoom: 12.0,
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.dreamland.tawzii',
+          // Map — forced LTR so geographic orientation never mirrors.
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: FlutterMap(
+              mapController: _mapController,
+              options: const MapOptions(
+                initialCenter: LatLng(36.7, 3.0),
+                initialZoom: 12.0,
               ),
-              // Driver markers
-              locations.when(
-                data: (locs) {
-                  // Fit bounds on first load
-                  if (locs.isNotEmpty) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      _fitBounds(locs);
-                    });
-                  }
-                  return MarkerLayer(
-                    markers: locs.map((loc) {
-                      final lat = (loc['lat'] as num).toDouble();
-                      final lng = (loc['lng'] as num).toDouble();
-                      final name = loc['driver_name'] as String? ?? '';
-                      return Marker(
-                        point: LatLng(lat, lng),
-                        width: 44,
-                        height: 44,
-                        child: GestureDetector(
-                          onTap: () => _showDriverDetails(context, loc),
-                          child: CircleAvatar(
-                            radius: 20,
-                            backgroundColor: colorScheme.primary,
-                            child: Text(
-                              name.isNotEmpty ? name[0].toUpperCase() : '?',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.dreamland.tawzii',
+                ),
+                // Driver markers
+                locations.when(
+                  data: (locs) {
+                    // Fit bounds on first load
+                    if (locs.isNotEmpty) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _fitBounds(locs);
+                      });
+                    }
+                    return MarkerLayer(
+                      markers: locs.map((loc) {
+                        final lat = (loc['lat'] as num).toDouble();
+                        final lng = (loc['lng'] as num).toDouble();
+                        final name = loc['driver_name'] as String? ?? '';
+                        return Marker(
+                          point: LatLng(lat, lng),
+                          width: 44,
+                          height: 44,
+                          child: GestureDetector(
+                            onTap: () => _showDriverDetails(context, loc),
+                            child: Container(
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: t.accent,
+                                border:
+                                    Border.all(color: t.onAccent, width: 2),
+                              ),
+                              child: Text(
+                                name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                style: TextStyle(
+                                  color: t.onAccent,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    }).toList(),
-                  );
-                },
-                loading: () => const MarkerLayer(markers: []),
-                error: (_, _) => const MarkerLayer(markers: []),
-              ),
-              // OSM attribution (required by tile usage policy)
-              const SimpleAttributionWidget(
-                source: Text('OpenStreetMap contributors'),
-              ),
-            ],
+                        );
+                      }).toList(),
+                    );
+                  },
+                  loading: () => const MarkerLayer(markers: []),
+                  error: (_, _) => const MarkerLayer(markers: []),
+                ),
+                // OSM attribution (required by tile usage policy)
+                const SimpleAttributionWidget(
+                  source: Text('OpenStreetMap contributors'),
+                ),
+              ],
+            ),
           ),
 
           // Empty state overlay
@@ -182,24 +190,30 @@ class _DriverMapScreenState extends ConsumerState<DriverMapScreen> {
               if (locs.isNotEmpty) return const SizedBox.shrink();
               return Positioned.fill(
                 child: Container(
-                  color: Colors.black26,
+                  color: t.scrim,
                   child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.location_off,
-                          size: 48,
-                          color: Colors.white.withValues(alpha: 0.8),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          l10n.noActiveDrivers,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: Colors.white,
+                    child: Container(
+                      padding: const EdgeInsetsDirectional.symmetric(
+                          horizontal: 18, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: t.surface,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const StatusDot(StatusKind.muted),
+                          const SizedBox(width: 9),
+                          Text(
+                            l10n.noActiveDrivers,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: t.textPrimary,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),

@@ -2,19 +2,53 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
-import 'package:tawzii/core/theme/app_colors.dart';
-import 'package:tawzii/features/purchase_orders/screens/purchase_order_list_screen.dart';
-import 'package:tawzii/features/suppliers/screens/supplier_list_screen.dart';
+import 'package:tawzii/core/theme/app_theme.dart';
+import 'package:tawzii/core/ui/money_text.dart';
+import 'package:tawzii/core/ui/state_blocks.dart';
+import 'package:tawzii/core/ui/surface_card.dart';
+import 'package:tawzii/features/purchase_orders/screens/procurement_hub_screen.dart';
 import '../providers/product_provider.dart';
-import 'product_form_screen.dart';
+import 'product_detail_screen.dart';
+import 'product_form_sheet.dart';
 
-class ProductListScreen extends ConsumerWidget {
+enum _StockFilter { all, low, out }
+
+/// 5d — المنتجات: cost/sell pair on the row, stock is the loud number.
+class ProductListScreen extends ConsumerStatefulWidget {
   const ProductListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProductListScreen> createState() =>
+      _ProductListScreenState();
+}
+
+class _ProductListScreenState extends ConsumerState<ProductListScreen> {
+  final _searchController = TextEditingController();
+  _StockFilter _filter = _StockFilter.all;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  static bool _isLow(Map<String, dynamic> p) {
+    final stock = (p['stock_on_hand'] as num?)?.toInt() ?? 0;
+    final threshold = (p['low_stock_threshold'] as num?)?.toInt() ?? 0;
+    return threshold > 0 && stock > 0 && stock <= threshold;
+  }
+
+  static bool _isOut(Map<String, dynamic> p) =>
+      ((p['stock_on_hand'] as num?)?.toInt() ?? 0) <= 0;
+
+  Future<void> _openCreate() async {
+    final created = await showProductFormSheet(context);
+    if (created == true) ref.invalidate(productListProvider);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final productsAsync = ref.watch(productListProvider);
-    final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -22,196 +56,303 @@ class ProductListScreen extends ConsumerWidget {
         title: const Text('المنتجات'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.local_shipping_outlined),
-            tooltip: l10n.suppliers,
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => const SupplierListScreen()),
-            ),
-          ),
-          IconButton(
             icon: const Icon(Icons.shopping_cart_outlined),
             tooltip: l10n.purchaseOrders,
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (_) => const PurchaseOrderListScreen()),
+                  builder: (_) => const ProcurementHubScreen()),
             ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const ProductFormScreen(),
-            ),
-          );
-          ref.invalidate(productListProvider);
-        },
+        onPressed: _openCreate,
         child: const Icon(Icons.add),
       ),
-      body: productsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(productListProvider);
+          await ref.read(productListProvider.future);
+        },
+        child: productsAsync.when(
+          loading: () => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsetsDirectional.all(18),
+            children: const [SurfaceCard(child: SkeletonList(count: 7))],
+          ),
+          error: (e, _) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsetsDirectional.all(18),
             children: [
-              Text('خطأ في تحميل المنتجات', style: theme.textTheme.bodyLarge),
-              const SizedBox(height: 8),
-              FilledButton.tonal(
-                onPressed: () => ref.invalidate(productListProvider),
-                child: const Text('إعادة المحاولة'),
+              SurfaceCard(
+                child: ErrorRetryRow(
+                  onRetry: () => ref.invalidate(productListProvider),
+                ),
               ),
             ],
           ),
-        ),
-        data: (products) {
-          if (products.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.inventory_2_outlined,
-                      size: 64, color: theme.colorScheme.onSurfaceVariant),
-                  const SizedBox(height: 16),
-                  Text('لا توجد منتجات',
-                      style: theme.textTheme.titleMedium),
-                  const SizedBox(height: 8),
-                  Text('اضغط + لإضافة منتج جديد',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      )),
-                ],
-              ),
-            );
-          }
+          data: (products) {
+            final lowCount = products.where(_isLow).length;
+            final outCount = products.where(_isOut).length;
 
-          return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(productListProvider),
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)
-                  .copyWith(bottom: 80),
-              itemCount: products.length,
-              itemBuilder: (context, index) {
-                final p = products[index];
-                final hasPackaging = p['has_returnable_packaging'] == true;
-                final unitsPerPkg = p['units_per_package'];
-                final costPrice = (p['cost_price'] as num?)?.toDouble();
-                final sellPrice = (p['unit_price'] as num?)?.toDouble() ?? 0;
-                final margin = costPrice != null ? sellPrice - costPrice : null;
-                final marginPct = (costPrice != null && costPrice > 0)
-                    ? (margin! / costPrice * 100).toStringAsFixed(0)
-                    : null;
-                final stockOnHand = (p['stock_on_hand'] as num?)?.toInt() ?? 0;
-                final lowStockThreshold =
-                    (p['low_stock_threshold'] as num?)?.toInt() ?? 0;
-                final isLowStock =
-                    lowStockThreshold > 0 && stockOnHand <= lowStockThreshold;
+            final query = _searchController.text.trim().toLowerCase();
+            var visible = query.isEmpty
+                ? products
+                : products
+                    .where((p) => (p['name'] as String? ?? '')
+                        .toLowerCase()
+                        .contains(query))
+                    .toList();
+            visible = switch (_filter) {
+              _StockFilter.all => visible,
+              _StockFilter.low => visible.where(_isLow).toList(),
+              _StockFilter.out => visible.where(_isOut).toList(),
+            };
 
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: theme.colorScheme.primaryContainer,
-                      child: Icon(
-                        hasPackaging ? Icons.inventory_2 : Icons.shopping_bag,
-                        color: theme.colorScheme.onPrimaryContainer,
-                      ),
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsetsDirectional.fromSTEB(18, 8, 18, 96),
+              children: [
+                TextField(
+                  controller: _searchController,
+                  decoration:
+                      const InputDecoration(hintText: 'ابحث عن منتج…'),
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    _FilterChip(
+                      label: 'الكل · \u2066${products.length}\u2069',
+                      selected: _filter == _StockFilter.all,
+                      onTap: () =>
+                          setState(() => _filter = _StockFilter.all),
                     ),
-                    title: Text(p['name'] ?? ''),
-                    subtitle: Text(
-                      costPrice != null
-                          ? '${l10n.sellPrice}: $sellPrice د.ج · ${l10n.costPrice}: $costPrice د.ج'
-                          : '${p['unit_price']} د.ج${unitsPerPkg != null ? ' · $unitsPerPkg وحدة/عبوة' : ''}',
+                    const SizedBox(width: 8),
+                    _FilterChip(
+                      label: 'منخفض · \u2066$lowCount\u2069',
+                      selected: _filter == _StockFilter.low,
+                      warning: true,
+                      onTap: () =>
+                          setState(() => _filter = _StockFilter.low),
                     ),
-                    trailing: Wrap(
-                      spacing: 4,
-                      direction: Axis.vertical,
-                      crossAxisAlignment: WrapCrossAlignment.end,
+                    const SizedBox(width: 8),
+                    _FilterChip(
+                      label: 'نفذ · \u2066$outCount\u2069',
+                      selected: _filter == _StockFilter.out,
+                      onTap: () =>
+                          setState(() => _filter = _StockFilter.out),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                if (products.isEmpty)
+                  EmptyState(
+                    title: 'لا توجد منتجات',
+                    message: 'أضف أول منتج لبدء إدارة المخزون',
+                    ctaLabel: 'إضافة منتج',
+                    onCta: _openCreate,
+                  )
+                else if (visible.isEmpty)
+                  const EmptyState(
+                    title: 'لا نتائج',
+                    message: 'جرّب كلمة بحث أو تصفية أخرى',
+                  )
+                else
+                  SurfaceCard(
+                    child: Column(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: isLowStock
-                                ? AppColors.error.withValues(alpha: 0.12)
-                                : AppColors.success.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.inventory_outlined,
-                                size: 12,
-                                color: isLowStock
-                                    ? AppColors.error
-                                    : AppColors.success,
-                              ),
-                              const SizedBox(width: 3),
-                              Text(
-                                '$stockOnHand',
-                                style: TextStyle(
-                                  color: isLowStock
-                                      ? AppColors.error
-                                      : AppColors.success,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
+                        for (var i = 0; i < visible.length; i++)
+                          _ProductRow(
+                            product: visible[i],
+                            showDivider: i < visible.length - 1,
+                            onTap: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ProductDetailScreen(
+                                      product: visible[i]),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (marginPct != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: margin! >= 0
-                                  ? AppColors.success
-                                      .withValues(alpha: 0.12)
-                                  : AppColors.error
-                                      .withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              '$marginPct%',
-                              style: TextStyle(
-                                color: margin >= 0
-                                    ? AppColors.success
-                                    : AppColors.error,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        if (hasPackaging)
-                          Chip(
-                            label: const Text('قابل للإرجاع'),
-                            labelStyle: theme.textTheme.labelSmall,
-                            visualDensity: VisualDensity.compact,
+                              );
+                              ref.invalidate(productListProvider);
+                            },
                           ),
                       ],
                     ),
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ProductFormScreen(product: p),
-                        ),
-                      );
-                      ref.invalidate(productListProvider);
-                    },
                   ),
-                );
-              },
-            ),
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.warning = false,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  /// Low-stock chip: mustard text when unselected (warning ≠ accent).
+  final bool warning;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = TawziiTokens.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Material(
+      color: selected
+          ? (isDark ? t.surfaceAlt : t.surface)
+          : Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(999),
+        side: selected && !isDark
+            ? BorderSide(color: t.borderStrong)
+            : BorderSide.none,
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          height: 36,
+          padding: const EdgeInsetsDirectional.symmetric(horizontal: 14),
+          alignment: AlignmentDirectional.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+              color: selected
+                  ? t.textPrimary
+                  : (warning ? t.warning : t.textMuted),
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProductRow extends StatelessWidget {
+  const _ProductRow({
+    required this.product,
+    required this.showDivider,
+    required this.onTap,
+  });
+
+  final Map<String, dynamic> product;
+  final bool showDivider;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = TawziiTokens.of(context);
+    final costPrice = (product['cost_price'] as num?)?.toDouble();
+    final sellPrice = (product['unit_price'] as num?)?.toDouble() ?? 0;
+    final stock = (product['stock_on_hand'] as num?)?.toInt() ?? 0;
+    final threshold =
+        (product['low_stock_threshold'] as num?)?.toInt() ?? 0;
+    final isOut = stock <= 0;
+    final isLow = !isOut && threshold > 0 && stock <= threshold;
+
+    final subtitleStyle = TextStyle(fontSize: 12, color: t.textMuted);
+    final subtitleNumber = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: t.textMuted,
+    );
+
+    final row = InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 56),
+        padding: const EdgeInsetsDirectional.symmetric(
+            horizontal: 12, vertical: 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    product['name'] as String? ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      if (costPrice != null) ...[
+                        Text('شراء ', style: subtitleStyle),
+                        Money(costPrice,
+                            showUnit: false,
+                            color: t.textMuted,
+                            numberStyle: subtitleNumber),
+                        Text(' · ', style: subtitleStyle),
+                      ],
+                      Text('بيع ', style: subtitleStyle),
+                      Money(sellPrice,
+                          showUnit: false,
+                          color: t.textMuted,
+                          numberStyle: subtitleNumber),
+                      if (product['has_returnable_packaging'] == true)
+                        Text(' · قابل للإرجاع', style: subtitleStyle),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 11),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '\u2066$stock\u2069',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: isOut
+                        ? t.danger
+                        : (isLow ? t.warning : t.textPrimary),
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+                Text('مخزون',
+                    style: TextStyle(fontSize: 11, color: t.textMuted)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (!showDivider) return row;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        row,
+        Padding(
+          padding:
+              const EdgeInsetsDirectional.symmetric(horizontal: 12),
+          child: Divider(height: 1, thickness: 1, color: t.border),
+        ),
+      ],
     );
   }
 }

@@ -8,8 +8,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/constants/app_constants.dart';
 import '../core/utils/version_utils.dart';
 import '../features/auth/models/app_user.dart';
-import '../features/auth/screens/force_update_screen.dart';
-import '../features/auth/screens/init_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/splash_screen.dart';
 import '../features/driver/screens/driver_shell.dart';
@@ -165,14 +163,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/force-update',
-        builder: (context, state) => ForceUpdateScreen(
+        builder: (context, state) => SplashScreen(
+          forceUpdate: true,
           minVersion: notifier.minVersion,
           downloadUrl: notifier.downloadUrl,
         ),
       ),
       GoRoute(
         path: '/init',
-        builder: (context, state) => const InitScreen(),
+        builder: (context, state) => const LoginScreen(ownerSetup: true),
       ),
       GoRoute(
         path: '/login',

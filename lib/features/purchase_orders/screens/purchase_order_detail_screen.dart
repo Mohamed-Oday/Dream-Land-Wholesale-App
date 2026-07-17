@@ -3,9 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/ui/hero_number.dart';
+import '../../../core/ui/money_text.dart';
+import '../../../core/ui/section_label.dart';
+import '../../../core/ui/state_blocks.dart';
+import '../../../core/ui/status_dot.dart';
+import '../../../core/ui/surface_card.dart';
 import '../providers/purchase_order_provider.dart';
 
-class PurchaseOrderDetailScreen extends ConsumerWidget {
+/// Purchase order detail (canvas 6c): supplier header, cost hero,
+/// stock-updated status row, line items, notes.
+class PurchaseOrderDetailScreen extends ConsumerStatefulWidget {
   final String purchaseOrderId;
 
   const PurchaseOrderDetailScreen({
@@ -14,303 +23,231 @@ class PurchaseOrderDetailScreen extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PurchaseOrderDetailScreen> createState() =>
+      _PurchaseOrderDetailScreenState();
+}
+
+class _PurchaseOrderDetailScreenState
+    extends ConsumerState<PurchaseOrderDetailScreen> {
+  Future<Map<String, dynamic>>? _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  void _load() {
+    final repo = ref.read(purchaseOrderRepositoryProvider);
+    _future = repo?.getById(widget.purchaseOrderId);
+  }
+
+  String _formatDate(dynamic createdAt) {
+    if (createdAt == null) return '';
+    final dt = DateTime.tryParse(createdAt as String)?.toLocal();
+    if (dt == null) return createdAt.toString();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(dt.year, dt.month, dt.day);
+    final time = DateFormat('HH:mm').format(dt);
+    if (day == today) return 'اليوم \u2066$time\u2069';
+    if (day == today.subtract(const Duration(days: 1))) return 'أمس \u2066$time\u2069';
+    return '\u2066${DateFormat('dd/MM/yyyy').format(dt)}\u2069 · \u2066$time\u2069';
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final currencyFormat = NumberFormat('#,##0.00', 'ar');
-    final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+    final t = TawziiTokens.of(context);
 
-    final repo = ref.watch(purchaseOrderRepositoryProvider);
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.purchaseDetails)),
+      body: _future == null
+          ? Center(
+              child: ErrorRetryRow(
+                onRetry: () => setState(_load),
+              ),
+            )
+          : FutureBuilder<Map<String, dynamic>>(
+              future: _future,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return ListView(
+                    padding: const EdgeInsetsDirectional.all(18),
+                    children: const [
+                      SurfaceCard(child: SkeletonList(count: 5)),
+                    ],
+                  );
+                }
+                if (snapshot.hasError || snapshot.data == null) {
+                  return Center(
+                    child: ErrorRetryRow(
+                      onRetry: () => setState(_load),
+                    ),
+                  );
+                }
 
-    return FutureBuilder<Map<String, dynamic>>(
-      future: repo?.getById(purchaseOrderId),
-      builder: (context, snapshot) {
-        final po = snapshot.data;
+                final po = snapshot.data!;
+                final supplierName = (po['suppliers']
+                        as Map<String, dynamic>?)?['name'] as String? ??
+                    '';
+                final createdByName =
+                    (po['users'] as Map<String, dynamic>?)?['name']
+                            as String? ??
+                        '';
+                final totalCost =
+                    (po['total_cost'] as num?)?.toDouble() ?? 0;
+                final lines =
+                    po['purchase_order_lines'] as List<dynamic>? ?? [];
+                final notes = (po['notes'] ?? '').toString();
+                final dateLabel = _formatDate(po['created_at']);
 
-        return Scaffold(
-          appBar: AppBar(title: Text(l10n.purchaseDetails)),
-          body: snapshot.connectionState == ConnectionState.waiting
-              ? const Center(child: CircularProgressIndicator())
-              : po == null
-                  ? Center(child: Text(l10n.error))
-                  : ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        // --- Header Card ---
-                        Card(
-                          elevation: 0,
-                          color: colorScheme.surfaceContainerLow,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              children: [
-                                _InfoRow(
-                                  icon: Icons.local_shipping,
-                                  label: l10n.supplier,
-                                  value: (po['suppliers']
-                                              as Map<String, dynamic>?)?[
-                                          'name'] as String? ??
-                                      '',
-                                  theme: theme,
-                                ),
-                                const SizedBox(height: 8),
-                                _InfoRow(
-                                  icon: Icons.calendar_today,
-                                  label: 'التاريخ',
-                                  value: _formatDate(
-                                      po['created_at'], dateFormat),
-                                  theme: theme,
-                                ),
-                                const SizedBox(height: 8),
-                                _InfoRow(
-                                  icon: Icons.person,
-                                  label: 'بواسطة',
-                                  value: (po['users']
-                                              as Map<String, dynamic>?)?[
-                                          'name'] as String? ??
-                                      '',
-                                  theme: theme,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                return ListView(
+                  padding:
+                      const EdgeInsetsDirectional.fromSTEB(18, 8, 18, 24),
+                  children: [
+                    // Supplier header
+                    Text(
+                      supplierName,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      createdByName.isEmpty
+                          ? dateLabel
+                          : '$dateLabel · بواسطة $createdByName',
+                      style: TextStyle(fontSize: 12, color: t.textSecondary),
+                    ),
+                    const SizedBox(height: 16),
 
-                        const SizedBox(height: 24),
+                    // Cost hero
+                    HeroNumber(label: l10n.totalCost, value: totalCost),
+                    const SizedBox(height: 14),
 
-                        // --- Line Items ---
-                        Row(
-                          children: [
-                            Icon(Icons.shopping_bag_outlined,
-                                size: 20, color: colorScheme.primary),
-                            const SizedBox(width: 8),
-                            Text(
-                              l10n.products,
-                              style:
-                                  theme.textTheme.titleMedium?.copyWith(
+                    // Stock-updated status row
+                    SurfaceCard(
+                      level: SurfaceLevel.alt,
+                      radius: 12,
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                          13, 11, 13, 11),
+                      margin: const EdgeInsetsDirectional.only(bottom: 14),
+                      child: Row(
+                        children: [
+                          const StatusDot(StatusKind.success),
+                          const SizedBox(width: 9),
+                          Expanded(
+                            child: Text(
+                              'تم الاستلام — المخزون محدّث',
+                              style: TextStyle(
+                                fontSize: 13,
                                 fontWeight: FontWeight.w600,
+                                color: t.textPrimary,
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-
-                        _buildLineItems(po, theme, colorScheme,
-                            currencyFormat, l10n),
-
-                        const SizedBox(height: 16),
-
-                        // --- Total ---
-                        Card(
-                          elevation: 0,
-                          color: colorScheme.primaryContainer,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  l10n.totalCost,
-                                  style: theme.textTheme.titleMedium
-                                      ?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color:
-                                        colorScheme.onPrimaryContainer,
-                                  ),
-                                ),
-                                Text(
-                                  '${currencyFormat.format((po['total_cost'] as num?)?.toDouble() ?? 0)} د.ج',
-                                  style: theme.textTheme.titleLarge
-                                      ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color:
-                                        colorScheme.onPrimaryContainer,
-                                    fontFeatures: [
-                                      const FontFeature.tabularFigures()
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        // --- Notes ---
-                        if ((po['notes'] ?? '').toString().isNotEmpty) ...[
-                          const SizedBox(height: 16),
-                          Card(
-                            elevation: 0,
-                            color: colorScheme.surfaceContainerLow,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Row(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  Icon(Icons.notes,
-                                      size: 18,
-                                      color:
-                                          colorScheme.onSurfaceVariant),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      po['notes'] as String,
-                                      style: theme.textTheme.bodyMedium,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                          Text(
+                            dateLabel,
+                            style:
+                                TextStyle(fontSize: 11, color: t.textMuted),
                           ),
                         ],
-
-                        const SizedBox(height: 24),
-                      ],
+                      ),
                     ),
-        );
-      },
-    );
-  }
 
-  Widget _buildLineItems(
-    Map<String, dynamic> po,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    NumberFormat currencyFormat,
-    AppLocalizations l10n,
-  ) {
-    final lines = po['purchase_order_lines'] as List<dynamic>? ?? [];
-    if (lines.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Center(
-          child: Text(
-            l10n.noPurchaseOrders,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
+                    // Line items
+                    SectionLabel('الأصناف · \u2066${lines.length}\u2069'),
+                    if (lines.isEmpty)
+                      EmptyState(
+                        title: l10n.noPurchaseOrders,
+                        message: 'لا توجد أصناف مسجلة في هذا الأمر',
+                      )
+                    else
+                      SurfaceCard(
+                        child: Column(
+                          children: [
+                            for (var i = 0; i < lines.length; i++)
+                              _LineRow(
+                                line: lines[i] as Map<String, dynamic>,
+                                showDivider: i < lines.length - 1,
+                              ),
+                          ],
+                        ),
+                      ),
+
+                    // Notes
+                    if (notes.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      SectionLabel(l10n.purchaseNotes),
+                      SurfaceCard(
+                        level: SurfaceLevel.alt,
+                        padding: const EdgeInsetsDirectional.all(14),
+                        child: Text(
+                          notes,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                  ],
+                );
+              },
             ),
-          ),
-        ),
-      );
-    }
-
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          for (int i = 0; i < lines.length; i++) ...[
-            _buildLineItem(
-                lines[i] as Map<String, dynamic>,
-                theme,
-                colorScheme,
-                currencyFormat,
-                l10n),
-            if (i < lines.length - 1)
-              Divider(
-                height: 1,
-                indent: 56,
-                color: colorScheme.outlineVariant,
-              ),
-          ],
-        ],
-      ),
     );
   }
+}
 
-  Widget _buildLineItem(
-    Map<String, dynamic> line,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    NumberFormat currencyFormat,
-    AppLocalizations l10n,
-  ) {
+class _LineRow extends StatelessWidget {
+  const _LineRow({required this.line, required this.showDivider});
+
+  final Map<String, dynamic> line;
+  final bool showDivider;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = TawziiTokens.of(context);
     final product = line['products'] as Map<String, dynamic>?;
     final productName = product?['name'] as String? ?? '';
     final quantity = (line['quantity'] as num?)?.toInt() ?? 0;
     final unitCost = (line['unit_cost'] as num?)?.toDouble() ?? 0;
     final lineTotal = (line['line_total'] as num?)?.toDouble() ?? 0;
 
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: CircleAvatar(
-        backgroundColor: colorScheme.primaryContainer,
-        radius: 20,
-        child: Icon(Icons.shopping_bag,
-            color: colorScheme.onPrimaryContainer, size: 20),
-      ),
-      title: Text(productName, style: theme.textTheme.titleSmall),
-      subtitle: Text(
-        '$quantity × ${currencyFormat.format(unitCost)} د.ج',
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: colorScheme.onSurfaceVariant,
-        ),
-      ),
-      trailing: Text(
-        '${currencyFormat.format(lineTotal)} د.ج',
-        style: theme.textTheme.titleSmall?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: colorScheme.primary,
-        ),
+    final row = Padding(
+      padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: 12, vertical: 9),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  productName,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: t.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  '\u2066$quantity\u2069 × \u2066${Money.format(unitCost)}\u2069',
+                  style: TextStyle(fontSize: 12, color: t.textMuted),
+                ),
+              ],
+            ),
+          ),
+          Money(lineTotal, showUnit: false),
+        ],
       ),
     );
-  }
 
-  String _formatDate(dynamic createdAt, DateFormat format) {
-    if (createdAt == null) return '';
-    try {
-      return format.format(DateTime.parse(createdAt as String).toLocal());
-    } catch (_) {
-      return createdAt.toString();
-    }
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final ThemeData theme;
-
-  const _InfoRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.theme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
+    if (!showDivider) return row;
+    return Column(
       children: [
-        Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  )),
-              Text(value, style: theme.textTheme.bodyMedium),
-            ],
-          ),
+        row,
+        Padding(
+          padding: const EdgeInsetsDirectional.symmetric(horizontal: 12),
+          child: Divider(height: 1, thickness: 1, color: t.border),
         ),
       ],
     );

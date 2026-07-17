@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tawzii/core/l10n/app_localizations.dart';
+import 'package:tawzii/core/theme/app_theme.dart';
+import 'package:tawzii/core/ui/tawzii_nav_bar.dart';
+import 'package:tawzii/core/ui/tawzii_row.dart';
 import 'package:tawzii/features/auth/providers/auth_provider.dart';
+import 'package:tawzii/features/auth/screens/settings_screen.dart';
 import 'package:tawzii/features/location/providers/location_provider.dart';
 import 'package:tawzii/features/driver_loads/screens/driver_stock_screen.dart';
 import 'package:tawzii/features/orders/screens/order_list_screen.dart';
@@ -17,6 +21,7 @@ class DriverShell extends ConsumerStatefulWidget {
 }
 
 class _DriverShellState extends ConsumerState<DriverShell> {
+  // Store-hub-centric flow (canvas t4): stores tab is the driver's home.
   int _selectedIndex = 0;
   bool _toggling = false;
 
@@ -82,15 +87,22 @@ class _DriverShellState extends ConsumerState<DriverShell> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isOnDuty = ref.watch(isOnDutyProvider);
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final t = TawziiTokens.of(context);
 
     final screens = [
+      const StoreListScreen(),
       const OrderListScreen(isOwner: false),
       const DriverStockScreen(),
-      const PackageListScreen(),
       const PaymentListScreen(isOwner: false),
-      const StoreListScreen(),
+      const _DriverMoreScreen(),
+    ];
+
+    final labels = [
+      l10n.stores,
+      l10n.orders,
+      l10n.myStock,
+      l10n.payments,
+      'المزيد',
     ];
 
     return Scaffold(
@@ -102,92 +114,111 @@ class _DriverShellState extends ConsumerState<DriverShell> {
               children: screens,
             ),
           ),
-          // On-duty toggle banner
+          // On-duty toggle banner (canvas 3c): surface, hairline top border,
+          // 8px success dot, 13/600 label, success-colored switch.
           Material(
-            color: isOnDuty
-                ? colorScheme.primaryContainer
-                : colorScheme.surfaceContainerHighest,
+            color: t.surface,
             child: InkWell(
               onTap: _toggling ? null : _toggleDuty,
-              child: SizedBox(
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border(top: BorderSide(color: t.border)),
+                ),
+                padding:
+                    const EdgeInsetsDirectional.symmetric(horizontal: 18),
                 height: 48,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      Icon(
-                        isOnDuty ? Icons.location_on : Icons.location_off,
-                        size: 20,
-                        color: isOnDuty
-                            ? colorScheme.primary
-                            : colorScheme.onSurfaceVariant,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isOnDuty ? t.success : t.borderStrong,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          isOnDuty ? l10n.onDuty : l10n.offDuty,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: isOnDuty
-                                ? colorScheme.onPrimaryContainer
-                                : colorScheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                          ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        isOnDuty
+                            ? 'في الخدمة — التتبع مفعّل'
+                            : 'خارج الخدمة — التتبع متوقف',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color:
+                              isOnDuty ? t.textPrimary : t.textSecondary,
                         ),
                       ),
-                      if (_toggling)
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: isOnDuty
-                                ? colorScheme.primary
-                                : colorScheme.onSurfaceVariant,
-                          ),
-                        )
-                      else
-                        Switch(
-                          value: isOnDuty,
-                          onChanged: (_) => _toggleDuty(),
+                    ),
+                    if (_toggling)
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: t.textMuted,
                         ),
-                    ],
-                  ),
+                      )
+                    else
+                      Switch(
+                        value: isOnDuty,
+                        onChanged: (_) => _toggleDuty(),
+                        activeThumbColor: t.surface,
+                        activeTrackColor: t.success,
+                      ),
+                  ],
                 ),
               ),
             ),
           ),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: TawziiNavBar(
+        labels: labels,
         selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() => _selectedIndex = index);
-        },
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.receipt_long_outlined),
-            selectedIcon: const Icon(Icons.receipt_long),
-            label: l10n.orders,
+        onSelected: (index) => setState(() => _selectedIndex = index),
+      ),
+    );
+  }
+}
+
+/// المزيد tab — packages and settings entry points (canvas t3/t4 nav).
+class _DriverMoreScreen extends StatelessWidget {
+  const _DriverMoreScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    final t = TawziiTokens.of(context);
+    final chevron = Icon(Icons.chevron_left, size: 20, color: t.textMuted);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('المزيد')),
+      body: ListView(
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 16),
+        children: [
+          TawziiRow(
+            hardened: true,
+            title: 'الصناديق',
+            subtitle: 'أرصدة الصناديق والاسترجاع',
+            trailing: chevron,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const PackageListScreen(),
+              ),
+            ),
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.inventory_outlined),
-            selectedIcon: const Icon(Icons.inventory),
-            label: l10n.myStock,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.inventory_2_outlined),
-            selectedIcon: const Icon(Icons.inventory_2),
-            label: l10n.packages,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.payments_outlined),
-            selectedIcon: const Icon(Icons.payments),
-            label: l10n.payments,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.store_outlined),
-            selectedIcon: const Icon(Icons.store),
-            label: l10n.stores,
+          const SizedBox(height: 8),
+          TawziiRow(
+            hardened: true,
+            title: 'الإعدادات',
+            subtitle: 'الإشعارات والطابعة والمظهر',
+            trailing: chevron,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const SettingsScreen(roleName: 'بائع'),
+              ),
+            ),
           ),
         ],
       ),

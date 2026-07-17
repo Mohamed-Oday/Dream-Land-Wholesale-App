@@ -3,21 +3,35 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
-import 'package:tawzii/core/theme/app_colors.dart';
-import 'package:tawzii/features/driver_loads/providers/driver_load_providers.dart';
+import 'package:tawzii/core/theme/app_theme.dart';
+import 'package:tawzii/core/ui/state_blocks.dart';
+import 'package:tawzii/core/ui/status_dot.dart';
+import 'package:tawzii/core/ui/surface_card.dart';
+import 'package:tawzii/core/ui/tawzii_row.dart';
 import 'package:tawzii/features/auth/providers/auth_provider.dart';
-import 'package:tawzii/features/driver_loads/screens/add_to_load_screen.dart';
+import 'package:tawzii/features/driver_loads/providers/driver_load_providers.dart';
 import 'package:tawzii/features/driver_loads/screens/create_load_screen.dart';
-import 'package:tawzii/features/driver_loads/screens/load_receipt_screen.dart';
+import 'package:tawzii/features/receipts/screens/receipt_screen.dart';
 
-class LoadListScreen extends ConsumerWidget {
+/// 5a — تحميلات البائعين: status-forward rows, quantities at a glance.
+class LoadListScreen extends ConsumerStatefulWidget {
   const LoadListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LoadListScreen> createState() => _LoadListScreenState();
+}
+
+class _LoadListScreenState extends ConsumerState<LoadListScreen> {
+  bool _showClosed = false;
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
+    final t = TawziiTokens.of(context);
     final loadsAsync = ref.watch(driverLoadListProvider);
+    final currentUser = ref.watch(currentUserProvider);
+    final canManage =
+        currentUser != null && (currentUser.isOwner || currentUser.isAdmin);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.driverLoads)),
@@ -29,74 +43,82 @@ class LoadListScreen extends ConsumerWidget {
         child: loadsAsync.when(
           loading: () => ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            children: [
-              SizedBox(
-                height: MediaQuery.of(context).size.height * 0.7,
-                child: const Center(child: CircularProgressIndicator()),
-              ),
+            padding: const EdgeInsetsDirectional.all(18),
+            children: const [
+              SurfaceCard(child: SkeletonList(count: 6)),
             ],
           ),
           error: (e, _) => ListView(
             physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsetsDirectional.all(18),
             children: [
-              SizedBox(
-                height: MediaQuery.of(context).size.height * 0.7,
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline,
-                          size: 48, color: theme.colorScheme.error),
-                      const SizedBox(height: 16),
-                      Text(l10n.error, style: theme.textTheme.bodyLarge),
-                      const SizedBox(height: 16),
-                      FilledButton.tonal(
-                        onPressed: () => ref.invalidate(driverLoadListProvider),
-                        child: Text(l10n.retry),
-                      ),
-                    ],
-                  ),
+              SurfaceCard(
+                child: ErrorRetryRow(
+                  onRetry: () => ref.invalidate(driverLoadListProvider),
                 ),
               ),
             ],
           ),
           data: (loads) {
-            if (loads.isEmpty) {
-              return ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                  SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.7,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.local_shipping_outlined,
-                              size: 64,
-                              color: theme.colorScheme.onSurfaceVariant
-                                  .withValues(alpha: 0.4)),
-                          const SizedBox(height: 16),
-                          Text(
-                            l10n.noLoads,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
+            final active =
+                loads.where((l) => l['status'] == 'active').toList();
+            final closed =
+                loads.where((l) => l['status'] != 'active').toList();
+            final visible = _showClosed ? closed : active;
+
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsetsDirectional.fromSTEB(18, 8, 18, 96),
+              children: [
+                Row(
+                  children: [
+                    _FilterChip(
+                      label: 'نشطة · \u2066${active.length}\u2069',
+                      selected: !_showClosed,
+                      onTap: () => setState(() => _showClosed = false),
+                    ),
+                    const SizedBox(width: 8),
+                    _FilterChip(
+                      label: 'مغلقة · \u2066${closed.length}\u2069',
+                      selected: _showClosed,
+                      onTap: () => setState(() => _showClosed = true),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                if (loads.isEmpty)
+                  EmptyState(
+                    title: l10n.noLoads,
+                    message: 'حمّل بائعاً لبدء وردية بيع جديدة',
+                    ctaLabel: l10n.loadDriver,
+                    onCta: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const CreateLoadScreen()),
+                    ),
+                  )
+                else if (visible.isEmpty)
+                  EmptyState(
+                    title: _showClosed ? 'لا تحميلات مغلقة' : 'لا تحميلات نشطة',
+                    message: _showClosed
+                        ? 'ستظهر التحميلات هنا بعد إغلاق الورديات'
+                        : 'حمّل بائعاً لبدء وردية بيع جديدة',
+                  )
+                else
+                  SurfaceCard(
+                    child: Column(
+                      children: [
+                        for (var i = 0; i < visible.length; i++)
+                          _LoadRow(
+                            load: visible[i],
+                            canManage: canManage,
+                            showDivider: i < visible.length - 1,
+                            tokens: t,
                           ),
-                        ],
-                      ),
+                      ],
                     ),
                   ),
-                ],
-              );
-            }
-
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: loads.length,
-              itemBuilder: (_, index) {
-                final load = loads[index];
-                return _LoadCard(load: load, l10n: l10n, theme: theme);
-              },
+              ],
             );
           },
         ),
@@ -114,161 +136,47 @@ class LoadListScreen extends ConsumerWidget {
   }
 }
 
-class _LoadCard extends StatelessWidget {
-  final Map<String, dynamic> load;
-  final AppLocalizations l10n;
-  final ThemeData theme;
-
-  const _LoadCard({
-    required this.load,
-    required this.l10n,
-    required this.theme,
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
   });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final driverName = load['driver_name'] as String? ?? '';
-    final status = load['status'] as String? ?? 'active';
-    final itemCount = (load['item_count'] as num?)?.toInt() ?? 0;
-    final totalQty = (load['total_quantity'] as num?)?.toInt() ?? 0;
-    final openedAt = load['opened_at'] as String?;
-    final loadedByName = load['loaded_by_name'] as String? ?? '';
+    final t = TawziiTokens.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    String formattedDate = '';
-    if (openedAt != null) {
-      try {
-        final dt = DateTime.parse(openedAt).toLocal();
-        formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(dt);
-      } catch (_) {
-        formattedDate = openedAt;
-      }
-    }
-
-    final isActive = status == 'active';
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+    return Material(
+      color: selected
+          ? (isDark ? t.surfaceAlt : t.surface)
+          : Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(999),
+        side: selected && !isDark
+            ? BorderSide(color: t.borderStrong)
+            : BorderSide.none,
+      ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          // Build receipt data from load list data
-          final receiptData = {
-            'id': load['id'],
-            'driver_name': driverName,
-            'loaded_by_name': loadedByName,
-            'opened_at': openedAt,
-            'items': <Map<String, dynamic>>[],
-          };
-
-          // Fetch detail then navigate
-          final repo =
-              ProviderScope.containerOf(context).read(driverLoadRepositoryProvider);
-          if (repo == null) return;
-
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => _LoadDetailLoader(
-                loadId: load['id'] as String,
-              ),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          height: 36,
+          padding: const EdgeInsetsDirectional.symmetric(horizontal: 14),
+          alignment: AlignmentDirectional.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+              color: selected ? t.textPrimary : t.textMuted,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.local_shipping,
-                      color: theme.colorScheme.primary, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      driverName,
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? AppColors.success.withValues(alpha: 0.12)
-                          : theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      isActive ? l10n.activeLoad : l10n.closedLoad,
-                      style: TextStyle(
-                        color: isActive
-                            ? AppColors.success
-                            : theme.colorScheme.onSurfaceVariant,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Text(
-                    '$itemCount ${l10n.products} · $totalQty ${l10n.totalLoaded}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    formattedDate,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-              // Action buttons for active loads (owner/admin only)
-              if (isActive)
-                Consumer(
-                  builder: (ctx, ref, _) {
-                    final currentUser = ref.watch(currentUserProvider);
-                    if (currentUser == null ||
-                        (!currentUser.isOwner && !currentUser.isAdmin)) {
-                      return const SizedBox.shrink();
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                Navigator.push(
-                                  ctx,
-                                  MaterialPageRoute(
-                                    builder: (_) => AddToLoadScreen(
-                                        loadId: load['id'] as String),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.add, size: 16),
-                              label: Text(l10n.addToLoad,
-                                  style: const TextStyle(fontSize: 12)),
-                              style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 4)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-            ],
           ),
         ),
       ),
@@ -276,39 +184,131 @@ class _LoadCard extends StatelessWidget {
   }
 }
 
+class _LoadRow extends StatelessWidget {
+  const _LoadRow({
+    required this.load,
+    required this.canManage,
+    required this.showDivider,
+    required this.tokens,
+  });
+
+  final Map<String, dynamic> load;
+  final bool canManage;
+  final bool showDivider;
+  final TawziiTokens tokens;
+
+  static String _formatWhen(String? iso) {
+    if (iso == null) return '';
+    final dt = DateTime.tryParse(iso)?.toLocal();
+    if (dt == null) return '';
+    final now = DateTime.now();
+    final sameDay =
+        dt.year == now.year && dt.month == now.month && dt.day == now.day;
+    final fmt = sameDay ? DateFormat('HH:mm') : DateFormat('dd/MM HH:mm');
+    return fmt.format(dt);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final driverName = load['driver_name'] as String? ?? '';
+    final status = load['status'] as String? ?? 'active';
+    final isActive = status == 'active';
+    final itemCount = (load['item_count'] as num?)?.toInt() ?? 0;
+    final totalQty = (load['total_quantity'] as num?)?.toInt() ?? 0;
+
+    final subtitle = isActive
+        ? 'نشط منذ \u2066${_formatWhen(load['opened_at'] as String?)}\u2069'
+            ' · \u2066$itemCount\u2069 منتج'
+        : 'أُغلق \u2066${_formatWhen(load['closed_at'] as String?)}\u2069'
+            ' · \u2066$itemCount\u2069 منتج';
+
+    return TawziiRow(
+      leading: StatusDot(isActive ? StatusKind.success : StatusKind.neutral),
+      title: driverName,
+      subtitle: subtitle,
+      showDivider: showDivider,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isActive && canManage)
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CreateLoadScreen(
+                      loadId: load['id'] as String,
+                      driverName: driverName,
+                    ),
+                  ),
+                );
+              },
+              child: const Text('إضافة'),
+            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '\u2066$totalQty\u2069',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color:
+                      isActive ? tokens.textPrimary : tokens.textMuted,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+              Text(
+                'وحدة',
+                style: TextStyle(fontSize: 11, color: tokens.textMuted),
+              ),
+            ],
+          ),
+        ],
+      ),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => _LoadDetailLoader(loadId: load['id'] as String),
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// Loads the full detail, then shows the receipt screen.
 class _LoadDetailLoader extends ConsumerWidget {
-  final String loadId;
-
   const _LoadDetailLoader({required this.loadId});
+
+  final String loadId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
     final detailAsync = ref.watch(driverLoadDetailProvider(loadId));
 
     return detailAsync.when(
       loading: () => Scaffold(
         appBar: AppBar(title: Text(l10n.loadDetails)),
-        body: const Center(child: CircularProgressIndicator()),
+        body: ListView(
+          padding: const EdgeInsetsDirectional.all(18),
+          children: const [SurfaceCard(child: SkeletonList(count: 5))],
+        ),
       ),
       error: (e, _) => Scaffold(
         appBar: AppBar(title: Text(l10n.loadDetails)),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
-              const SizedBox(height: 16),
-              Text(l10n.error),
-              const SizedBox(height: 16),
-              FilledButton.tonal(
-                onPressed: () => ref.invalidate(driverLoadDetailProvider(loadId)),
-                child: Text(l10n.retry),
+        body: ListView(
+          padding: const EdgeInsetsDirectional.all(18),
+          children: [
+            SurfaceCard(
+              child: ErrorRetryRow(
+                onRetry: () =>
+                    ref.invalidate(driverLoadDetailProvider(loadId)),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
       data: (detail) {
@@ -316,7 +316,6 @@ class _LoadDetailLoader extends ConsumerWidget {
         final driverUser = detail['driver'] as Map<String, dynamic>?;
         final loaderUser = detail['loader'] as Map<String, dynamic>?;
 
-        // Build receipt data from detail
         final receiptData = {
           'id': detail['id'],
           'driver_name': driverUser?['name'] ?? '',
@@ -332,7 +331,7 @@ class _LoadDetailLoader extends ConsumerWidget {
           }).toList(),
         };
 
-        return LoadReceiptScreen(loadData: receiptData);
+        return ReceiptScreen.load(loadData: receiptData);
       },
     );
   }

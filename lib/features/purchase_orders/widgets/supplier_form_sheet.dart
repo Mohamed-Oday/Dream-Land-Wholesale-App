@@ -2,20 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
-import '../providers/supplier_provider.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../suppliers/providers/supplier_provider.dart';
 
-class SupplierFormScreen extends ConsumerStatefulWidget {
+/// Supplier create/edit form as a bottom sheet (canvas 6a: "supplier form =
+/// sheet"). Absorbs the old SupplierFormScreen behavior: name required,
+/// phone/address/contact optional, create or update via SupplierRepository,
+/// invalidates supplierListProvider on save.
+Future<void> showSupplierFormSheet(
+  BuildContext context, {
+  Map<String, dynamic>? supplier,
+}) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    builder: (_) => _SupplierFormSheet(supplier: supplier),
+  );
+}
+
+class _SupplierFormSheet extends ConsumerStatefulWidget {
+  const _SupplierFormSheet({this.supplier});
+
   final Map<String, dynamic>? supplier;
-
-  const SupplierFormScreen({super.key, this.supplier});
 
   bool get isEditing => supplier != null;
 
   @override
-  ConsumerState<SupplierFormScreen> createState() => _SupplierFormScreenState();
+  ConsumerState<_SupplierFormSheet> createState() => _SupplierFormSheetState();
 }
 
-class _SupplierFormScreenState extends ConsumerState<SupplierFormScreen> {
+class _SupplierFormSheetState extends ConsumerState<_SupplierFormSheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _phoneController;
@@ -78,105 +94,104 @@ class _SupplierFormScreenState extends ConsumerState<SupplierFormScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _errorMessage = 'خطأ في الحفظ: $e';
-        });
+        setState(() => _errorMessage = 'خطأ في الحفظ: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  Widget _fieldLabel(BuildContext context, String text) {
+    final t = TawziiTokens.of(context);
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(bottom: 5),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: t.textSecondary,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+    final t = TawziiTokens.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.isEditing ? l10n.editSupplier : l10n.addSupplier),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SingleChildScrollView(
+        padding: const EdgeInsetsDirectional.fromSTEB(18, 0, 18, 20),
         child: Form(
           key: _formKey,
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Text(
+                widget.isEditing ? l10n.editSupplier : l10n.addSupplier,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 14),
+              _fieldLabel(context, l10n.supplierName),
               TextFormField(
                 controller: _nameController,
                 enabled: !_isLoading,
                 textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText: l10n.supplierName,
-                  prefixIcon: const Icon(Icons.local_shipping_outlined),
-                ),
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'مطلوب' : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
+              _fieldLabel(context, 'رقم الهاتف'),
               TextFormField(
                 controller: _phoneController,
                 enabled: !_isLoading,
                 keyboardType: TextInputType.phone,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'رقم الهاتف',
-                  prefixIcon: Icon(Icons.phone_outlined),
-                  hintText: 'اختياري',
-                ),
+                decoration: const InputDecoration(hintText: 'اختياري'),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
+              _fieldLabel(context, 'العنوان'),
               TextFormField(
                 controller: _addressController,
                 enabled: !_isLoading,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'العنوان',
-                  prefixIcon: Icon(Icons.location_on_outlined),
-                  hintText: 'اختياري',
-                ),
+                decoration: const InputDecoration(hintText: 'اختياري'),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
+              _fieldLabel(context, 'جهة الاتصال'),
               TextFormField(
                 controller: _contactController,
                 enabled: !_isLoading,
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _save(),
-                decoration: const InputDecoration(
-                  labelText: 'جهة الاتصال',
-                  prefixIcon: Icon(Icons.person_outline),
-                  hintText: 'اختياري',
-                ),
+                decoration: const InputDecoration(hintText: 'اختياري'),
               ),
-              const SizedBox(height: 8),
-              if (_errorMessage != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Text(
-                    _errorMessage!,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(color: theme.colorScheme.error),
-                    textAlign: TextAlign.center,
-                  ),
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, color: t.textSecondary),
                 ),
-              const SizedBox(height: 16),
+              ],
+              const SizedBox(height: 18),
               FilledButton(
                 onPressed: _isLoading ? null : _save,
                 style: FilledButton.styleFrom(
                   minimumSize: const Size(double.infinity, 52),
                 ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
-                      )
-                    : Text(
-                        widget.isEditing ? 'حفظ التعديلات' : l10n.addSupplier,
-                        style: const TextStyle(fontSize: 16),
-                      ),
+                child: Text(
+                  _isLoading
+                      ? '...'
+                      : widget.isEditing
+                          ? 'حفظ التعديلات'
+                          : l10n.addSupplier,
+                  style: const TextStyle(fontSize: 16),
+                ),
               ),
             ],
           ),

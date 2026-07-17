@@ -2,22 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
+import 'package:tawzii/core/theme/app_theme.dart';
 import '../providers/product_provider.dart';
-import 'stock_adjustment_screen.dart';
-import 'stock_movement_history_screen.dart';
 
-class ProductFormScreen extends ConsumerStatefulWidget {
+/// Product create/edit — folded into a bottom sheet (one surface rung up
+/// over the scrim), quiet labels above the fields per canvas 4d.
+///
+/// Returns `true` when the product was saved.
+Future<bool?> showProductFormSheet(
+  BuildContext context, {
+  Map<String, dynamic>? product,
+}) {
+  return showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    builder: (_) => _ProductFormSheet(product: product),
+  );
+}
+
+class _ProductFormSheet extends ConsumerStatefulWidget {
+  const _ProductFormSheet({this.product});
+
   final Map<String, dynamic>? product;
-
-  const ProductFormScreen({super.key, this.product});
 
   bool get isEditing => product != null;
 
   @override
-  ConsumerState<ProductFormScreen> createState() => _ProductFormScreenState();
+  ConsumerState<_ProductFormSheet> createState() =>
+      _ProductFormSheetState();
 }
 
-class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
+class _ProductFormSheetState extends ConsumerState<_ProductFormSheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _priceController;
@@ -36,14 +51,14 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     _nameController = TextEditingController(text: p?['name'] ?? '');
     _priceController =
         TextEditingController(text: p?['unit_price']?.toString() ?? '');
-    _unitsPerPkgController =
-        TextEditingController(text: p?['units_per_package']?.toString() ?? '');
+    _unitsPerPkgController = TextEditingController(
+        text: p?['units_per_package']?.toString() ?? '');
     _costPriceController =
         TextEditingController(text: p?['cost_price']?.toString() ?? '');
     _stockController =
         TextEditingController(text: p?['stock_on_hand']?.toString() ?? '0');
-    _lowStockThresholdController =
-        TextEditingController(text: p?['low_stock_threshold']?.toString() ?? '0');
+    _lowStockThresholdController = TextEditingController(
+        text: p?['low_stock_threshold']?.toString() ?? '0');
     _hasReturnablePackaging = p?['has_returnable_packaging'] ?? false;
   }
 
@@ -79,7 +94,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
 
       if (widget.isEditing) {
         final stockOnHand = int.tryParse(_stockController.text.trim()) ?? 0;
-        final lowStockThreshold = int.tryParse(_lowStockThresholdController.text.trim()) ?? 0;
+        final lowStockThreshold =
+            int.tryParse(_lowStockThresholdController.text.trim()) ?? 0;
         await repo.update(widget.product!['id'], {
           'name': _nameController.text.trim(),
           'unit_price': price,
@@ -101,57 +117,77 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
 
       if (mounted) {
         ref.invalidate(productListProvider);
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _errorMessage = 'خطأ في الحفظ: $e';
-        });
+        setState(() => _errorMessage = 'خطأ في الحفظ: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  Widget _label(String text, {bool required = false}) {
+    final t = TawziiTokens.of(context);
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(bottom: 5, top: 12),
+      child: Text.rich(
+        TextSpan(
+          text: text,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: t.textSecondary,
+          ),
+          children: [
+            if (required)
+              TextSpan(text: ' *', style: TextStyle(color: t.danger)),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final t = TawziiTokens.of(context);
     final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.isEditing ? 'تعديل المنتج' : 'إضافة منتج'),
+    return Padding(
+      padding: EdgeInsetsDirectional.only(
+        start: 18,
+        end: 18,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        top: 4,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Text(
+                widget.isEditing ? 'تعديل المنتج' : 'إضافة منتج',
+                style: const TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              _label('اسم المنتج', required: true),
               TextFormField(
                 controller: _nameController,
                 enabled: !_isLoading,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'اسم المنتج',
-                  prefixIcon: Icon(Icons.label_outline),
-                ),
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'مطلوب' : null,
               ),
-              const SizedBox(height: 16),
+              _label('سعر البيع (دج)', required: true),
               TextFormField(
                 controller: _priceController,
                 enabled: !_isLoading,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'سعر الوحدة (د.ج)',
-                  prefixIcon: Icon(Icons.attach_money),
-                ),
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return 'مطلوب';
                   final price = double.tryParse(v.trim());
@@ -160,19 +196,14 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              _label('${l10n.costPrice} (دج)'),
               TextFormField(
                 controller: _costPriceController,
                 enabled: !_isLoading,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
                 textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText: l10n.costPrice,
-                  prefixIcon: const Icon(Icons.money_off_outlined),
-                  hintText: 'اختياري',
-                  suffixText: 'د.ج',
-                ),
+                decoration: const InputDecoration(hintText: 'اختياري'),
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return null;
                   final cost = double.tryParse(v.trim());
@@ -182,17 +213,12 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 },
               ),
               if (widget.isEditing) ...[
-                const SizedBox(height: 16),
+                _label(l10n.stockOnHand),
                 TextFormField(
                   controller: _stockController,
                   enabled: !_isLoading,
                   keyboardType: TextInputType.number,
                   textInputAction: TextInputAction.next,
-                  decoration: InputDecoration(
-                    labelText: l10n.stockOnHand,
-                    prefixIcon: const Icon(Icons.inventory_outlined),
-                    suffixText: 'وحدة',
-                  ),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return null;
                     final n = int.tryParse(v.trim());
@@ -201,18 +227,14 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                _label(l10n.alertThreshold),
                 TextFormField(
                   controller: _lowStockThresholdController,
                   enabled: !_isLoading,
                   keyboardType: TextInputType.number,
                   textInputAction: TextInputAction.next,
-                  decoration: InputDecoration(
-                    labelText: l10n.alertThreshold,
-                    prefixIcon: const Icon(Icons.warning_amber_outlined),
-                    suffixText: 'وحدة',
-                    hintText: '0 = بدون تنبيه',
-                  ),
+                  decoration:
+                      const InputDecoration(hintText: '0 = بدون تنبيه'),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return null;
                     final n = int.tryParse(v.trim());
@@ -222,104 +244,57 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                   },
                 ),
               ],
-              const SizedBox(height: 16),
+              _label('عدد الوحدات في العبوة'),
               TextFormField(
                 controller: _unitsPerPkgController,
                 enabled: !_isLoading,
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.done,
-                decoration: const InputDecoration(
-                  labelText: 'عدد الوحدات في العبوة',
-                  prefixIcon: Icon(Icons.inventory),
-                  hintText: 'اختياري',
-                ),
+                decoration: const InputDecoration(hintText: 'اختياري'),
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return null;
                   final n = int.tryParse(v.trim());
-                  if (n == null || n <= 0) return 'أدخل عدداً صحيحاً أكبر من صفر';
+                  if (n == null || n <= 0) {
+                    return 'أدخل عدداً صحيحاً أكبر من صفر';
+                  }
                   return null;
                 },
               ),
-              if (widget.isEditing) ...[
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _isLoading
-                            ? null
-                            : () async {
-                                final result = await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => StockAdjustmentScreen(
-                                        product: widget.product!),
-                                  ),
-                                );
-                                if (result == true) {
-                                  ref.invalidate(productListProvider);
-                                }
-                              },
-                        icon: const Icon(Icons.tune, size: 18),
-                        label: Text(l10n.adjustStock),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _isLoading
-                            ? null
-                            : () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        StockMovementHistoryScreen(
-                                      productId:
-                                          widget.product!['id'] as String,
-                                      productName:
-                                          widget.product!['name'] as String? ??
-                                              '',
-                                    ),
-                                  ),
-                                ),
-                        icon: const Icon(Icons.history, size: 18),
-                        label: Text(l10n.stockMovements),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-              const SizedBox(height: 16),
-              SwitchListTile(
-                title: const Text('تغليف قابل للإرجاع'),
-                subtitle: const Text('هل يحتوي المنتج على عبوات يجب إرجاعها؟'),
-                value: _hasReturnablePackaging,
-                onChanged:
-                    _isLoading ? null : (v) => setState(() => _hasReturnablePackaging = v),
-              ),
               const SizedBox(height: 8),
+              SwitchListTile(
+                contentPadding: EdgeInsetsDirectional.zero,
+                title: const Text('تغليف قابل للإرجاع',
+                    style: TextStyle(fontSize: 15)),
+                subtitle: Text(
+                  'هل يحتوي المنتج على عبوات يجب إرجاعها؟',
+                  style: TextStyle(fontSize: 12, color: t.textMuted),
+                ),
+                value: _hasReturnablePackaging,
+                onChanged: _isLoading
+                    ? null
+                    : (v) => setState(() => _hasReturnablePackaging = v),
+              ),
               if (_errorMessage != null)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsetsDirectional.only(bottom: 8),
                   child: Text(
                     _errorMessage!,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(color: theme.colorScheme.error),
                     textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, color: t.textSecondary),
                   ),
                 ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               FilledButton(
                 onPressed: _isLoading ? null : _save,
                 style: FilledButton.styleFrom(
                   minimumSize: const Size(double.infinity, 52),
                 ),
                 child: _isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         height: 24,
                         width: 24,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
+                            strokeWidth: 2, color: t.onAccent),
                       )
                     : Text(
                         widget.isEditing ? 'حفظ التعديلات' : 'إضافة المنتج',
