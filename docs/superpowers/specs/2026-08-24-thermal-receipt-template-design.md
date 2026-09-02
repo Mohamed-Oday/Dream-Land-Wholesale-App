@@ -210,8 +210,19 @@ Measured on the proof with the four-line sample order: 163 mm of paper, 2.3 s at
 70 mm/s. Roughly 8 mm per additional single-line item.
 
 **Load manifest and return documents** reuse `ThermalGrid` with the same rule
-weights: 3 columns (`الصنف` 316 / `الكمية` 100 / `—` 120) for the manifest and
-4 columns (`الصنف` 236 / `محمّل` 100 / `مباع` 100 / `مرتجع` 100) for the return.
+weights: 2 columns (`الصنف` 416 / `الكمية` 120) for the manifest with the loaded
+total as a footer row, and 4 columns (`الصنف` 236 / `محمّل` 100 / `مباع` 100 /
+`مرتجع` 100) for the return with the totals as a bold last body row.
+
+**Order reference.** Orders have no sequential number (`orders.id` is a UUID), so
+the reference under the document title is `#` followed by the first 8 characters
+of the id, upper-cased (`#3F9A2C1B`), at 28 dots bold. The 40-dot numeral in the
+original proof assumed a short number that does not exist.
+
+**Primitives actually needed** (revises §4.3): `ThermalRule` solid 3-dot and hair
+2-dot only — no dashed rule, template A does not use one — plus `ThermalKv`,
+`ThermalGrid`, `TotalBar`, `Stamp`, `DueBox` (the boxed `المتبقي` row) and
+`SignatureLine`.
 
 **Load manifest** and **return / shift-close** reuse the same primitives: header,
 metadata block, ruled table (3-column for the manifest, 4-column for the return
