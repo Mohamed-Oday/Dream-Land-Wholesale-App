@@ -1373,6 +1373,8 @@ git commit -m "feat(receipts): ReceiptConfig from app_config (receipt.phone, rec
 - Test: `test/widget/receipts/receipt_capture_test.dart`
 - Test fixture: `test/widget/receipts/fixtures.dart`
 
+**Note on finders:** grid cells are `RichText` widgets, so any `find.text` / `find.textContaining` aimed at a cell must pass `findRichText: true` (verified in Task 4).
+
 **Interfaces:**
 - Consumes: everything from Tasks 2–5; `AppLocalizations` (`lib/core/l10n/app_localizations.dart`); `Money.format`.
 - Produces: `enum ReceiptDocType { order, load, returns }` (moved here from the screen; Task 8 re-exports it).
@@ -1581,7 +1583,7 @@ void main() {
     expect(find.text('توقيع المستلم'), findsOneWidget);
     expect(find.text('توقيع السائق'), findsOneWidget);
     expect(find.textContaining('0770 12 34 56'), findsNWidgets(2)); // header + footer
-    expect(find.textContaining('للقطعة'), findsOneWidget);
+    expect(find.textContaining('للقطعة', findRichText: true), findsOneWidget);
     expect(find.textContaining('+\u20666\u2069 ق'), findsOneWidget);
   });
 
@@ -2005,7 +2007,7 @@ Append inside `main()` of `test/widget/receipts/receipt_palette_test.dart`:
     )));
     await expectOnlyInk(tester);
     expect(find.text(l10nAr.loadReceipt), findsOneWidget);
-    expect(find.text(l10nAr.totalLoaded), findsOneWidget);
+    expect(find.text(l10nAr.totalLoaded, findRichText: true), findsOneWidget);
     expect(find.text('\u206664\u2069'), findsOneWidget); // 40 + 24
   });
 
@@ -2022,9 +2024,9 @@ Append inside `main()` of `test/widget/receipts/receipt_palette_test.dart`:
     )));
     await expectOnlyInk(tester);
     expect(find.text(l10nAr.shiftCloseReceipt), findsOneWidget);
-    expect(find.text(l10nAr.loaded), findsOneWidget);
-    expect(find.text(l10nAr.sold), findsOneWidget);
-    expect(find.text(l10nAr.returned), findsOneWidget);
+    expect(find.text(l10nAr.loaded, findRichText: true), findsOneWidget);
+    expect(find.text(l10nAr.sold, findRichText: true), findsOneWidget);
+    expect(find.text(l10nAr.returned, findRichText: true), findsOneWidget);
     expect(find.text('\u206657\u2069'), findsOneWidget); // sold 33 + 24
     expect(find.text('\u20667\u2069'), findsNWidgets(2)); // row + total returned
   });
