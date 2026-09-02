@@ -32,7 +32,7 @@ The SDK is not installed on this PC (`flutter` is not on PATH and not in `C:\src
 
 **Files:** none in the repo.
 
-- [ ] **Step 1: Install Flutter 3.41.4 (the version pinned in `.github/workflows/build-apk.yml`)**
+- [x] **Step 1: Install Flutter 3.41.4 (the version pinned in `.github/workflows/build-apk.yml`)**
 
 Run in PowerShell:
 
@@ -45,7 +45,7 @@ flutter --version
 
 Expected: first line `Flutter 3.41.4 • channel stable`.
 
-- [ ] **Step 2: Fetch packages and confirm the existing suite is green**
+- [x] **Step 2: Fetch packages and confirm the existing suite is green**
 
 ```powershell
 cd "C:\Users\Admin\Desktop\Dev Projects\Whole-Sale\Dream-Land-Wholesale-App"
@@ -55,13 +55,17 @@ flutter test
 
 Expected: `All tests passed!` (4 existing test files under `test/unit`).
 
-- [ ] **Step 3: Confirm the analyzer baseline**
+Done 2026-09-02: 59 tests passed.
+
+- [x] **Step 3: Confirm the analyzer baseline**
 
 ```powershell
 flutter analyze
 ```
 
 Expected: `No issues found!`. If pre-existing issues are reported, note them; later tasks must not add to the count.
+
+Done 2026-09-02: baseline is **6 info-level lints**, all pre-existing (`withOpacity` deprecation in `order_list_screen.dart`, `_makeItem` underscore locals in two tests, `gotrue` import in `app_user_test.dart`). Every later task's `flutter analyze` must report at most these 6.
 
 ---
 
