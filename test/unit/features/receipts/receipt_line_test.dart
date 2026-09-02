@@ -22,8 +22,8 @@ Map<String, dynamic> _line({
 }
 
 void main() {
-  const iso = '⁦';
-  const pdi = '⁩';
+  const iso = '\u2066';
+  const pdi = '\u2069';
   const fs = ' '; // figure space used by Money.format
 
   test('ltr wraps the value in isolate marks', () {
