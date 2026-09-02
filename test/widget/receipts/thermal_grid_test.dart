@@ -76,8 +76,8 @@ void main() {
     expect(foot.border!.top.width, 1.5);
     expect(foot.border!.horizontalInside.width, 1.0);
     expect(foot.children.length, 2);
-    expect(find.text('المجموع الفرعي'), findsOneWidget);
-    expect(find.text('−230'), findsOneWidget);
+    expect(find.text('المجموع الفرعي', findRichText: true), findsOneWidget);
+    expect(find.text('−230', findRichText: true), findsOneWidget);
     // Body no longer closes the frame; the footer does.
     expect(tables[1].border!.bottom, BorderSide.none);
   });
