@@ -1584,7 +1584,7 @@ void main() {
     expect(find.text('توقيع السائق'), findsOneWidget);
     expect(find.textContaining('0770 12 34 56'), findsNWidgets(2)); // header + footer
     expect(find.textContaining('للقطعة', findRichText: true), findsOneWidget);
-    expect(find.textContaining('+\u20666\u2069 ق'), findsOneWidget);
+    expect(find.textContaining('+\u20666\u2069 ق', findRichText: true), findsOneWidget);
   });
 
   testWidgets('cancelled order shows ملغى and no payment block', (tester) async {
@@ -2008,7 +2008,7 @@ Append inside `main()` of `test/widget/receipts/receipt_palette_test.dart`:
     await expectOnlyInk(tester);
     expect(find.text(l10nAr.loadReceipt), findsOneWidget);
     expect(find.text(l10nAr.totalLoaded, findRichText: true), findsOneWidget);
-    expect(find.text('\u206664\u2069'), findsOneWidget); // 40 + 24
+    expect(find.text('\u206664\u2069', findRichText: true), findsOneWidget); // 40 + 24
   });
 
   testWidgets('return document declares only black and white and totals columns',
@@ -2027,8 +2027,8 @@ Append inside `main()` of `test/widget/receipts/receipt_palette_test.dart`:
     expect(find.text(l10nAr.loaded, findRichText: true), findsOneWidget);
     expect(find.text(l10nAr.sold, findRichText: true), findsOneWidget);
     expect(find.text(l10nAr.returned, findRichText: true), findsOneWidget);
-    expect(find.text('\u206657\u2069'), findsOneWidget); // sold 33 + 24
-    expect(find.text('\u20667\u2069'), findsNWidgets(2)); // row + total returned
+    expect(find.text('\u206657\u2069', findRichText: true), findsOneWidget); // sold 33 + 24
+    expect(find.text('\u20667\u2069', findRichText: true), findsNWidgets(2)); // row + total returned
   });
 ```
 
