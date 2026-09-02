@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
+import 'package:tawzii/features/printing/services/esc_pos_raster.dart';
 
 /// Service for Bluetooth thermal printer operations.
 ///
@@ -83,7 +84,7 @@ class PrintService {
   /// 2. Sends raw image bytes to printer via ESC/POS commands
   ///
   /// Arabic text works perfectly because Flutter renders it.
-  Future<bool> printFromWidget(GlobalKey receiptKey, {double pixelRatio = 3.0}) async {
+  Future<bool> printFromWidget(GlobalKey receiptKey, {double pixelRatio = 2.0}) async {
     if (!_connected) {
       // Attempt auto-reconnect to last known printer
       final reconnected = await tryReconnect();
@@ -117,75 +118,28 @@ class PrintService {
 
   /// Convert PNG bytes to ESC/POS raster bitmap commands.
   ///
-  /// Decodes the PNG, converts to monochrome, generates GS v 0 commands.
+  /// Decodes the PNG to RGBA and hands it to [encodeEscPosRaster]. The
+  /// receipt paper is 288 logical px captured at 2.0, so the decoded width
+  /// should already be [kPrintWidthDots]; anything else means the paper
+  /// width and the capture ratio were changed independently.
   Future<List<int>> _pngToEscPos(Uint8List pngBytes) async {
     try {
-      // Decode PNG to raw RGBA pixels using Flutter's image codec
       final codec = await ui.instantiateImageCodec(pngBytes);
       final frame = await codec.getNextFrame();
       final image = frame.image;
-
-      final width = image.width;
-      final height = image.height;
-
+      assert(
+        image.width == kPrintWidthDots,
+        'Receipt capture is ${image.width} dots wide; expected $kPrintWidthDots. '
+        'ReceiptPaper.width × pixelRatio must equal $kPrintWidthDots.',
+      );
       final byteData =
           await image.toByteData(format: ui.ImageByteFormat.rawRgba);
       if (byteData == null) return [];
-
-      final pixels = byteData.buffer.asUint8List();
-
-      // Target print width: 576 pixels (72mm printable on 80mm paper at 203dpi)
-      const printWidth = 576;
-      final scale = printWidth / width;
-      final printHeight = (height * scale).toInt();
-
-      // Convert to monochrome bitmap (1 bit per pixel)
-      // Width in bytes (8 pixels per byte)
-      final widthBytes = (printWidth + 7) ~/ 8;
-
-      final List<int> commands = [];
-
-      // GS v 0 — Print raster bit image
-      // Format: GS v 0 m xL xH yL yH d1...dk
-      commands.addAll([0x1D, 0x76, 0x30, 0x00]); // GS v 0 normal
-      commands.addAll([
-        widthBytes & 0xFF,
-        (widthBytes >> 8) & 0xFF,
-      ]); // xL xH
-      commands.addAll([
-        printHeight & 0xFF,
-        (printHeight >> 8) & 0xFF,
-      ]); // yL yH
-
-      // Generate monochrome pixel data
-      for (int y = 0; y < printHeight; y++) {
-        for (int xByte = 0; xByte < widthBytes; xByte++) {
-          int byte = 0;
-          for (int bit = 0; bit < 8; bit++) {
-            final px = xByte * 8 + bit;
-            if (px >= printWidth) continue;
-
-            // Map scaled coordinates back to source image
-            final srcX = (px / scale).toInt().clamp(0, width - 1);
-            final srcY = (y / scale).toInt().clamp(0, height - 1);
-            final idx = (srcY * width + srcX) * 4;
-
-            // RGBA → grayscale → threshold
-            final r = pixels[idx];
-            final g = pixels[idx + 1];
-            final b = pixels[idx + 2];
-            final gray = (0.299 * r + 0.587 * g + 0.114 * b).toInt();
-
-            // Dark pixels = 1 (print), light pixels = 0 (no print)
-            if (gray < 128) {
-              byte |= (0x80 >> bit);
-            }
-          }
-          commands.add(byte);
-        }
-      }
-
-      return commands;
+      return encodeEscPosRaster(
+        width: image.width,
+        height: image.height,
+        rgba: byteData.buffer.asUint8List(),
+      );
     } catch (e) {
       debugPrint('PNG to ESC/POS conversion failed: $e');
       return [];
