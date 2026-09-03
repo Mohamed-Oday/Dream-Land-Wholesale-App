@@ -8,6 +8,8 @@ class OrderLines extends Table {
   RealColumn get unitPrice => real()();
   IntColumn get packagesCount => integer().nullable()();
   RealColumn get lineTotal => real().withDefault(const Constant(0.0))();
+  BoolColumn get soldByPiece => boolean().withDefault(const Constant(false))();
+  IntColumn get piecesQuantity => integer().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

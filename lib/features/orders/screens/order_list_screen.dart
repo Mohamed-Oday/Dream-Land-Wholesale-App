@@ -33,8 +33,26 @@ class OrderListScreen extends ConsumerStatefulWidget {
 class _OrderListScreenState extends ConsumerState<OrderListScreen> {
   bool _pendingOnly = false;
   String? _expandedOrderId;
+  String _paymentStatusFilter = 'all'; // 'all', 'unpaid', 'partial', 'paid'
 
   bool get isOwner => widget.isOwner;
+
+  Widget _buildFilterChip(String label, String value) {
+    final t = TawziiTokens.of(context);
+    final selected = _paymentStatusFilter == value;
+    return FilterChip(
+      label: Text(label, style: const TextStyle(fontSize: 13)),
+      selected: selected,
+      onSelected: (_) => setState(() => _paymentStatusFilter = value),
+      selectedColor: t.accentSoft,
+      checkmarkColor: t.accent,
+      backgroundColor: Colors.transparent,
+      side: BorderSide(
+        color: selected ? t.accent : t.borderStrong,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+    );
+  }
 
   void _invalidate() {
     ref.invalidate(isOwner ? allOrdersProvider : orderListProvider);
@@ -155,11 +173,17 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
                 final pendingCount = orders
                     .where((o) => o['discount_status'] == 'pending')
                     .length;
-                final visible = _pendingOnly
-                    ? orders
-                        .where((o) => o['discount_status'] == 'pending')
-                        .toList()
-                    : orders;
+                Iterable<Map<String, dynamic>> filtered = orders;
+                if (_pendingOnly) {
+                  filtered = filtered
+                      .where((o) => o['discount_status'] == 'pending');
+                }
+                if (_paymentStatusFilter != 'all') {
+                  filtered = filtered.where((o) =>
+                      (o['payment_status'] as String? ?? 'unpaid') ==
+                      _paymentStatusFilter);
+                }
+                final visible = filtered.toList();
 
                 if (orders.isEmpty) {
                   return EmptyState(
@@ -183,6 +207,22 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
                     padding: const EdgeInsetsDirectional.fromSTEB(
                         18, 12, 18, 96),
                     children: [
+                      // Payment status filter chips
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _buildFilterChip('الكل', 'all'),
+                            const SizedBox(width: 8),
+                            _buildFilterChip('غير مدفوع', 'unpaid'),
+                            const SizedBox(width: 8),
+                            _buildFilterChip('مدفوع جزئياً', 'partial'),
+                            const SizedBox(width: 8),
+                            _buildFilterChip('مدفوع', 'paid'),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       // Pending-discount filter chip
                       if (pendingCount > 0 || _pendingOnly)
                         Padding(
@@ -225,9 +265,11 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
                           ),
                         ),
                       if (visible.isEmpty)
-                        const EmptyState(
-                          title: 'لا توجد خصومات معلقة',
-                          message: 'ستظهر الطلبات ذات الخصم المعلق هنا',
+                        EmptyState(
+                          title: 'لا توجد طلبات',
+                          message: _pendingOnly
+                              ? 'لا توجد طلبات ذات خصم معلق'
+                              : 'لا توجد طلبات مطابقة للتصفية',
                         )
                       else if (isOwner)
                         SurfaceCard(
@@ -337,11 +379,12 @@ class _OrderRow extends StatelessWidget {
     final total = (order['total'] as num?)?.toDouble() ?? 0;
     final status = order['status'] as String? ?? 'created';
     final discountStatus = order['discount_status'] as String? ?? 'none';
+    final paymentStatus = order['payment_status'] as String? ?? 'unpaid';
+    final paidAmount = (order['paid_amount'] as num?)?.toDouble() ?? 0.0;
     final isCancelled = status == 'cancelled';
     final isPendingDiscount = discountStatus == 'pending';
     final createdAt = order['created_at'] as String?;
-    final dt =
-        createdAt == null ? null : DateTime.tryParse(createdAt)?.toLocal();
+    final dt = createdAt == null ? null : DateTime.tryParse(createdAt)?.toLocal();
     final time = dt == null ? '' : DateFormat('HH:mm').format(dt);
 
     if (isPendingDiscount) {
@@ -354,6 +397,23 @@ class _OrderRow extends StatelessWidget {
         hardened: hardened,
         showDivider: showDivider,
       );
+    }
+
+    // Payment status badge color
+    Color paymentBadgeColor;
+    String paymentLabel;
+    switch (paymentStatus) {
+      case 'paid':
+        paymentBadgeColor = Colors.green;
+        paymentLabel = 'مدفوع';
+        break;
+      case 'partial':
+        paymentBadgeColor = Colors.orange;
+        paymentLabel = 'جزئي';
+        break;
+      default:
+        paymentBadgeColor = Colors.red;
+        paymentLabel = 'غير مدفوع';
     }
 
     final subtitleParts = <String>[
@@ -372,6 +432,23 @@ class _OrderRow extends StatelessWidget {
       numberStyle: isCancelled
           ? const TextStyle(decoration: TextDecoration.lineThrough)
           : null,
+    );
+
+    final paymentBadge = Container(
+      padding: const EdgeInsetsDirectional.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: paymentBadgeColor.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: paymentBadgeColor),
+      ),
+      child: Text(
+        paymentLabel,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: paymentBadgeColor,
+        ),
+      ),
     );
 
     final mainRow = ConstrainedBox(
@@ -395,8 +472,7 @@ class _OrderRow extends StatelessWidget {
                     storeName,
                     style: TextStyle(
                       fontSize: hardened ? 16 : 15,
-                      fontWeight:
-                          hardened ? FontWeight.w600 : FontWeight.w500,
+                      fontWeight: hardened ? FontWeight.w600 : FontWeight.w500,
                       height: 1.5,
                       color: t.textPrimary,
                     ),
@@ -419,7 +495,14 @@ class _OrderRow extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsetsDirectional.only(start: 11),
-              child: money,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  paymentBadge,
+                  const SizedBox(width: 8),
+                  money,
+                ],
+              ),
             ),
           ],
         ),

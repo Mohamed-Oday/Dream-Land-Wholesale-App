@@ -15,6 +15,7 @@ import 'package:tawzii/features/driver/providers/user_management_provider.dart';
 import 'package:tawzii/features/driver_loads/providers/driver_load_providers.dart';
 import 'package:tawzii/features/receipts/screens/receipt_screen.dart';
 import 'package:tawzii/features/products/providers/product_provider.dart';
+import 'package:tawzii/core/utils/package_stock.dart';
 
 /// 5b — تحميل بائع: create load AND add-to-load are the same screen.
 /// Pass [loadId] (+ [driverName]) to operate on an active load.
@@ -393,7 +394,7 @@ class _CreateLoadScreenState extends ConsumerState<CreateLoadScreen> {
                           onChanged: (qty) => _setQuantity(
                             p['id'] as String,
                             qty,
-                            (p['stock_on_hand'] as num?)?.toInt() ?? 0,
+                            wholePackages(stockOf(p)),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -494,7 +495,8 @@ class _ProductLoadRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = TawziiTokens.of(context);
-    final stock = (product['stock_on_hand'] as num?)?.toInt() ?? 0;
+    // Loads move whole packages only, so a leftover fraction is not loadable.
+    final stock = wholePackages(stockOf(product));
     final outOfStock = stock <= 0;
 
     return Opacity(

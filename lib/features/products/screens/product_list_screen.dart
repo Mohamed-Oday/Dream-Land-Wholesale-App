@@ -7,6 +7,7 @@ import 'package:tawzii/core/ui/money_text.dart';
 import 'package:tawzii/core/ui/state_blocks.dart';
 import 'package:tawzii/core/ui/surface_card.dart';
 import 'package:tawzii/features/purchase_orders/screens/procurement_hub_screen.dart';
+import 'package:tawzii/core/utils/package_stock.dart';
 import '../providers/product_provider.dart';
 import 'product_detail_screen.dart';
 import 'product_form_sheet.dart';
@@ -33,13 +34,13 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
   }
 
   static bool _isLow(Map<String, dynamic> p) {
-    final stock = (p['stock_on_hand'] as num?)?.toInt() ?? 0;
-    final threshold = (p['low_stock_threshold'] as num?)?.toInt() ?? 0;
-    return threshold > 0 && stock > 0 && stock <= threshold;
+    final stock = stockOf(p);
+    final threshold = (p['low_stock_threshold'] as num?)?.toDouble() ?? 0;
+    return threshold > 0 && !_isOut(p) && stock <= threshold;
   }
 
   static bool _isOut(Map<String, dynamic> p) =>
-      ((p['stock_on_hand'] as num?)?.toInt() ?? 0) <= 0;
+      isOutOfStock(stockOf(p), (p['units_per_package'] as num?)?.toInt());
 
   Future<void> _openCreate() async {
     final created = await showProductFormSheet(context);
@@ -260,10 +261,11 @@ class _ProductRow extends StatelessWidget {
     final t = TawziiTokens.of(context);
     final costPrice = (product['cost_price'] as num?)?.toDouble();
     final sellPrice = (product['unit_price'] as num?)?.toDouble() ?? 0;
-    final stock = (product['stock_on_hand'] as num?)?.toInt() ?? 0;
+    final stock = stockOf(product);
     final threshold =
-        (product['low_stock_threshold'] as num?)?.toInt() ?? 0;
-    final isOut = stock <= 0;
+        (product['low_stock_threshold'] as num?)?.toDouble() ?? 0;
+    final isOut = isOutOfStock(
+        stock, (product['units_per_package'] as num?)?.toInt());
     final isLow = !isOut && threshold > 0 && stock <= threshold;
 
     final subtitleStyle = TextStyle(fontSize: 12, color: t.textMuted);
@@ -322,7 +324,7 @@ class _ProductRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '\u2066$stock\u2069',
+                  '\u2066${formatStockNumber(stock)}\u2069',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,

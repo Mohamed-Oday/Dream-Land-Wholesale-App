@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/core/theme/app_colors.dart';
 import 'package:tawzii/core/theme/app_theme.dart';
+import 'package:tawzii/core/ui/numeric_keypad.dart';
 import 'package:tawzii/core/ui/state_blocks.dart';
 import 'package:tawzii/core/ui/status_dot.dart';
 import 'package:tawzii/features/auth/providers/auth_provider.dart';
@@ -72,6 +73,7 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
   final _receiptKey = GlobalKey();
   bool _isPrinting = false;
   bool _isCancelling = false;
+  bool _isMarkingPaid = false;
   int? _packageBalance;
 
   /// Direct order data (when passed in, possibly mutated after cancel).
@@ -207,6 +209,68 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
     }
   }
 
+  /// Record a payment against the order. Prompts for the amount collected now
+  /// (defaults to the remaining balance) and derives paid/partial status.
+  Future<void> _markAsPaid(Map<String, dynamic> order) async {
+    final l10n = AppLocalizations.of(context)!;
+    final total = ((order['total'] as num?) ?? 0).toDouble();
+    final alreadyPaid = ((order['paid_amount'] as num?) ?? 0).toDouble();
+    final remaining = (total - alreadyPaid).clamp(0.0, total);
+
+    final amount = await showKeypadSheet(
+      context,
+      title: 'المبلغ المدفوع',
+      initialValue: remaining > 0 ? remaining : null,
+      allowDecimal: true,
+      hardened: true,
+    );
+    if (amount == null || amount <= 0 || !mounted) return;
+
+    final newPaidTotal = (alreadyPaid + amount).clamp(0.0, total);
+    final status = newPaidTotal >= total
+        ? 'paid'
+        : (newPaidTotal > 0 ? 'partial' : 'unpaid');
+
+    setState(() => _isMarkingPaid = true);
+    try {
+      final repo = ref.read(orderRepositoryProvider)!;
+      await repo.updatePaymentStatus(
+        orderId: order['id'] as String,
+        paymentStatus: status,
+        paidAmount: newPaidTotal,
+        storeId: order['store_id'] as String?,
+      );
+      if (!mounted) return;
+
+      // Reflect locally / refetch.
+      if (_directOrder != null) {
+        _directOrder!['payment_status'] = status;
+        _directOrder!['paid_amount'] = newPaidTotal;
+      } else if (widget.orderId != null) {
+        ref.invalidate(_orderByIdProvider(widget.orderId!));
+      }
+      ref.invalidate(orderListProvider);
+      ref.invalidate(allOrdersProvider);
+      setState(() {});
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(status == 'paid'
+              ? 'تم تسجيل الدفع بالكامل'
+              : 'تم تسجيل دفعة جزئية'),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${l10n.error}: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isMarkingPaid = false);
+    }
+  }
+
   void _done() {
     switch (widget.docType) {
       case ReceiptDocType.order:
@@ -283,6 +347,12 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
         status == 'created' &&
         currentUser != null &&
         (currentUser.isOwner || currentUser.isAdmin);
+
+    final paymentStatus = order?['payment_status'] as String? ?? 'unpaid';
+    final canMarkPaid = widget.docType == ReceiptDocType.order &&
+        order != null &&
+        status != 'cancelled' &&
+        paymentStatus != 'paid';
 
     final title = switch (widget.docType) {
       ReceiptDocType.order => l10n.receipt,
@@ -394,6 +464,36 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
+              ],
+              if (canMarkPaid) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed:
+                        _isMarkingPaid ? null : () => _markAsPaid(order),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: t.success,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(0, 52),
+                    ),
+                    icon: _isMarkingPaid
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.payments_outlined, size: 20),
+                    label: Text(
+                      paymentStatus == 'partial'
+                          ? 'إكمال الدفع'
+                          : 'تسجيل الدفع',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
               ],
               if (canCancel) ...[
                 SizedBox(

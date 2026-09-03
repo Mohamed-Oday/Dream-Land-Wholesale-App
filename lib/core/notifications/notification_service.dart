@@ -128,9 +128,9 @@ class NotificationService {
           .gt('low_stock_threshold', 0);
 
       for (final product in List<Map<String, dynamic>>.from(result)) {
-        final stock = (product['stock_on_hand'] as num?)?.toInt() ?? 0;
+        final stock = (product['stock_on_hand'] as num?)?.toDouble() ?? 0;
         final threshold =
-            (product['low_stock_threshold'] as num?)?.toInt() ?? 0;
+            (product['low_stock_threshold'] as num?)?.toDouble() ?? 0;
         if (stock <= threshold) {
           await sendNotification(
             eventType: 'low_stock',

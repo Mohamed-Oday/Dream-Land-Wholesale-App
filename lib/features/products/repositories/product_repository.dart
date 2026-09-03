@@ -23,22 +23,24 @@ class ProductRepository {
   }
 
   Future<Map<String, dynamic>> create({
-    required String name,
-    required double unitPrice,
-    int? unitsPerPackage,
-    bool hasReturnablePackaging = false,
-    double? costPrice,
-  }) async {
-    final result = await _client.from('products').insert({
-      'business_id': _businessId,
-      'name': name,
-      'unit_price': unitPrice,
-      'units_per_package': unitsPerPackage,
-      'has_returnable_packaging': hasReturnablePackaging,
-      'cost_price': costPrice,
-    }).select().single();
-    return Map<String, dynamic>.from(result);
-  }
+      required String name,
+      required double unitPrice,
+      int? unitsPerPackage,
+      bool hasReturnablePackaging = false,
+      bool sellByPiece = false,
+      double? costPrice,
+    }) async {
+      final result = await _client.from('products').insert({
+        'business_id': _businessId,
+        'name': name,
+        'unit_price': unitPrice,
+        'units_per_package': unitsPerPackage,
+        'has_returnable_packaging': hasReturnablePackaging,
+        'sell_by_piece': sellByPiece,
+        'cost_price': costPrice,
+      }).select().single();
+      return Map<String, dynamic>.from(result);
+    }
 
   Future<Map<String, dynamic>> update(
       String id, Map<String, dynamic> fields) async {

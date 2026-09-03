@@ -41,6 +41,7 @@ class _ProductFormSheetState extends ConsumerState<_ProductFormSheet> {
   late final TextEditingController _stockController;
   late final TextEditingController _lowStockThresholdController;
   late bool _hasReturnablePackaging;
+  late bool _sellByPiece;
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -60,6 +61,7 @@ class _ProductFormSheetState extends ConsumerState<_ProductFormSheet> {
     _lowStockThresholdController = TextEditingController(
         text: p?['low_stock_threshold']?.toString() ?? '0');
     _hasReturnablePackaging = p?['has_returnable_packaging'] ?? false;
+    _sellByPiece = p?['sell_by_piece'] ?? false;
   }
 
   @override
@@ -93,7 +95,8 @@ class _ProductFormSheetState extends ConsumerState<_ProductFormSheet> {
           : null;
 
       if (widget.isEditing) {
-        final stockOnHand = int.tryParse(_stockController.text.trim()) ?? 0;
+        final stockOnHand =
+            double.tryParse(_stockController.text.trim()) ?? 0.0;
         final lowStockThreshold =
             int.tryParse(_lowStockThresholdController.text.trim()) ?? 0;
         await repo.update(widget.product!['id'], {
@@ -101,6 +104,7 @@ class _ProductFormSheetState extends ConsumerState<_ProductFormSheet> {
           'unit_price': price,
           'units_per_package': unitsPerPkg,
           'has_returnable_packaging': _hasReturnablePackaging,
+          'sell_by_piece': _sellByPiece,
           'cost_price': costPrice,
           'stock_on_hand': stockOnHand,
           'low_stock_threshold': lowStockThreshold,
@@ -111,6 +115,7 @@ class _ProductFormSheetState extends ConsumerState<_ProductFormSheet> {
           unitPrice: price,
           unitsPerPackage: unitsPerPkg,
           hasReturnablePackaging: _hasReturnablePackaging,
+          sellByPiece: _sellByPiece,
           costPrice: costPrice,
         );
       }
@@ -217,11 +222,14 @@ class _ProductFormSheetState extends ConsumerState<_ProductFormSheet> {
                 TextFormField(
                   controller: _stockController,
                   enabled: !_isLoading,
-                  keyboardType: TextInputType.number,
+                  // Stock is a package count that may carry a fraction of a
+                  // package once loose pieces have been sold.
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   textInputAction: TextInputAction.next,
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return null;
-                    final n = int.tryParse(v.trim());
+                    final n = double.tryParse(v.trim());
                     if (n == null) return 'أدخل رقماً صحيحاً';
                     if (n < 0) return 'لا يمكن أن يكون سالباً';
                     return null;
@@ -273,6 +281,20 @@ class _ProductFormSheetState extends ConsumerState<_ProductFormSheet> {
                 onChanged: _isLoading
                     ? null
                     : (v) => setState(() => _hasReturnablePackaging = v),
+              ),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                contentPadding: EdgeInsetsDirectional.zero,
+                title: const Text('البيع بالقطعة',
+                    style: TextStyle(fontSize: 15)),
+                subtitle: Text(
+                  'السماح ببيع المنتج بالقطعة بالإضافة إلى العبوات',
+                  style: TextStyle(fontSize: 12, color: t.textMuted),
+                ),
+                value: _sellByPiece,
+                onChanged: _isLoading
+                    ? null
+                    : (v) => setState(() => _sellByPiece = v),
               ),
               if (_errorMessage != null)
                 Padding(

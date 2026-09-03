@@ -291,5 +291,18 @@
   "notifLowStock": "Low Stock",
   "notifShiftOpened": "Shift Opened",
   "notifShiftClosed": "Shift Closed",
-  "notifLoadError": "Failed to load preferences"
-}
+  "notifLoadError": "Failed to load preferences",
+    "restoreDraftTitle": "Restore Draft Order",
+    "restoreDraftMessage": "You have an incomplete order. Restore it?",
+    "discard": "Discard",
+    "restore": "Restore",
+    "paymentStatusAll": "All",
+    "paymentStatusUnpaid": "Unpaid",
+    "paymentStatusPartial": "Partial",
+    "paymentStatusPaid": "Paid",
+    "markAsPaid": "Mark as Paid",
+    "markPaidTitle": "Mark Order as Paid",
+    "markPaidMessage": "Enter payment amount:",
+    "paymentAmount": "Payment Amount",
+    "remainingBalance": "Remaining Balance"
+  }

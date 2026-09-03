@@ -9,6 +9,7 @@ class Products extends Table {
   TextColumn get categoryId => text().nullable()();
   BoolColumn get hasReturnablePackaging => boolean().withDefault(const Constant(false))();
   BoolColumn get active => boolean().withDefault(const Constant(true))();
+  BoolColumn get sellByPiece => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override

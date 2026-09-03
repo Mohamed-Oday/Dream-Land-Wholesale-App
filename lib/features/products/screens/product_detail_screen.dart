@@ -9,6 +9,7 @@ import 'package:tawzii/core/ui/money_text.dart';
 import 'package:tawzii/core/ui/section_label.dart';
 import 'package:tawzii/core/ui/state_blocks.dart';
 import 'package:tawzii/core/ui/surface_card.dart';
+import 'package:tawzii/core/utils/package_stock.dart';
 import '../providers/product_provider.dart';
 import 'product_form_sheet.dart';
 
@@ -39,10 +40,10 @@ class ProductDetailScreen extends ConsumerWidget {
 
     final costPrice = (p['cost_price'] as num?)?.toDouble();
     final sellPrice = (p['unit_price'] as num?)?.toDouble() ?? 0;
-    final stock = (p['stock_on_hand'] as num?)?.toInt() ?? 0;
-    final threshold = (p['low_stock_threshold'] as num?)?.toInt() ?? 0;
+    final stock = stockOf(p);
+    final threshold = (p['low_stock_threshold'] as num?)?.toDouble() ?? 0;
     final unitsPerPkg = (p['units_per_package'] as num?)?.toInt();
-    final isOut = stock <= 0;
+    final isOut = isOutOfStock(stock, unitsPerPkg);
     final isLow = !isOut && threshold > 0 && stock <= threshold;
 
     final subtitleStyle = TextStyle(fontSize: 12, color: t.textSecondary);
@@ -174,7 +175,7 @@ class ProductDetailScreen extends ConsumerWidget {
     Map<String, dynamic> p,
   ) async {
     final l10n = AppLocalizations.of(context)!;
-    final currentStock = (p['stock_on_hand'] as num?)?.toInt() ?? 0;
+    final currentStock = stockOf(p);
     final reasonController = TextEditingController();
     var delta = 0;
     var isSaving = false;
@@ -246,7 +247,7 @@ class ProductDetailScreen extends ConsumerWidget {
                         onTap: () => setSheetState(() => delta--),
                         onLongPress: () => setSheetState(() =>
                             delta = (delta - 5)
-                                .clamp(-currentStock, 999999)),
+                                .clamp(-currentStock.floor(), 999999)),
                       ),
                       SizedBox(
                         width: 100,

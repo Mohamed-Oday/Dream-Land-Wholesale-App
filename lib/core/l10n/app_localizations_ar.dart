@@ -807,4 +807,43 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get notifLoadError => 'فشل تحميل التفضيلات';
+
+  @override
+  String get restoreDraftTitle => 'استعادة المسودة';
+
+  @override
+  String get restoreDraftMessage => 'يوجد طلب غير مكتمل. هل تريد استعادته؟';
+
+  @override
+  String get discard => 'إلغاء';
+
+  @override
+  String get restore => 'استعادة';
+
+  @override
+  String get paymentStatusAll => 'الكل';
+
+  @override
+  String get paymentStatusUnpaid => 'غير مدفوع';
+
+  @override
+  String get paymentStatusPartial => 'مدفوع جزئياً';
+
+  @override
+  String get paymentStatusPaid => 'مدفوع';
+
+  @override
+  String get markAsPaid => 'تحديد كمدفوع';
+
+  @override
+  String get markPaidTitle => 'تحديد الطلب كمدفوع';
+
+  @override
+  String get markPaidMessage => 'أدخل مبلغ الدفع:';
+
+  @override
+  String get paymentAmount => 'مبلغ الدفع';
+
+  @override
+  String get remainingBalance => 'الرصيد المتبقي';
 }

@@ -13,6 +13,9 @@ class Orders extends Table {
   TextColumn get discountApprovedBy => text().nullable()();
   RealColumn get total => real().withDefault(const Constant(0.0))();
   TextColumn get status => text().withDefault(const Constant('created'))();
+  TextColumn get paymentStatus => text().withDefault(const Constant('unpaid'))();
+  RealColumn get paidAmount => real().withDefault(const Constant(0.0))();
+  DateTimeColumn get paidAt => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override

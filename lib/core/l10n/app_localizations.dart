@@ -1669,6 +1669,84 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'فشل تحميل التفضيلات'**
   String get notifLoadError;
+
+  /// No description provided for @restoreDraftTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'استعادة المسودة'**
+  String get restoreDraftTitle;
+
+  /// No description provided for @restoreDraftMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوجد طلب غير مكتمل. هل تريد استعادته؟'**
+  String get restoreDraftMessage;
+
+  /// No description provided for @discard.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get discard;
+
+  /// No description provided for @restore.
+  ///
+  /// In ar, this message translates to:
+  /// **'استعادة'**
+  String get restore;
+
+  /// No description provided for @paymentStatusAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get paymentStatusAll;
+
+  /// No description provided for @paymentStatusUnpaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير مدفوع'**
+  String get paymentStatusUnpaid;
+
+  /// No description provided for @paymentStatusPartial.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدفوع جزئياً'**
+  String get paymentStatusPartial;
+
+  /// No description provided for @paymentStatusPaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدفوع'**
+  String get paymentStatusPaid;
+
+  /// No description provided for @markAsPaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديد كمدفوع'**
+  String get markAsPaid;
+
+  /// No description provided for @markPaidTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديد الطلب كمدفوع'**
+  String get markPaidTitle;
+
+  /// No description provided for @markPaidMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل مبلغ الدفع:'**
+  String get markPaidMessage;
+
+  /// No description provided for @paymentAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'مبلغ الدفع'**
+  String get paymentAmount;
+
+  /// No description provided for @remainingBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد المتبقي'**
+  String get remainingBalance;
 }
 
 class _AppLocalizationsDelegate

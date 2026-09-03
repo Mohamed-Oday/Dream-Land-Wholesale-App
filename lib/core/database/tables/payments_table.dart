@@ -10,6 +10,7 @@ class Payments extends Table {
   RealColumn get previousBalance => real()();
   RealColumn get newBalance => real()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  TextColumn get orderId => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

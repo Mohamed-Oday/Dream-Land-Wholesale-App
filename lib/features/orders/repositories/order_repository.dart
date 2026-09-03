@@ -15,7 +15,8 @@ class OrderRepository {
   }) async {
     var query = _client
         .from('orders')
-        .select('*, stores(name, address), users!orders_driver_id_fkey(name)')
+        .select(
+            '*, stores(name, address), users!orders_driver_id_fkey(name)')
         .eq('business_id', _businessId);
 
     if (driverId != null) {
@@ -25,6 +26,32 @@ class OrderRepository {
       query = query.gte('created_at', startDate.toUtc().toIso8601String());
     }
     // No endDate filter — ranges use startDate only to always include latest orders
+
+    final result = await query.order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(result);
+  }
+
+  /// Orders with payment status filter (Feature 3)
+  Future<List<Map<String, dynamic>>> getAllWithPaymentStatus({
+    String? driverId,
+    DateTime? startDate,
+    String? paymentStatus,
+  }) async {
+    var query = _client
+        .from('orders')
+        .select(
+            '*, stores(name, address), users!orders_driver_id_fkey(name)')
+        .eq('business_id', _businessId);
+
+    if (driverId != null) {
+      query = query.eq('driver_id', driverId);
+    }
+    if (startDate != null) {
+      query = query.gte('created_at', startDate.toUtc().toIso8601String());
+    }
+    if (paymentStatus != null && paymentStatus.isNotEmpty) {
+      query = query.eq('payment_status', paymentStatus);
+    }
 
     final result = await query.order('created_at', ascending: false);
     return List<Map<String, dynamic>>.from(result);
@@ -146,5 +173,52 @@ class OrderRepository {
         .eq('discount_status', 'pending')
         .order('created_at', ascending: true);
     return List<Map<String, dynamic>>.from(result);
+  }
+
+  /// Update payment status on an order (Feature 3: Mark as paid)
+  Future<Map<String, dynamic>> updatePaymentStatus({
+    required String orderId,
+    required String paymentStatus, // 'unpaid', 'partial', 'paid'
+    required double paidAmount,
+    String? driverId,
+    String? storeId,
+  }) async {
+    final result = await _client.rpc('update_order_payment_status', params: {
+      'p_order_id': orderId,
+      'p_business_id': _businessId,
+      'p_payment_status': paymentStatus,
+      'p_paid_amount': paidAmount,
+      'p_driver_id': driverId,
+      'p_store_id': storeId,
+    });
+    return Map<String, dynamic>.from(result as Map);
+  }
+
+  /// Create a payment record linked to an order (Feature 3)
+  Future<Map<String, dynamic>> createPayment({
+    required String storeId,
+    required String driverId,
+    required double amount,
+    required String method,
+    required double previousBalance,
+    required double newBalance,
+    String? orderId,
+  }) async {
+    const uuid = Uuid();
+    final paymentId = uuid.v4();
+
+    final result = await _client.from('payments').insert({
+      'id': paymentId,
+      'business_id': _businessId,
+      'store_id': storeId,
+      'driver_id': driverId,
+      'order_id': orderId,
+      'amount': amount,
+      'method': method,
+      'previous_balance': previousBalance,
+      'new_balance': newBalance,
+    }).select().single();
+
+    return Map<String, dynamic>.from(result);
   }
 }

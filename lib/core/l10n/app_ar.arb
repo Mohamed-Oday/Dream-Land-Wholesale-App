@@ -291,5 +291,18 @@
   "notifLowStock": "مخزون منخفض",
   "notifShiftOpened": "بداية وردية",
   "notifShiftClosed": "نهاية وردية",
-  "notifLoadError": "فشل تحميل التفضيلات"
-}
+  "notifLoadError": "فشل تحميل التفضيلات",
+    "restoreDraftTitle": "استعادة المسودة",
+    "restoreDraftMessage": "يوجد طلب غير مكتمل. هل تريد استعادته؟",
+    "discard": "إلغاء",
+    "restore": "استعادة",
+    "paymentStatusAll": "الكل",
+    "paymentStatusUnpaid": "غير مدفوع",
+    "paymentStatusPartial": "مدفوع جزئياً",
+    "paymentStatusPaid": "مدفوع",
+    "markAsPaid": "تحديد كمدفوع",
+    "markPaidTitle": "تحديد الطلب كمدفوع",
+    "markPaidMessage": "أدخل مبلغ الدفع:",
+    "paymentAmount": "مبلغ الدفع",
+    "remainingBalance": "الرصيد المتبقي"
+  }

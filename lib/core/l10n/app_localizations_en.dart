@@ -809,4 +809,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notifLoadError => 'Failed to load preferences';
+
+  @override
+  String get restoreDraftTitle => 'Restore Draft Order';
+
+  @override
+  String get restoreDraftMessage => 'You have an incomplete order. Restore it?';
+
+  @override
+  String get discard => 'Discard';
+
+  @override
+  String get restore => 'Restore';
+
+  @override
+  String get paymentStatusAll => 'All';
+
+  @override
+  String get paymentStatusUnpaid => 'Unpaid';
+
+  @override
+  String get paymentStatusPartial => 'Partial';
+
+  @override
+  String get paymentStatusPaid => 'Paid';
+
+  @override
+  String get markAsPaid => 'Mark as Paid';
+
+  @override
+  String get markPaidTitle => 'Mark Order as Paid';
+
+  @override
+  String get markPaidMessage => 'Enter payment amount:';
+
+  @override
+  String get paymentAmount => 'Payment Amount';
+
+  @override
+  String get remainingBalance => 'Remaining Balance';
 }

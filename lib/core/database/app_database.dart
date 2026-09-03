@@ -41,16 +41,28 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
-  MigrationStrategy get migration {
-    return MigrationStrategy(
-      onCreate: (Migrator m) async {
-        await m.createAll();
-      },
-    );
-  }
+    MigrationStrategy get migration {
+      return MigrationStrategy(
+        onCreate: (Migrator m) async {
+          await m.createAll();
+        },
+        onUpgrade: (Migrator m, int from, int to) async {
+                  if (from < 2) {
+                    // Migration v1 -> v2: Add new columns for Features 1 and 3
+                    await m.addColumn(products, products.sellByPiece);
+                    await m.addColumn(orderLines, orderLines.soldByPiece);
+                    await m.addColumn(orderLines, orderLines.piecesQuantity);
+                    await m.addColumn(orders, orders.paymentStatus);
+                    await m.addColumn(orders, orders.paidAmount);
+                    await m.addColumn(orders, orders.paidAt);
+                    await m.addColumn(payments, payments.orderId);
+                  }
+                },
+      );
+    }
 }
 
 LazyDatabase _openConnection() {

@@ -23,6 +23,7 @@ import 'package:tawzii/features/products/screens/product_detail_screen.dart';
 import 'package:tawzii/features/products/screens/product_list_screen.dart';
 import 'package:tawzii/features/driver_loads/screens/load_list_screen.dart';
 import 'package:tawzii/features/stores/screens/store_detail_screen.dart';
+import 'package:tawzii/core/utils/package_stock.dart';
 
 /// Owner dashboard — canvas 2b "Queue-first": the decision queue (pending
 /// discounts with a draining RTL countdown) sits ABOVE the revenue hero,
@@ -336,7 +337,9 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
                             leading: const StatusDot(StatusKind.warning),
                             title: products[i]['name'] as String? ?? '',
                             trailing: _CountBadge(
-                              count: _toInt(products[i]['stock_on_hand']),
+                              count: stockOf(products[i]),
+                              formatted:
+                                  formatStockNumber(stockOf(products[i])),
                               unit: 'متبقي',
                               unitFirst: true,
                               color: t.warning,
@@ -714,9 +717,14 @@ class _CountBadge extends StatelessWidget {
     required this.unit,
     required this.color,
     this.unitFirst = false,
+    this.formatted,
   });
 
-  final int count;
+  final num count;
+
+  /// Overrides the money-style formatting of [count]. Stock is a fractional
+  /// package count, and Money.format would round 0.8 up to a misleading 1.
+  final String? formatted;
   final String unit;
   final Color color;
 
@@ -727,7 +735,7 @@ class _CountBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = TawziiTokens.of(context);
     final number = Text(
-      '\u2066${Money.format(count)}\u2069',
+      '\u2066${formatted ?? Money.format(count)}\u2069',
       style: TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w600,

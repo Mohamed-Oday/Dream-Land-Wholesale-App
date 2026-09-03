@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ import 'package:tawzii/core/ui/status_dot.dart';
 import 'package:tawzii/core/ui/surface_card.dart';
 import 'package:tawzii/core/ui/tawzii_row.dart';
 import 'package:tawzii/core/utils/order_calculator.dart';
+import 'package:tawzii/core/utils/package_stock.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../driver_loads/providers/driver_load_providers.dart';
 import '../../products/providers/product_provider.dart';
@@ -69,6 +71,7 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
   void initState() {
     super.initState();
     _loadLastStore();
+    _loadDraft(); // Load draft order if exists
     _checkConnectivity();
     _connectivityTimer = Timer.periodic(
       const Duration(seconds: 10),
@@ -138,6 +141,139 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
   }
 
   // ------------------------------------------------------------------
+  // Draft order persistence (Feature 2)
+  // ------------------------------------------------------------------
+
+  static const _draftKeys = {
+    'lineItems': 'draft_order_line_items',
+    'storeId': 'draft_order_store_id',
+    'storeName': 'draft_order_store_name',
+    'discount': 'draft_order_discount',
+    'storeBalance': 'draft_order_store_balance',
+    'timestamp': 'draft_order_timestamp',
+  };
+
+  Future<void> _saveDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lineItemsJson = _lineItems.map((item) => {
+      'productId': item.productId,
+      'productName': item.productName,
+      'unitPrice': item.unitPrice,
+      'quantity': item.quantity,
+      'unitsPerPackage': item.unitsPerPackage,
+      'hasReturnablePackaging': item.hasReturnablePackaging,
+      'stockOnHand': item.stockOnHand,
+      'allowPiece': item.allowPiece,
+      'piecesQuantity': item.piecesQuantity,
+    }).toList();
+
+    await prefs.setString(_draftKeys['lineItems']!, jsonEncode(lineItemsJson));
+    if (_selectedStoreId != null) {
+      await prefs.setString(_draftKeys['storeId']!, _selectedStoreId!);
+    }
+    if (_selectedStoreName.isNotEmpty) {
+      await prefs.setString(_draftKeys['storeName']!, _selectedStoreName);
+    }
+    if (_discount > 0) {
+      await prefs.setDouble(_draftKeys['discount']!, _discount);
+    }
+    if (_storeBalance != null) {
+      await prefs.setDouble(_draftKeys['storeBalance']!, _storeBalance!);
+    }
+    await prefs.setString(_draftKeys['timestamp']!, DateTime.now().toIso8601String());
+  }
+
+  Future<void> _loadDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+    final timestampStr = prefs.getString(_draftKeys['timestamp']!);
+    if (timestampStr == null) return;
+
+    final timestamp = DateTime.tryParse(timestampStr);
+    if (timestamp == null) return;
+
+    // Check if draft is older than 24 hours
+    if (DateTime.now().difference(timestamp).inHours > 24) {
+      await _clearDraft();
+      return;
+    }
+
+    final lineItemsStr = prefs.getString(_draftKeys['lineItems']!);
+    if (lineItemsStr == null || lineItemsStr.isEmpty) return;
+
+    final List<dynamic> lineItemsJson = jsonDecode(lineItemsStr);
+    if (lineItemsJson.isEmpty) return;
+
+    // Show restore dialog
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+    final shouldRestore = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.restoreDraftTitle),
+        content: Text(l10n.restoreDraftMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.discard),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.restore),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldRestore != true) {
+      await _clearDraft();
+      return;
+    }
+
+    final lineItems = lineItemsJson.map((json) => LineItem(
+      productId: json['productId'] as String,
+      productName: json['productName'] as String,
+      unitPrice: (json['unitPrice'] as num).toDouble(),
+      quantity: json['quantity'] as int,
+      unitsPerPackage: json['unitsPerPackage'] as int?,
+      hasReturnablePackaging: json['hasReturnablePackaging'] as bool? ?? false,
+      stockOnHand: (json['stockOnHand'] as num?)?.toDouble() ?? 0.0,
+      allowPiece: (json['allowPiece'] ?? json['soldByPiece']) as bool? ?? false,
+      piecesQuantity: json['piecesQuantity'] as int? ?? 0,
+    )).toList();
+
+    final storeId = prefs.getString(_draftKeys['storeId']!);
+    final storeName = prefs.getString(_draftKeys['storeName']!) ?? '';
+    final discount = prefs.getDouble(_draftKeys['discount']!) ?? 0.0;
+    final storeBalance = prefs.getDouble(_draftKeys['storeBalance']!);
+
+    setState(() {
+      _lineItems.clear();
+      _lineItems.addAll(lineItems);
+      _selectedStoreId = storeId;
+      _selectedStoreName = storeName;
+      _discount = discount;
+      _storeBalance = storeBalance;
+    });
+  }
+
+  Future<void> _clearDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_draftKeys['lineItems']!);
+    await prefs.remove(_draftKeys['storeId']!);
+    await prefs.remove(_draftKeys['storeName']!);
+    await prefs.remove(_draftKeys['discount']!);
+    await prefs.remove(_draftKeys['storeBalance']!);
+    await prefs.remove(_draftKeys['timestamp']!);
+  }
+
+  // Call this after successful order submission
+  Future<void> _clearDraftOnSubmit() async {
+    await _clearDraft();
+  }
+
+  // Call _saveDraft() in _updateLine, _pickStore, _editDiscount, and on dispose
+
+  // ------------------------------------------------------------------
   // Totals
   // ------------------------------------------------------------------
 
@@ -147,66 +283,106 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
   double get _discountAmount => _discount;
   double get _total => calculateTotal(_subtotal, _taxAmount, _discountAmount);
   bool get _hasDiscount => _discountAmount > 0;
-  int get _packageCount =>
-      _lineItems.fold(0, (sum, item) => sum + item.quantity);
+  int get _itemCount => _lineItems.length;
   bool get _canSubmit =>
       _selectedStoreId != null && _lineItems.isNotEmpty && !_isLoading;
 
-  int _getQuantity(String productId) {
+  LineItem? _findItem(String productId) {
     for (final item in _lineItems) {
-      if (item.productId == productId) return item.quantity;
+      if (item.productId == productId) return item;
     }
-    return 0;
+    return null;
   }
 
-  void _setQuantity(
-    String productId,
-    int qty,
-    int maxStock,
-    Map<String, dynamic> product,
-  ) {
-    final clamped = qty.clamp(0, maxStock);
+  int _getPackages(String productId) => _findItem(productId)?.quantity ?? 0;
+  int _getPieces(String productId) => _findItem(productId)?.piecesQuantity ?? 0;
+
+  /// Upsert a cart line, updating packages and/or pieces independently.
+  /// Pass only the field being changed; the other is preserved.
+  void _updateLine(
+    String productId, {
+    int? packages,
+    int? pieces,
+    required double maxStock,
+    required Map<String, dynamic> product,
+  }) {
+    final allowPiece = product['sell_by_piece'] == true;
+    final upkg = product['units_per_package'] as int?;
+    final existing = _findItem(productId);
+
+    var newPackages = packages ?? existing?.quantity ?? 0;
+    var newPieces = pieces ?? existing?.piecesQuantity ?? 0;
+
+    // Stock is fractional packages. Whole packages are capped by the whole
+    // packages on hand; loose pieces take whatever units are left over.
+    newPackages = newPackages.clamp(0, wholePackages(maxStock));
+    final piecesCap =
+        allowPiece ? loosePiecesAfter(maxStock, newPackages, upkg) : 0;
+    newPieces = newPieces.clamp(0, piecesCap);
+
     setState(() {
       _saveFailed = false;
       _lastQueued = null;
-      if (clamped > 0) {
-        final existingIndex =
-            _lineItems.indexWhere((item) => item.productId == productId);
-        if (existingIndex >= 0) {
-          _lineItems[existingIndex].quantity = clamped;
-        } else {
-          _lineItems.add(LineItem(
-            productId: productId,
-            productName: product['name'] ?? '',
-            unitPrice: (product['unit_price'] as num).toDouble(),
-            quantity: clamped,
-            unitsPerPackage: product['units_per_package'] as int?,
-            hasReturnablePackaging: product['has_returnable_packaging'] == true,
-            stockOnHand: maxStock,
-          ));
-        }
-        _activeProductId = productId;
-      } else {
+      if (newPackages <= 0 && newPieces <= 0) {
         _lineItems.removeWhere((item) => item.productId == productId);
         if (_activeProductId == productId) _activeProductId = null;
+      } else {
+        final line = LineItem(
+          productId: productId,
+          productName: product['name'] ?? '',
+          unitPrice: (product['unit_price'] as num).toDouble(),
+          quantity: newPackages,
+          unitsPerPackage: upkg,
+          hasReturnablePackaging: product['has_returnable_packaging'] == true,
+          stockOnHand: maxStock,
+          allowPiece: allowPiece,
+          piecesQuantity: newPieces,
+        );
+        final idx =
+            _lineItems.indexWhere((item) => item.productId == productId);
+        if (idx >= 0) {
+          _lineItems[idx] = line;
+        } else {
+          _lineItems.add(line);
+        }
+        _activeProductId = productId;
       }
     });
+    _saveDraft(); // Auto-save draft after quantity change
   }
 
-  Future<void> _editQuantity(
+  Future<void> _editPackages(
     String productId,
-    int currentQty,
-    int maxStock,
+    double maxStock,
     Map<String, dynamic> product,
   ) async {
+    final current = _getPackages(productId);
     final v = await showKeypadSheet(
       context,
-      title: 'الكمية',
-      initialValue: currentQty > 0 ? currentQty.toDouble() : null,
+      title: 'الكمية (عبوات)',
+      initialValue: current > 0 ? current.toDouble() : null,
       hardened: true,
     );
     if (v == null || !mounted) return;
-    _setQuantity(productId, v.round(), maxStock, product);
+    _updateLine(productId,
+        packages: v.round(), maxStock: maxStock, product: product);
+  }
+
+  Future<void> _editPieces(
+    String productId,
+    double maxStock,
+    Map<String, dynamic> product,
+  ) async {
+    final current = _getPieces(productId);
+    final v = await showKeypadSheet(
+      context,
+      title: 'الكمية (قطع)',
+      initialValue: current > 0 ? current.toDouble() : null,
+      hardened: true,
+    );
+    if (v == null || !mounted) return;
+    _updateLine(productId,
+        pieces: v.round(), maxStock: maxStock, product: product);
   }
 
   Future<void> _editDiscount() async {
@@ -323,6 +499,7 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
       _storeBalance = (selected['credit_balance'] as num?)?.toDouble() ?? 0;
     });
     _saveLastStore(selected['id'] as String, selected['name'] ?? '');
+    _saveDraft(); // Auto-save draft after store selection
   }
 
   // ------------------------------------------------------------------
@@ -334,6 +511,9 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
         .map((item) => {
               'product_id': item.productId,
               'quantity': item.quantity,
+              'pieces_quantity': item.piecesQuantity,
+              'sold_by_piece': item.soldByPiece,
+              'units_per_package': item.unitsPerPackage,
               'unit_price': item.packagePrice,
               'line_total': item.lineTotal,
             })
@@ -431,6 +611,8 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                   'unit_price': item.unitPrice,
                 },
                 'quantity': item.quantity,
+                'pieces_quantity': item.piecesQuantity,
+                'sold_by_piece': item.soldByPiece,
                 'unit_price': item.packagePrice,
                 'line_total': item.lineTotal,
               })
@@ -879,21 +1061,31 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
   // Catalog: cart card + favorites grid (or search results)
   // ------------------------------------------------------------------
 
-  ({int available, bool notInLoad}) _availability(
+  /// Available stock in PACKAGES. Warehouse stock is fractional (loose pieces
+  /// consume part of a package); a driver's load is always whole packages.
+  ({double available, bool notInLoad}) _availability(
     Map<String, dynamic> p, {
     required bool hasActiveLoad,
     required Map<String, int> loadStock,
   }) {
     final productId = p['id'] as String;
-    final warehouseStock = (p['stock_on_hand'] as num?)?.toInt() ?? 0;
     if (hasActiveLoad) {
       final loadRemaining = loadStock[productId];
       if (loadRemaining == null) {
-        return (available: 0, notInLoad: true);
+        return (available: 0.0, notInLoad: true);
       }
-      return (available: loadRemaining, notInLoad: false);
+      return (available: loadRemaining.toDouble(), notInLoad: false);
     }
-    return (available: warehouseStock, notInLoad: false);
+    return (available: stockOf(p), notInLoad: false);
+  }
+
+  /// Nothing sellable left — no whole package, and no loose piece this product
+  /// is allowed to sell.
+  bool _isDepleted(Map<String, dynamic> p, double available) {
+    final upp = (p['units_per_package'] as num?)?.toInt();
+    return p['sell_by_piece'] == true
+        ? isOutOfStock(available, upp)
+        : wholePackages(available) <= 0;
   }
 
   Widget _buildCatalog(
@@ -1026,6 +1218,11 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
     // The load pool is not yet reduced by this uncommitted cart, so the
     // pool itself is the cap (same clamp semantics as the old screen).
     final maxQty = avail.available;
+    final maxPackages = wholePackages(maxQty);
+    // Loose pieces draw from the units left after the whole packages on hand.
+    final piecesMax = item.allowPiece
+        ? loosePiecesAfter(maxQty, item.quantity, item.unitsPerPackage)
+        : 0;
 
     return InkWell(
       onTap: _isLoading
@@ -1052,8 +1249,7 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                     ),
                   ),
                   Text(
-                    '\u2066${item.quantity}\u2069 × '
-                    '\u2066${Money.format(item.packagePrice)}\u2069',
+                    _lineSummary(item),
                     style: TextStyle(
                       fontSize: 12,
                       color: t.textSecondary,
@@ -1065,7 +1261,43 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
             ),
             const SizedBox(width: 10),
             if (isActive && product != null)
-              _buildStepper(t, item.productId, item.quantity, maxQty, product)
+              (item.allowPiece
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        _buildStepperRow(
+                          t,
+                          label: 'عبوات',
+                          value: item.quantity,
+                          maxValue: maxPackages,
+                          onSet: (v) => _updateLine(item.productId,
+                              packages: v, maxStock: maxQty, product: product),
+                          onEdit: () =>
+                              _editPackages(item.productId, maxQty, product),
+                        ),
+                        const SizedBox(height: 6),
+                        _buildStepperRow(
+                          t,
+                          label: 'قطع',
+                          value: item.piecesQuantity,
+                          maxValue: piecesMax,
+                          onSet: (v) => _updateLine(item.productId,
+                              pieces: v, maxStock: maxQty, product: product),
+                          onEdit: () =>
+                              _editPieces(item.productId, maxQty, product),
+                        ),
+                      ],
+                    )
+                  : _buildStepper(
+                      t,
+                      value: item.quantity,
+                      maxValue: maxPackages,
+                      onSet: (v) => _updateLine(item.productId,
+                          packages: v, maxStock: maxQty, product: product),
+                      onEdit: () =>
+                          _editPackages(item.productId, maxQty, product),
+                    ))
             else
               Money(
                 item.lineTotal,
@@ -1080,27 +1312,67 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
     );
   }
 
+  String _iso(Object v) =>
+      '${String.fromCharCode(0x2066)}$v${String.fromCharCode(0x2069)}';
+
+  String _lineSummary(LineItem item) {
+    final parts = <String>[];
+    if (item.quantity > 0) {
+      parts.add('${_iso(item.quantity)} عبوة');
+    }
+    if (item.piecesQuantity > 0) {
+      parts.add('${_iso(item.piecesQuantity)} قطعة');
+    }
+    return parts.join(' + ');
+  }
+
+  Widget _buildStepperRow(
+    TawziiTokens t, {
+    required String label,
+    required int value,
+    required int maxValue,
+    required void Function(int) onSet,
+    VoidCallback? onEdit,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 44,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: t.textSecondary,
+            ),
+          ),
+        ),
+        const SizedBox(width: 4),
+        _buildStepper(t,
+            value: value, maxValue: maxValue, onSet: onSet, onEdit: onEdit),
+      ],
+    );
+  }
+
   Widget _buildStepper(
-    TawziiTokens t,
-    String productId,
-    int qty,
-    int maxQty,
-    Map<String, dynamic> product,
-  ) {
+    TawziiTokens t, {
+    required int value,
+    required int maxValue,
+    required void Function(int) onSet,
+    VoidCallback? onEdit,
+  }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         _SquareIconButton(
           icon: Icons.remove,
-          enabled: !_isLoading && qty > 0,
-          onTap: () => _setQuantity(productId, qty - 1, maxQty, product),
-          onLongPress: () =>
-              _setQuantity(productId, qty - 5, maxQty, product),
+          enabled: !_isLoading && value > 0,
+          onTap: () => onSet(value - 1),
+          onLongPress: () => onSet(value - 5),
         ),
         InkWell(
-          onTap: _isLoading
-              ? null
-              : () => _editQuantity(productId, qty, maxQty, product),
+          onTap: _isLoading ? null : onEdit,
           borderRadius: BorderRadius.circular(8),
           child: Container(
             constraints: const BoxConstraints(minWidth: 34),
@@ -1108,7 +1380,7 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                 horizontal: 4, vertical: 10),
             alignment: Alignment.center,
             child: Text(
-              '\u2066$qty\u2069',
+              _iso(value),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -1121,10 +1393,9 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
         _SquareIconButton(
           icon: Icons.add,
           filled: true,
-          enabled: !_isLoading && qty < maxQty,
-          onTap: () => _setQuantity(productId, qty + 1, maxQty, product),
-          onLongPress: () =>
-              _setQuantity(productId, qty + 5, maxQty, product),
+          enabled: !_isLoading && value < maxValue,
+          onTap: () => onSet(value + 1),
+          onLongPress: () => onSet(value + 5),
         ),
       ],
     );
@@ -1171,9 +1442,9 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
     final productId = p['id'] as String;
     final avail = _availability(p,
         hasActiveLoad: hasActiveLoad, loadStock: loadStock);
-    final qty = _getQuantity(productId);
+    final qty = _getPackages(productId);
     final maxQty = avail.available;
-    final isDisabled = maxQty <= 0 || avail.notInLoad;
+    final isDisabled = _isDepleted(p, maxQty) || avail.notInLoad;
     final price = (p['unit_price'] as num).toDouble();
     final upkg = p['units_per_package'] as int?;
     final packagePrice = upkg != null ? price * upkg : price;
@@ -1198,7 +1469,7 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
               child: InkWell(
                 onTap: isDisabled || _isLoading
                     ? null
-                    : () => _setQuantity(productId, qty + 1, maxQty, p),
+                    : () => _updateLine(productId, packages: qty + 1, maxStock: maxQty, product: p),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1214,14 +1485,23 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                       ),
                     ),
                     _buildStockLine(t, packagePrice,
-                        available: avail.available,
-                        notInLoad: avail.notInLoad),
+                        depleted: _isDepleted(p, maxQty),
+                        notInLoad: avail.notInLoad,
+                        available: avail.available),
                   ],
                 ),
               ),
             ),
             const SizedBox(width: 10),
-            if (!isDisabled) _buildStepper(t, productId, qty, maxQty, p),
+            if (!isDisabled)
+              _buildStepper(
+                t,
+                value: qty,
+                maxValue: wholePackages(maxQty),
+                onSet: (v) => _updateLine(productId,
+                    packages: v, maxStock: maxQty, product: p),
+                onEdit: () => _editPackages(productId, maxQty, p),
+              ),
           ],
         ),
       ),
@@ -1231,15 +1511,16 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
   Widget _buildStockLine(
     TawziiTokens t,
     double packagePrice, {
-    required int available,
+    required bool depleted,
     required bool notInLoad,
+    required double available,
   }) {
     final String suffix;
     final Color suffixColor;
     if (notInLoad) {
       suffix = 'غير محمّل';
       suffixColor = t.textMuted;
-    } else if (available <= 0) {
+    } else if (depleted) {
       suffix = 'نفذ';
       suffixColor = t.danger;
     } else {
@@ -1273,7 +1554,7 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
             style: TextStyle(fontSize: 12, color: t.textSecondary),
           ),
           Text(
-            '\u2066$available\u2069',
+            '\u2066${formatStockNumber(available)}\u2069',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -1295,10 +1576,10 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
     final productId = p['id'] as String;
     final avail = _availability(p,
         hasActiveLoad: hasActiveLoad, loadStock: loadStock);
-    final qty = _getQuantity(productId);
+    final qty = _getPackages(productId);
     final maxQty = avail.available;
-    final isDisabled = maxQty <= 0 || avail.notInLoad;
-    final inCart = qty > 0;
+    final isDisabled = _isDepleted(p, maxQty) || avail.notInLoad;
+    final inCart = _findItem(productId) != null;
     final price = (p['unit_price'] as num).toDouble();
     final upkg = p['units_per_package'] as int?;
     final packagePrice = upkg != null ? price * upkg : price;
@@ -1325,10 +1606,10 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
               child: InkWell(
                 onTap: isDisabled || _isLoading
                     ? null
-                    : () => _setQuantity(productId, qty + 1, maxQty, p),
+                    : () => _updateLine(productId, packages: qty + 1, maxStock: maxQty, product: p),
                 onLongPress: isDisabled || _isLoading
                     ? null
-                    : () => _editQuantity(productId, qty, maxQty, p),
+                    : () => _editPackages(productId, maxQty, p),
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
                   padding: const EdgeInsetsDirectional.symmetric(
@@ -1349,8 +1630,9 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                       ),
                       const SizedBox(height: 3),
                       _buildStockLine(t, packagePrice,
-                          available: avail.available,
-                          notInLoad: avail.notInLoad),
+                          depleted: _isDepleted(p, maxQty),
+                          notInLoad: avail.notInLoad,
+                          available: avail.available),
                     ],
                   ),
                 ),
@@ -1373,7 +1655,7 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
-                '\u2066$qty\u2069',
+                _iso(qty > 0 ? qty : _getPieces(productId)),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
@@ -1419,7 +1701,7 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
                             ),
                           )
                         : Text(
-                            'تأكيد الطلب (\u2066$_packageCount\u2069)',
+                            'تأكيد الطلب (${_iso(_itemCount)})',
                             style: const TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w700,
