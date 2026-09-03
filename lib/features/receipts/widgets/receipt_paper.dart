@@ -157,13 +157,9 @@ class ReceiptPaper extends StatelessWidget {
 
   // --- order receipt ---
 
-  // Not wrapped in `ltr()`: the reference stands alone on its own centred
-  // line (unlike the qty/price spans embedded in Arabic text), and the
-  // brief's own test asserts an exact `find.text('#3F9A2C1B')` match, which
-  // the invisible LRI/PDI marks would break.
   static String _orderRef(Map<String, dynamic> o) {
     final id = (o['id'] ?? '').toString();
-    return '#${id.substring(0, id.length < 8 ? id.length : 8).toUpperCase()}';
+    return '#${ltr(id.substring(0, id.length < 8 ? id.length : 8).toUpperCase())}';
   }
 
   List<Widget> _orderBody() {
@@ -241,17 +237,7 @@ class ReceiptPaper extends StatelessWidget {
           if (showDiscount) (label: l10n.discount, value: '−${_amt(discount)}'),
         ],
       ),
-      // Wrapped defensively: TotalBar's Row has no Flexible/Expanded, so an
-      // unusually long total (or a test environment with no font metrics —
-      // see receipt_capture_test.dart) can overflow it. FittedBox+
-      // IntrinsicWidth is a no-op at normal sizes and only ever scales down.
-      FittedBox(
-        fit: BoxFit.scaleDown,
-        child: IntrinsicWidth(
-          child: TotalBar(
-              label: 'الإجمالي', value: '${_amt(total)} ${l10n.currencyUnit}'),
-        ),
-      ),
+      TotalBar(label: 'الإجمالي', value: '${_amt(total)} ${l10n.currencyUnit}'),
       if (!cancelled) ...[
         Stamp(
           label: 'حالة الدفع',

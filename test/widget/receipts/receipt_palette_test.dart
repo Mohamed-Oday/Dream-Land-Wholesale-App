@@ -1,13 +1,15 @@
 // test/widget/receipts/receipt_palette_test.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tawzii/features/receipts/models/receipt_line.dart';
 import 'package:tawzii/features/receipts/widgets/receipt_paper.dart';
 import 'package:tawzii/features/receipts/widgets/thermal.dart';
 
 import 'fixtures.dart';
 
-// Not `const`: this SDK's Color compares a/r/g/b/colorSpace as doubles, so it
-// no longer has "primitive equality" and can't be a const Set element.
+// Not `const`: `Color` overrides `==`, so it does not have primitive
+// equality and a `const` set of `Color` is never allowed
+// (const_set_element_not_primitive_equality).
 final _allowed = {ThermalInk.black, ThermalInk.paper};
 
 void _expectInk(Color? c, String where) {
@@ -106,7 +108,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(host(orderPaper()));
     expect(find.text('فاتورة تسليم'), findsOneWidget);
-    expect(find.text('#3F9A2C1B'), findsOneWidget);
+    expect(find.text('#${ltr('3F9A2C1B')}'), findsOneWidget);
     expect(find.text('مدفوع جزئياً'), findsOneWidget);
     expect(find.text('المتبقي'), findsOneWidget);
     expect(find.text('توقيع المستلم'), findsOneWidget);
