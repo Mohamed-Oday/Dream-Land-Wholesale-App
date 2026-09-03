@@ -168,17 +168,13 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
     }).toList();
 
     await prefs.setString(_draftKeys['lineItems']!, jsonEncode(lineItemsJson));
-    if (_selectedStoreId != null) {
-      await prefs.setString(_draftKeys['storeId']!, _selectedStoreId!);
-    }
-    if (_selectedStoreName.isNotEmpty) {
-      await prefs.setString(_draftKeys['storeName']!, _selectedStoreName);
-    }
+    // The store is deliberately not part of the draft (see _loadDraft); any
+    // store keys left by older builds are dropped here.
+    await prefs.remove(_draftKeys['storeId']!);
+    await prefs.remove(_draftKeys['storeName']!);
+    await prefs.remove(_draftKeys['storeBalance']!);
     if (_discount > 0) {
       await prefs.setDouble(_draftKeys['discount']!, _discount);
-    }
-    if (_storeBalance != null) {
-      await prefs.setDouble(_draftKeys['storeBalance']!, _storeBalance!);
     }
     await prefs.setString(_draftKeys['timestamp']!, DateTime.now().toIso8601String());
   }
@@ -241,18 +237,18 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
       piecesQuantity: json['piecesQuantity'] as int? ?? 0,
     )).toList();
 
-    final storeId = prefs.getString(_draftKeys['storeId']!);
-    final storeName = prefs.getString(_draftKeys['storeName']!) ?? '';
     final discount = prefs.getDouble(_draftKeys['discount']!) ?? 0.0;
-    final storeBalance = prefs.getDouble(_draftKeys['storeBalance']!);
 
+    // A restored draft brings back the lines and the discount only. The
+    // store is chosen afresh every time so a draft can never be confirmed
+    // against the store it happened to be started for.
     setState(() {
       _lineItems.clear();
       _lineItems.addAll(lineItems);
-      _selectedStoreId = storeId;
-      _selectedStoreName = storeName;
+      _selectedStoreId = null;
+      _selectedStoreName = '';
       _discount = discount;
-      _storeBalance = storeBalance;
+      _storeBalance = null;
     });
   }
 
@@ -297,6 +293,16 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
   int _getPackages(String productId) => _findItem(productId)?.quantity ?? 0;
   int _getPieces(String productId) => _findItem(productId)?.piecesQuantity ?? 0;
 
+  /// True while the current build has an active driver load. Set from build.
+  ///
+  /// Warehouse stock never caps a sale (a product that exists in the warehouse
+  /// may still read 0 in the app; the database clamps the deduction at zero).
+  /// A driver's load is a physical pool, so it still caps.
+  bool _hasActiveLoad = false;
+
+  /// Upper bound for a quantity that is not capped by a load.
+  static const int _kUncapped = 9999;
+
   /// Upsert a cart line, updating packages and/or pieces independently.
   /// Pass only the field being changed; the other is preserved.
   void _updateLine(
@@ -313,12 +319,18 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
     var newPackages = packages ?? existing?.quantity ?? 0;
     var newPieces = pieces ?? existing?.piecesQuantity ?? 0;
 
-    // Stock is fractional packages. Whole packages are capped by the whole
-    // packages on hand; loose pieces take whatever units are left over.
-    newPackages = newPackages.clamp(0, wholePackages(maxStock));
-    final piecesCap =
-        allowPiece ? loosePiecesAfter(maxStock, newPackages, upkg) : 0;
-    newPieces = newPieces.clamp(0, piecesCap);
+    // Only a driver's load caps the sale. Stock is fractional packages: whole
+    // packages are capped by the whole packages on the load; loose pieces
+    // take whatever units are left over.
+    if (_hasActiveLoad) {
+      newPackages = newPackages.clamp(0, wholePackages(maxStock));
+      final piecesCap =
+          allowPiece ? loosePiecesAfter(maxStock, newPackages, upkg) : 0;
+      newPieces = newPieces.clamp(0, piecesCap);
+    } else {
+      newPackages = newPackages.clamp(0, _kUncapped);
+      newPieces = allowPiece ? newPieces.clamp(0, _kUncapped) : 0;
+    }
 
     setState(() {
       _saveFailed = false;
@@ -758,6 +770,7 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
     final List<String> loadOrder = [];
     final loadData = loadAsync.valueOrNull;
     final hasActiveLoad = loadData != null;
+    _hasActiveLoad = hasActiveLoad;
     if (loadData != null) {
       final items = loadData['items'] as List<dynamic>? ?? [];
       for (final item in items) {
@@ -1126,20 +1139,18 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
       );
     }
 
-    // Favorites: products on the active load (recently loaded first), else
-    // the head of the catalog. NOTE: no per-store product-frequency provider
-    // exists in the data layer, so ranking is load-aware rather than
-    // order-history-based.
+    // The whole catalog. With an active load, the loaded products come first
+    // (most recently loaded at the top), then everything else.
     final byId = {for (final p in products) p['id'] as String: p};
-    final favorites = <Map<String, dynamic>>[];
+    final favs = <Map<String, dynamic>>[];
     if (hasActiveLoad) {
       for (final pid in loadOrder) {
         final p = byId[pid];
-        if (p != null) favorites.add(p);
+        if (p != null) favs.add(p);
       }
     }
-    if (favorites.isEmpty) favorites.addAll(products);
-    final favs = favorites.take(6).toList();
+    final loaded = {for (final p in favs) p['id'] as String};
+    favs.addAll(products.where((p) => !loaded.contains(p['id'] as String)));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1151,7 +1162,7 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
           _buildDiscountRow(t),
           const SizedBox(height: 8),
         ],
-        const SectionLabel('الأكثر طلباً'),
+        const SectionLabel('الكتالوج'),
         const SizedBox(height: 10),
         GridView.builder(
           shrinkWrap: true,
@@ -1216,13 +1227,15 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
         : _availability(product,
             hasActiveLoad: hasActiveLoad, loadStock: loadStock);
     // The load pool is not yet reduced by this uncommitted cart, so the
-    // pool itself is the cap (same clamp semantics as the old screen).
+    // pool itself is the cap. Warehouse stock does not cap (see _updateLine).
     final maxQty = avail.available;
-    final maxPackages = wholePackages(maxQty);
-    // Loose pieces draw from the units left after the whole packages on hand.
-    final piecesMax = item.allowPiece
-        ? loosePiecesAfter(maxQty, item.quantity, item.unitsPerPackage)
-        : 0;
+    final maxPackages = hasActiveLoad ? wholePackages(maxQty) : _kUncapped;
+    // Loose pieces draw from the units left after the whole packages on load.
+    final piecesMax = !item.allowPiece
+        ? 0
+        : hasActiveLoad
+            ? loosePiecesAfter(maxQty, item.quantity, item.unitsPerPackage)
+            : _kUncapped;
 
     return InkWell(
       onTap: _isLoading
@@ -1444,7 +1457,9 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
         hasActiveLoad: hasActiveLoad, loadStock: loadStock);
     final qty = _getPackages(productId);
     final maxQty = avail.available;
-    final isDisabled = _isDepleted(p, maxQty) || avail.notInLoad;
+    // Depleted warehouse stock only labels the card ("نفذ"); it never blocks
+    // the sale. A product missing from the driver's load still does.
+    final isDisabled = avail.notInLoad;
     final price = (p['unit_price'] as num).toDouble();
     final upkg = p['units_per_package'] as int?;
     final packagePrice = upkg != null ? price * upkg : price;
@@ -1578,7 +1593,9 @@ class _CreateOrderScreenState extends ConsumerState<CreateOrderScreen> {
         hasActiveLoad: hasActiveLoad, loadStock: loadStock);
     final qty = _getPackages(productId);
     final maxQty = avail.available;
-    final isDisabled = _isDepleted(p, maxQty) || avail.notInLoad;
+    // Depleted warehouse stock only labels the card ("نفذ"); it never blocks
+    // the sale. A product missing from the driver's load still does.
+    final isDisabled = avail.notInLoad;
     final inCart = _findItem(productId) != null;
     final price = (p['unit_price'] as num).toDouble();
     final upkg = p['units_per_package'] as int?;
