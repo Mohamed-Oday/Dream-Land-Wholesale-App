@@ -80,7 +80,7 @@ Done 2026-09-02: baseline is **6 info-level lints**, all pre-existing (`withOpac
 - Produces: `List<int> encodeEscPosRaster({required int width, required int height, required Uint8List rgba})` — converts an RGBA buffer to a `GS v 0` raster command for a 576-dot printer. Source width 576 is copied 1:1; any other width is box-filter resampled to 576.
 - Produces: `PrintService.printFromWidget(GlobalKey key, {double pixelRatio = 2.0})` (default changed from 3.0).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```dart
 // test/unit/features/printing/esc_pos_raster_test.dart
@@ -176,7 +176,7 @@ void main() {
 }
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 ```powershell
 flutter test test/unit/features/printing/esc_pos_raster_test.dart
@@ -184,7 +184,7 @@ flutter test test/unit/features/printing/esc_pos_raster_test.dart
 
 Expected: compile error `Target of URI doesn't exist: 'package:tawzii/features/printing/services/esc_pos_raster.dart'`.
 
-- [ ] **Step 3: Write the encoder**
+- [x] **Step 3: Write the encoder**
 
 ```dart
 // lib/features/printing/services/esc_pos_raster.dart
@@ -253,7 +253,7 @@ List<int> encodeEscPosRaster({
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 ```powershell
 flutter test test/unit/features/printing/esc_pos_raster_test.dart
@@ -261,7 +261,7 @@ flutter test test/unit/features/printing/esc_pos_raster_test.dart
 
 Expected: `All tests passed!` (5 tests).
 
-- [ ] **Step 5: Wire the encoder into `PrintService` and change the default pixel ratio**
+- [x] **Step 5: Wire the encoder into `PrintService` and change the default pixel ratio**
 
 In `lib/features/printing/services/print_service.dart`:
 
@@ -312,7 +312,7 @@ Replace the whole `_pngToEscPos` method (from `/// Convert PNG bytes to ESC/POS 
 }
 ```
 
-- [ ] **Step 6: Analyze and run the full suite**
+- [x] **Step 6: Analyze and run the full suite**
 
 ```powershell
 flutter analyze
@@ -321,7 +321,7 @@ flutter test
 
 Expected: `No issues found!` and `All tests passed!`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add lib/features/printing/services/esc_pos_raster.dart lib/features/printing/services/print_service.dart test/unit/features/printing/esc_pos_raster_test.dart
@@ -348,7 +348,7 @@ Cell rules (spec §5.1):
 | qtyMain / qtySub | `6 ع` / null | `4 ع` / `+6 ق` | `10 ق` / null |
 | priceMain / priceSub | `240` / null | `480` / `20/ق` | `15` / `للقطعة` |
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```dart
 // test/unit/features/receipts/receipt_line_test.dart
@@ -462,7 +462,7 @@ void main() {
 }
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 ```powershell
 flutter test test/unit/features/receipts/receipt_line_test.dart
@@ -470,7 +470,7 @@ flutter test test/unit/features/receipts/receipt_line_test.dart
 
 Expected: compile error, `receipt_line.dart` does not exist.
 
-- [ ] **Step 3: Write the model**
+- [x] **Step 3: Write the model**
 
 ```dart
 // lib/features/receipts/models/receipt_line.dart
@@ -564,7 +564,7 @@ class ReceiptLine {
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 ```powershell
 flutter test test/unit/features/receipts/receipt_line_test.dart
@@ -572,7 +572,7 @@ flutter test test/unit/features/receipts/receipt_line_test.dart
 
 Expected: `All tests passed!` (13 tests).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add lib/features/receipts/models/receipt_line.dart test/unit/features/receipts/receipt_line_test.dart
@@ -593,7 +593,7 @@ git commit -m "feat(receipts): ReceiptLine model — grid cell text for package,
 - Produces: `const kThermalFont = 'IBMPlexSansArabic'`.
 - Produces widgets: `ThermalRule({ThermalRuleKind kind = solid})` (solid = 3 dots, hair = 2 dots), `ThermalKv({label, value, bool bold, double sizeDots = 22, double? valueSizeDots, FontWeight? valueWeight})`, `TotalBar({label, value})`, `Stamp({label, value})`, `DueBox({label, value})`, `SignatureLine({label})`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```dart
 // test/widget/receipts/thermal_primitives_test.dart
@@ -660,7 +660,7 @@ void main() {
 }
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 ```powershell
 flutter test test/widget/receipts/thermal_primitives_test.dart
@@ -668,7 +668,7 @@ flutter test test/widget/receipts/thermal_primitives_test.dart
 
 Expected: compile error, `thermal.dart` does not exist.
 
-- [ ] **Step 3: Write the primitives**
+- [x] **Step 3: Write the primitives**
 
 ```dart
 // lib/features/receipts/widgets/thermal.dart
@@ -879,7 +879,7 @@ class SignatureLine extends StatelessWidget {
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 ```powershell
 flutter test test/widget/receipts/thermal_primitives_test.dart
@@ -887,7 +887,7 @@ flutter test test/widget/receipts/thermal_primitives_test.dart
 
 Expected: `All tests passed!` (6 tests).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add lib/features/receipts/widgets/thermal.dart test/widget/receipts/thermal_primitives_test.dart
@@ -910,7 +910,7 @@ git commit -m "feat(receipts): thermal primitives — ink palette, dot sizing, r
 
 Rule weights: outer frame and header bottom 3 dots; every inner rule 2 dots; footer top 3 dots. Cell padding 6 dots vertical, 5 dots horizontal.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```dart
 // test/widget/receipts/thermal_grid_test.dart
@@ -1009,7 +1009,7 @@ void main() {
 }
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 ```powershell
 flutter test test/widget/receipts/thermal_grid_test.dart
@@ -1017,7 +1017,7 @@ flutter test test/widget/receipts/thermal_grid_test.dart
 
 Expected: compile error, `thermal_grid.dart` does not exist.
 
-- [ ] **Step 3: Write the grid**
+- [x] **Step 3: Write the grid**
 
 ```dart
 // lib/features/receipts/widgets/thermal_grid.dart
@@ -1207,7 +1207,7 @@ class ThermalGrid extends StatelessWidget {
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 ```powershell
 flutter test test/widget/receipts/thermal_grid_test.dart
@@ -1215,7 +1215,7 @@ flutter test test/widget/receipts/thermal_grid_test.dart
 
 Expected: `All tests passed!` (4 tests).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add lib/features/receipts/widgets/thermal_grid.dart test/widget/receipts/thermal_grid_test.dart
@@ -1235,7 +1235,7 @@ git commit -m "feat(receipts): ThermalGrid boxed table with fixed dot-width colu
 - Produces: `class ReceiptConfig { final String? phone; final String? footer; const ReceiptConfig({this.phone, this.footer}); static const empty = ReceiptConfig(); factory ReceiptConfig.fromRows(List<Map<String, dynamic>> rows); }` — rows are `{key, value}` maps; keys `receipt.phone` and `receipt.footer`; blank values count as unset.
 - Produces: `final receiptConfigProvider = FutureProvider<ReceiptConfig>` that reads the current user's business rows from Supabase table `app_config` and returns `ReceiptConfig.empty` when signed out or on error.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```dart
 // test/unit/features/receipts/receipt_config_test.dart
@@ -1274,7 +1274,7 @@ void main() {
 }
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 ```powershell
 flutter test test/unit/features/receipts/receipt_config_test.dart
@@ -1282,7 +1282,7 @@ flutter test test/unit/features/receipts/receipt_config_test.dart
 
 Expected: compile error, `receipt_config.dart` does not exist.
 
-- [ ] **Step 3: Write the model and provider**
+- [x] **Step 3: Write the model and provider**
 
 ```dart
 // lib/features/receipts/models/receipt_config.dart
@@ -1347,7 +1347,7 @@ final receiptConfigProvider = FutureProvider<ReceiptConfig>((ref) async {
 });
 ```
 
-- [ ] **Step 4: Run the test and the analyzer**
+- [x] **Step 4: Run the test and the analyzer**
 
 ```powershell
 flutter test test/unit/features/receipts/receipt_config_test.dart
@@ -1356,7 +1356,7 @@ flutter analyze
 
 Expected: `All tests passed!` (4 tests) and `No issues found!`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add lib/features/receipts/models/receipt_config.dart lib/features/receipts/providers/receipt_config_provider.dart test/unit/features/receipts/receipt_config_test.dart
@@ -1383,7 +1383,7 @@ git commit -m "feat(receipts): ReceiptConfig from app_config (receipt.phone, rec
 
 Order body, top to bottom (spec §5): company name 34 dots bold centred; phone line 19 dots (if set); solid rule; `فاتورة تسليم` 24 dots; order reference `#` + first 8 chars of the id, upper-cased, 28 dots bold; hair rule; `ملغى` 30 dots bold centred when cancelled; metadata rows at 19 dots: date, store (23 bold), address, driver; the grid; total bar; payment stamp; paid + boxed due when partial; hair rule + package balance; two signature lines; solid rule; footer.
 
-- [ ] **Step 1: Write the shared fixture**
+- [x] **Step 1: Write the shared fixture**
 
 ```dart
 // test/widget/receipts/fixtures.dart
@@ -1468,7 +1468,7 @@ ReceiptPaper orderPaper({Map<String, dynamic>? order, int? packageBalance = 21})
     );
 ```
 
-- [ ] **Step 2: Write the failing palette test**
+- [x] **Step 2: Write the failing palette test**
 
 ```dart
 // test/widget/receipts/receipt_palette_test.dart
@@ -1611,7 +1611,7 @@ void main() {
 }
 ```
 
-- [ ] **Step 3: Write the failing capture test**
+- [x] **Step 3: Write the failing capture test**
 
 ```dart
 // test/widget/receipts/receipt_capture_test.dart
@@ -1665,7 +1665,7 @@ void main() {
 }
 ```
 
-- [ ] **Step 4: Run both tests to verify they fail**
+- [x] **Step 4: Run both tests to verify they fail**
 
 ```powershell
 flutter test test/widget/receipts/receipt_palette_test.dart test/widget/receipts/receipt_capture_test.dart
@@ -1673,7 +1673,7 @@ flutter test test/widget/receipts/receipt_palette_test.dart test/widget/receipts
 
 Expected: compile error, `receipt_paper.dart` does not exist.
 
-- [ ] **Step 5: Write `ReceiptPaper` with the order body**
+- [x] **Step 5: Write `ReceiptPaper` with the order body**
 
 ```dart
 // lib/features/receipts/widgets/receipt_paper.dart
@@ -1959,7 +1959,7 @@ class ReceiptPaper extends StatelessWidget {
 }
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 ```powershell
 flutter test test/widget/receipts/receipt_palette_test.dart test/widget/receipts/receipt_capture_test.dart
@@ -1967,7 +1967,7 @@ flutter test test/widget/receipts/receipt_palette_test.dart test/widget/receipts
 
 Expected: `All tests passed!` (6 tests). If the capture test fails with a width other than 576, the paper is not at its natural width — check that nothing in the test host constrains it (`Align` does not).
 
-- [ ] **Step 7: Analyze and commit**
+- [x] **Step 7: Analyze and commit**
 
 ```powershell
 flutter analyze
@@ -1989,7 +1989,7 @@ git commit -m "feat(receipts): ReceiptPaper — 288px delivery invoice with boxe
 
 Load manifest: masthead `إيصال التحميل`; driver, loaded-by, date; 2-column grid `الصنف` 416 / `الكمية` 120 with a footer row `إجمالي المحمّل`. Return: masthead `إيصال إغلاق الوردية`; driver, date; 4-column grid `الصنف` 236 / `محمّل` 100 / `مباع` 100 / `مرتجع` 100; totals row appended as the last body row in bold (the grid footer only has two cells, so the three totals go in a body row).
 
-- [ ] **Step 1: Add the failing tests**
+- [x] **Step 1: Add the failing tests**
 
 Append inside `main()` of `test/widget/receipts/receipt_palette_test.dart`:
 
@@ -2032,7 +2032,7 @@ Append inside `main()` of `test/widget/receipts/receipt_palette_test.dart`:
   });
 ```
 
-- [ ] **Step 2: Run to verify the new tests fail**
+- [x] **Step 2: Run to verify the new tests fail**
 
 ```powershell
 flutter test test/widget/receipts/receipt_palette_test.dart
@@ -2040,7 +2040,7 @@ flutter test test/widget/receipts/receipt_palette_test.dart
 
 Expected: the two new tests fail on `findsOneWidget` for the document titles (the bodies are empty); the earlier five still pass.
 
-- [ ] **Step 3: Implement both bodies**
+- [x] **Step 3: Implement both bodies**
 
 Replace the two stubs at the bottom of `receipt_paper.dart`:
 
@@ -2144,7 +2144,7 @@ Replace the two stubs at the bottom of `receipt_paper.dart`:
 }
 ```
 
-- [ ] **Step 4: Run the receipt tests**
+- [x] **Step 4: Run the receipt tests**
 
 ```powershell
 flutter test test/widget/receipts
@@ -2152,7 +2152,7 @@ flutter test test/widget/receipts
 
 Expected: `All tests passed!` (all receipt widget tests, including the 7 palette tests).
 
-- [ ] **Step 5: Check the file length, analyze, commit**
+- [x] **Step 5: Check the file length, analyze, commit**
 
 ```powershell
 (Get-Content lib/features/receipts/widgets/receipt_paper.dart | Measure-Object -Line).Lines
@@ -2174,7 +2174,7 @@ Expected line count under 500.
 - Consumes: `ReceiptPaper`, `ReceiptDocType` (Task 6), `receiptConfigProvider` (Task 5), `PrintService.printFromWidget` default 2.0 (Task 1).
 - Produces: `ReceiptScreen` unchanged in its public constructors; `ReceiptDocType` is still importable from `receipt_screen.dart` via a re-export.
 
-- [ ] **Step 1: Find every external use of `ReceiptDocType`**
+- [x] **Step 1: Find every external use of `ReceiptDocType`**
 
 ```powershell
 Select-String -Path lib\**\*.dart -Pattern "ReceiptDocType" | Where-Object { $_.Path -notmatch "receipts" }
@@ -2182,7 +2182,7 @@ Select-String -Path lib\**\*.dart -Pattern "ReceiptDocType" | Where-Object { $_.
 
 Expected: no matches, or matches that only go through `ReceiptScreen.order/load/returns`. Either way the re-export below keeps them compiling.
 
-- [ ] **Step 2: Replace the enum and imports at the top of the screen**
+- [x] **Step 2: Replace the enum and imports at the top of the screen**
 
 Delete these lines from `receipt_screen.dart`:
 
@@ -2210,7 +2210,7 @@ export 'package:tawzii/features/receipts/widgets/receipt_paper.dart' show Receip
 
 Also delete the `import 'package:intl/intl.dart';` line — after this task nothing in the screen uses `DateFormat`. Keep `app_theme.dart` (used by `_DocTypeIndicator`).
 
-- [ ] **Step 3: Replace the preview block in `_buildScaffold`**
+- [x] **Step 3: Replace the preview block in `_buildScaffold`**
 
 Replace:
 
@@ -2264,11 +2264,11 @@ with:
           ),
 ```
 
-- [ ] **Step 4: Delete the old paper**
+- [x] **Step 4: Delete the old paper**
 
 Delete everything from the comment `/// The white 58mm paper. Colors are intentionally FIXED to light-paper values` through the end of the file (the `_ReceiptPaper`, `_DashedDivider` and `_DashPainter` classes). The file must end after the closing brace of `_DocTypeIndicator`.
 
-- [ ] **Step 5: Analyze, check the line count, run everything**
+- [x] **Step 5: Analyze, check the line count, run everything**
 
 ```powershell
 flutter analyze
@@ -2291,7 +2291,7 @@ Build and install the debug app on the phone paired with the XP-P323B, open any 
 
 If the frame's right rule is missing, the printer's left margin is not zero: send `GS L 0 0` (`[0x1D, 0x4C, 0x00, 0x00]`) right after the `ESC @` initialise in `printFromWidget` and print again.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add lib/features/receipts/screens/receipt_screen.dart
