@@ -3,21 +3,51 @@ import 'dart:typed_data';
 /// Dots across the printable area of the Xprinter XP-P323B (72 mm at 203 dpi).
 const int kPrintWidthDots = 576;
 
-/// Encodes an RGBA bitmap as one ESC/POS `GS v 0` raster command.
+/// Dots per millimetre at 203 dpi.
+const double kDotsPerMm = 8;
+
+/// Rows per `GS v 0` command. Tall receipts are sent as a sequence of
+/// bands: portable printers with small input buffers handle many short
+/// rasters better than one very tall one, and bands print back to back
+/// with no visible seam.
+const int kRasterBandRows = 128;
+
+/// The encoded raster plus how many rows it will actually print.
+class EscPosRaster {
+  final List<int> bytes;
+
+  /// Rows sent to the printer after trailing white rows were trimmed.
+  final int rows;
+
+  const EscPosRaster({required this.bytes, required this.rows});
+
+  /// Printed length in millimetres at 203 dpi.
+  double get millimetres => rows / kDotsPerMm;
+}
+
+/// Encodes an RGBA bitmap as ESC/POS `GS v 0` raster commands.
 ///
 /// A source that is already [kPrintWidthDots] wide is copied dot for dot.
 /// Any other width is resampled to [kPrintWidthDots] with a box filter
 /// (area average) so thin strokes darken the dot they fall on instead of
 /// vanishing between sample points. A pixel prints when its luminance is
 /// below 128.
-List<int> encodeEscPosRaster({
+///
+/// Trailing rows with no ink are dropped ([trimTrailingWhite]) so the paper
+/// stops where the content stops, and the result is split into bands of
+/// [bandRows] rows.
+EscPosRaster encodeEscPosRaster({
   required int width,
   required int height,
   required Uint8List rgba,
+  bool trimTrailingWhite = true,
+  int bandRows = kRasterBandRows,
 }) {
   assert(rgba.length == width * height * 4, 'rgba buffer size mismatch');
+  assert(bandRows > 0, 'bandRows must be positive');
   final scale = width / kPrintWidthDots; // source px per output dot
-  final outHeight = width == kPrintWidthDots ? height : (height / scale).floor();
+  final fullHeight =
+      width == kPrintWidthDots ? height : (height / scale).floor();
   const widthBytes = kPrintWidthDots ~/ 8; // 72
 
   double lumaAt(int x, int y) {
@@ -43,21 +73,33 @@ List<int> encodeEscPosRaster({
     return sum / n;
   }
 
-  final out = <int>[
-    0x1D, 0x76, 0x30, 0x00, // GS v 0, normal mode
-    widthBytes & 0xFF, (widthBytes >> 8) & 0xFF, // xL xH
-    outHeight & 0xFF, (outHeight >> 8) & 0xFF, // yL yH
-  ];
-
-  for (var y = 0; y < outHeight; y++) {
+  // Threshold every row once; rows are 72 bytes each.
+  final rowBytes = Uint8List(widthBytes * fullHeight);
+  var lastInkRow = -1;
+  for (var y = 0; y < fullHeight; y++) {
+    var rowHasInk = false;
     for (var xb = 0; xb < widthBytes; xb++) {
       var byte = 0;
       for (var bit = 0; bit < 8; bit++) {
-        final x = xb * 8 + bit;
-        if (sampled(x, y) < 128) byte |= 0x80 >> bit;
+        if (sampled(xb * 8 + bit, y) < 128) byte |= 0x80 >> bit;
       }
-      out.add(byte);
+      if (byte != 0) rowHasInk = true;
+      rowBytes[y * widthBytes + xb] = byte;
     }
+    if (rowHasInk) lastInkRow = y;
   }
-  return out;
+
+  final rows = trimTrailingWhite ? lastInkRow + 1 : fullHeight;
+
+  final out = <int>[];
+  for (var start = 0; start < rows; start += bandRows) {
+    final n = (rows - start).clamp(0, bandRows);
+    out.addAll([
+      0x1D, 0x76, 0x30, 0x00, // GS v 0, normal mode
+      widthBytes & 0xFF, (widthBytes >> 8) & 0xFF, // xL xH
+      n & 0xFF, (n >> 8) & 0xFF, // yL yH
+    ]);
+    out.addAll(rowBytes.sublist(start * widthBytes, (start + n) * widthBytes));
+  }
+  return EscPosRaster(bytes: out, rows: rows);
 }

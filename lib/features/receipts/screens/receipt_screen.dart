@@ -10,6 +10,8 @@ import 'package:tawzii/core/ui/status_dot.dart';
 import 'package:tawzii/features/auth/providers/auth_provider.dart';
 import 'package:tawzii/features/orders/providers/order_provider.dart';
 import 'package:tawzii/features/printing/providers/printer_provider.dart';
+import 'package:tawzii/features/printing/services/esc_pos_raster.dart';
+import 'package:tawzii/features/receipts/models/receipt_line.dart';
 import 'package:tawzii/features/auth/screens/settings_screen.dart';
 import 'package:tawzii/features/products/providers/product_provider.dart';
 import 'package:tawzii/features/receipts/providers/receipt_config_provider.dart';
@@ -90,9 +92,16 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
       final success = await printService.printFromWidget(_receiptKey);
       if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
+      // Report the printed length so a paper-feed problem can be told apart
+      // from an over-tall bitmap: this is exactly what was sent, in dots.
+      final rows = printService.lastPrintedRows;
+      final lengthNote = success && rows != null
+          ? ' — ${ltr(rows)} نقطة ≈ ${ltr((rows / kDotsPerMm).round())} مم'
+          : '';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? l10n.printSuccess : l10n.printFailed),
+          content: Text(
+              success ? '${l10n.printSuccess}$lengthNote' : l10n.printFailed),
           action: success
               ? null
               : SnackBarAction(

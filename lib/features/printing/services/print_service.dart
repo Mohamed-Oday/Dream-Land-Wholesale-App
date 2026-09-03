@@ -22,6 +22,10 @@ class PrintService {
   bool get isConnected => _connected;
   String? get connectedPrinterName => _connectedName;
 
+  /// Rows (dots) sent to the printer by the last successful print, after
+  /// trailing white rows were trimmed. Divide by [kDotsPerMm] for length.
+  int? lastPrintedRows;
+
   /// Get list of paired Bluetooth devices.
   Future<List<BluetoothInfo>> getPairedDevices() async {
     return await PrintBluetoothThermal.pairedBluetooths;
@@ -96,20 +100,20 @@ class PrintService {
       final imageBytes = await captureWidget(receiptKey, pixelRatio: pixelRatio);
       if (imageBytes == null) return false;
 
-      // Initialize printer
-      await PrintBluetoothThermal.writeBytes([0x1B, 0x40]);
+      // Convert PNG to ESC/POS raster bands (trailing white rows trimmed).
+      final raster = await _pngToEscPos(imageBytes);
+      if (raster == null || raster.bytes.isEmpty) return false;
+      lastPrintedRows = raster.rows;
 
-      // Print image using the package's byte writing
-      // Convert PNG to ESC/POS raster format
-      final escPosBytes = await _pngToEscPos(imageBytes);
-      if (escPosBytes.isEmpty) return false;
-
-      final result = await PrintBluetoothThermal.writeBytes(escPosBytes);
-
-      // Feed paper
-      await PrintBluetoothThermal.writeBytes([0x1B, 0x64, 0x04]); // Feed 4 lines
-
-      return result;
+      // One write for the whole job. The Android plugin prefixes every
+      // writeBytes call with a line feed, so separate init / image / feed
+      // writes would each move the paper a little.
+      final job = <int>[
+        0x1B, 0x40, // ESC @  initialise
+        ...raster.bytes, // GS v 0 bands
+        0x1B, 0x64, 0x03, // ESC d 3  feed to the tear bar
+      ];
+      return await PrintBluetoothThermal.writeBytes(job);
     } catch (e) {
       debugPrint('Print failed: $e');
       return false;
@@ -122,7 +126,7 @@ class PrintService {
   /// receipt paper is 288 logical px captured at 2.0, so the decoded width
   /// should already be [kPrintWidthDots]; anything else means the paper
   /// width and the capture ratio were changed independently.
-  Future<List<int>> _pngToEscPos(Uint8List pngBytes) async {
+  Future<EscPosRaster?> _pngToEscPos(Uint8List pngBytes) async {
     // Decode + width check live OUTSIDE the try below: an AssertionError here
     // is a build-time bug (the capture is not 576 dots wide), and keeping it
     // out of this method's try lets its own message reach the log verbatim
@@ -139,7 +143,7 @@ class PrintService {
     try {
       final byteData =
           await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-      if (byteData == null) return [];
+      if (byteData == null) return null;
       return encodeEscPosRaster(
         width: image.width,
         height: image.height,
@@ -147,7 +151,7 @@ class PrintService {
       );
     } catch (e) {
       debugPrint('PNG to ESC/POS conversion failed: $e');
-      return [];
+      return null;
     }
   }
 }
