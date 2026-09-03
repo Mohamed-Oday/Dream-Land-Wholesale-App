@@ -292,7 +292,7 @@ class ReceiptPaper extends StatelessWidget {
       SizedBox(height: Dots.px(14)),
       ThermalGrid(
         columnDots: const [416, 120],
-        headers: [l10n.products, 'الكمية'],
+        headers: ['الصنف', 'الكمية'],
         aligns: const [TextAlign.start, TextAlign.end],
         rows: [
           for (final m in items)
@@ -346,7 +346,7 @@ class ReceiptPaper extends StatelessWidget {
       SizedBox(height: Dots.px(14)),
       ThermalGrid(
         columnDots: const [236, 100, 100, 100],
-        headers: [l10n.products, l10n.loaded, l10n.sold, l10n.returned],
+        headers: ['الصنف', l10n.loaded, l10n.sold, l10n.returned],
         aligns: const [
           TextAlign.start,
           TextAlign.center,

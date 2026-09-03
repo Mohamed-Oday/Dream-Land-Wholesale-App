@@ -153,6 +153,7 @@ void main() {
     )));
     await expectOnlyInk(tester);
     expect(find.text(l10nAr.loadReceipt), findsOneWidget);
+    expect(find.text('الصنف', findRichText: true), findsOneWidget);
     expect(find.text(l10nAr.totalLoaded, findRichText: true), findsOneWidget);
     expect(find.text('\u206664\u2069', findRichText: true), findsOneWidget); // 40 + 24
   });
@@ -170,6 +171,7 @@ void main() {
     )));
     await expectOnlyInk(tester);
     expect(find.text(l10nAr.shiftCloseReceipt), findsOneWidget);
+    expect(find.text('الصنف', findRichText: true), findsOneWidget);
     expect(find.text(l10nAr.loaded, findRichText: true), findsOneWidget);
     expect(find.text(l10nAr.sold, findRichText: true), findsOneWidget);
     expect(find.text(l10nAr.returned, findRichText: true), findsOneWidget);
