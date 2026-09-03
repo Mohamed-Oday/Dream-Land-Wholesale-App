@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import 'package:tawzii/core/l10n/app_localizations.dart';
 import 'package:tawzii/core/theme/app_colors.dart';
 import 'package:tawzii/core/theme/app_theme.dart';
-import 'package:tawzii/core/ui/money_text.dart';
+import 'package:tawzii/core/ui/numeric_keypad.dart';
 import 'package:tawzii/core/ui/state_blocks.dart';
 import 'package:tawzii/core/ui/status_dot.dart';
 import 'package:tawzii/features/auth/providers/auth_provider.dart';
@@ -14,9 +13,11 @@ import 'package:tawzii/features/packages/providers/package_provider.dart';
 import 'package:tawzii/features/printing/providers/printer_provider.dart';
 import 'package:tawzii/features/auth/screens/settings_screen.dart';
 import 'package:tawzii/features/products/providers/product_provider.dart';
+import 'package:tawzii/features/receipts/providers/receipt_config_provider.dart';
+import 'package:tawzii/features/receipts/models/receipt_config.dart';
+import 'package:tawzii/features/receipts/widgets/receipt_paper.dart';
 
-/// The three document types the unified receipt screen can render.
-enum ReceiptDocType { order, load, returns }
+export 'package:tawzii/features/receipts/widgets/receipt_paper.dart' show ReceiptDocType;
 
 /// Local (feature-scoped) provider: fetch an order by id with retry support.
 final _orderByIdProvider = FutureProvider.autoDispose
@@ -72,6 +73,7 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
   final _receiptKey = GlobalKey();
   bool _isPrinting = false;
   bool _isCancelling = false;
+  bool _isMarkingPaid = false;
   int? _packageBalance;
 
   /// Direct order data (when passed in, possibly mutated after cancel).
@@ -207,6 +209,68 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
     }
   }
 
+  /// Record a payment against the order. Prompts for the amount collected now
+  /// (defaults to the remaining balance) and derives paid/partial status.
+  Future<void> _markAsPaid(Map<String, dynamic> order) async {
+    final l10n = AppLocalizations.of(context)!;
+    final total = ((order['total'] as num?) ?? 0).toDouble();
+    final alreadyPaid = ((order['paid_amount'] as num?) ?? 0).toDouble();
+    final remaining = (total - alreadyPaid).clamp(0.0, total);
+
+    final amount = await showKeypadSheet(
+      context,
+      title: 'المبلغ المدفوع',
+      initialValue: remaining > 0 ? remaining : null,
+      allowDecimal: true,
+      hardened: true,
+    );
+    if (amount == null || amount <= 0 || !mounted) return;
+
+    final newPaidTotal = (alreadyPaid + amount).clamp(0.0, total);
+    final status = newPaidTotal >= total
+        ? 'paid'
+        : (newPaidTotal > 0 ? 'partial' : 'unpaid');
+
+    setState(() => _isMarkingPaid = true);
+    try {
+      final repo = ref.read(orderRepositoryProvider)!;
+      await repo.updatePaymentStatus(
+        orderId: order['id'] as String,
+        paymentStatus: status,
+        paidAmount: newPaidTotal,
+        storeId: order['store_id'] as String?,
+      );
+      if (!mounted) return;
+
+      // Reflect locally / refetch.
+      if (_directOrder != null) {
+        _directOrder!['payment_status'] = status;
+        _directOrder!['paid_amount'] = newPaidTotal;
+      } else if (widget.orderId != null) {
+        ref.invalidate(_orderByIdProvider(widget.orderId!));
+      }
+      ref.invalidate(orderListProvider);
+      ref.invalidate(allOrdersProvider);
+      setState(() {});
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(status == 'paid'
+              ? 'تم تسجيل الدفع بالكامل'
+              : 'تم تسجيل دفعة جزئية'),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${l10n.error}: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isMarkingPaid = false);
+    }
+  }
+
   void _done() {
     switch (widget.docType) {
       case ReceiptDocType.order:
@@ -284,6 +348,12 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
         currentUser != null &&
         (currentUser.isOwner || currentUser.isAdmin);
 
+    final paymentStatus = order?['payment_status'] as String? ?? 'unpaid';
+    final canMarkPaid = widget.docType == ReceiptDocType.order &&
+        order != null &&
+        status != 'cancelled' &&
+        paymentStatus != 'paid';
+
     final title = switch (widget.docType) {
       ReceiptDocType.order => l10n.receipt,
       ReceiptDocType.load => l10n.loadReceipt,
@@ -297,21 +367,29 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
         children: [
           _DocTypeIndicator(active: widget.docType),
           const SizedBox(height: 14),
-          // 58mm thermal preview — always white paper, ink text (both themes).
+          // 80 mm thermal paper at its natural 288 px (= 576 dots at 2.0).
+          // The RepaintBoundary is what gets captured; it sits inside the
+          // FittedBox so a narrow phone scales the preview without touching
+          // the printed bitmap.
           Center(
-            child: RepaintBoundary(
-              key: _receiptKey,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 300),
-                child: _ReceiptPaper(
-                  docType: widget.docType,
-                  order: order,
-                  loadData: widget.loadData,
-                  returnData: widget.returnData,
-                  packageBalance: _packageBalance,
-                  l10n: l10n,
-                ),
-              ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final paper = RepaintBoundary(
+                  key: _receiptKey,
+                  child: ReceiptPaper(
+                    docType: widget.docType,
+                    order: order,
+                    loadData: widget.loadData,
+                    returnData: widget.returnData,
+                    packageBalance: _packageBalance,
+                    config: ref.watch(receiptConfigProvider).valueOrNull ??
+                        ReceiptConfig.empty,
+                    l10n: l10n,
+                  ),
+                );
+                if (constraints.maxWidth >= ReceiptPaper.width) return paper;
+                return FittedBox(fit: BoxFit.fitWidth, child: paper);
+              },
             ),
           ),
           const SizedBox(height: 14),
@@ -386,6 +464,36 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
+              ],
+              if (canMarkPaid) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed:
+                        _isMarkingPaid ? null : () => _markAsPaid(order),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: t.success,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(0, 52),
+                    ),
+                    icon: _isMarkingPaid
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.payments_outlined, size: 20),
+                    label: Text(
+                      paymentStatus == 'partial'
+                          ? 'إكمال الدفع'
+                          : 'تسجيل الدفع',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
               ],
               if (canCancel) ...[
                 SizedBox(
@@ -494,392 +602,4 @@ class _DocTypeIndicator extends StatelessWidget {
       ),
     );
   }
-}
-
-/// The white 58mm paper. Colors are intentionally FIXED to light-paper values
-/// (AppColorsLight) in both themes: this widget is captured as a bitmap and
-/// sent to the thermal printer, so it must always be ink-on-white.
-class _ReceiptPaper extends StatelessWidget {
-  final ReceiptDocType docType;
-  final Map<String, dynamic>? order;
-  final Map<String, dynamic>? loadData;
-  final Map<String, dynamic>? returnData;
-  final int? packageBalance;
-  final AppLocalizations l10n;
-
-  static const _ink = AppColorsLight.textPrimary;
-  static const _dim = AppColorsLight.textSecondary;
-  static const _faint = AppColorsLight.textMuted;
-  static const _paper = AppColorsLight.surface;
-  static const _dash = AppColorsLight.borderStrong;
-
-  const _ReceiptPaper({
-    required this.docType,
-    required this.l10n,
-    this.order,
-    this.loadData,
-    this.returnData,
-    this.packageBalance,
-  });
-
-  String _fmtDate(String? iso) {
-    if (iso == null) return '';
-    try {
-      final dt = DateTime.parse(iso).toLocal();
-      return DateFormat('dd/MM/yyyy HH:mm').format(dt);
-    } catch (_) {
-      return iso;
-    }
-  }
-
-  /// Bidi-isolated LTR numeral run for the paper.
-  String _n(Object v) => '\u2066$v\u2069';
-
-  String _amt(num v) => _n(Money.format(v));
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: _paper,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 18),
-      child: DefaultTextStyle(
-        style: const TextStyle(
-          fontFamily: 'IBMPlexSansArabic',
-          fontSize: 12,
-          height: 1.7,
-          color: _ink,
-          fontFeatures: [
-            FontFeature.tabularFigures(),
-            FontFeature.liningFigures(),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: switch (docType) {
-            ReceiptDocType.order => _orderBody(),
-            ReceiptDocType.load => _loadBody(),
-            ReceiptDocType.returns => _returnBody(),
-          },
-        ),
-      ),
-    );
-  }
-
-  // --- shared pieces ---
-
-  Widget _header(String docTitle) {
-    return Column(
-      children: [
-        Text(
-          l10n.appTitle,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-        ),
-        const _DashedDivider(color: _dash),
-        Text(
-          docTitle,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-        ),
-      ],
-    );
-  }
-
-  Widget _kv(String label, String value, {bool bold = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(color: _dim)),
-        const SizedBox(width: 8),
-        Flexible(
-          child: Text(
-            value,
-            textAlign: TextAlign.left,
-            style: TextStyle(
-              fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _footer() {
-    return const Padding(
-      padding: EdgeInsetsDirectional.only(top: 10),
-      child: Text(
-        'شكراً لثقتكم',
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 11, color: _faint),
-      ),
-    );
-  }
-
-  // --- order receipt ---
-
-  List<Widget> _orderBody() {
-    final o = order!;
-    final store = o['stores'] as Map<String, dynamic>?;
-    final storeName = (store?['name'] ?? '').toString();
-    final storeAddress = (store?['address'] ?? '').toString();
-    final status = o['status'] as String? ?? 'created';
-    final subtotal = ((o['subtotal'] as num?) ?? 0).toDouble();
-    final taxAmount = ((o['tax_amount'] as num?) ?? 0).toDouble();
-    final discount = ((o['discount'] as num?) ?? 0).toDouble();
-    final discountStatus = o['discount_status'] as String? ?? 'none';
-    final total = ((o['total'] as num?) ?? 0).toDouble();
-    final lines = o['order_lines'] as List<dynamic>? ?? [];
-    final date = _fmtDate(o['created_at'] as String?);
-
-    final showDiscount = discount > 0 &&
-        (discountStatus == 'approved' || discountStatus == 'pending');
-
-    return [
-      _header(l10n.receipt),
-      if (status == 'cancelled')
-        Text(
-          l10n.statusCancelled,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-        ),
-      const SizedBox(height: 4),
-      if (date.isNotEmpty) _kv(l10n.orderDate, _n(date)),
-      if (storeName.isNotEmpty)
-        _kv('المتجر', storeName, bold: true),
-      if (storeAddress.isNotEmpty) _kv(l10n.address, storeAddress),
-      const _DashedDivider(color: _dash),
-      // Line items: name line, then LTR qty × unit …… line total.
-      ...lines.map((line) {
-        final lineMap = line as Map<String, dynamic>;
-        final product = lineMap['products'] as Map<String, dynamic>?;
-        final productName = (product?['name'] ?? '').toString();
-        final qty = (lineMap['quantity'] as num?)?.toInt() ?? 0;
-        final unitPrice =
-            ((lineMap['unit_price'] as num?) ?? 0).toDouble();
-        final lineTotal = ((lineMap['line_total'] as num?) ?? 0) == 0
-            ? unitPrice * qty
-            : (lineMap['line_total'] as num).toDouble();
-        final upkg = (product?['units_per_package'] as num?)?.toInt();
-
-        return Padding(
-          padding: const EdgeInsetsDirectional.only(bottom: 4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                productName,
-                style: const TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w600),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    upkg != null
-                        ? '${_n(qty)} × ${_amt(unitPrice)} · ${_n(upkg)} و/ع = ${_n(qty * upkg)} وحدة'
-                        : '${_n(qty)} × ${_amt(unitPrice)}',
-                    style: const TextStyle(color: _dim),
-                  ),
-                  Text(
-                    _amt(lineTotal),
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      }),
-      const _DashedDivider(color: _dash),
-      _kv(l10n.subtotal, _amt(subtotal), bold: true),
-      if (taxAmount > 0) _kv(l10n.tax, _amt(taxAmount), bold: true),
-      if (showDiscount) _kv(l10n.discount, '−${_amt(discount)}', bold: true),
-      Padding(
-        padding: const EdgeInsetsDirectional.only(top: 4),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(l10n.total,
-                style: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w700)),
-            Text('${_amt(total)} ${l10n.currencyUnit}',
-                style: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w700)),
-          ],
-        ),
-      ),
-      if (packageBalance != null) ...[
-        const _DashedDivider(color: _dash),
-        _kv('العبوات المتبقية',
-            '${_n(packageBalance!)} ${l10n.packageUnit}',
-            bold: true),
-      ],
-      _footer(),
-    ];
-  }
-
-  // --- load manifest ---
-
-  List<Widget> _loadBody() {
-    final d = loadData!;
-    final driverName = d['driver_name'] as String? ?? '';
-    final loadedByName = d['loaded_by_name'] as String? ?? '';
-    final date = _fmtDate(d['opened_at'] as String?);
-    final items = d['items'] as List<dynamic>? ?? [];
-    final totalQty = items.fold<int>(
-        0, (sum, i) => sum + ((i['quantity_loaded'] as num?)?.toInt() ?? 0));
-
-    return [
-      _header(l10n.loadReceipt),
-      const SizedBox(height: 4),
-      if (driverName.isNotEmpty) _kv(l10n.driver, driverName, bold: true),
-      if (loadedByName.isNotEmpty) _kv(l10n.loadedBy, loadedByName),
-      if (date.isNotEmpty) _kv(l10n.orderDate, _n(date)),
-      const _DashedDivider(color: _dash),
-      ...items.map((item) {
-        final m = item as Map<String, dynamic>;
-        final name = m['product_name'] as String? ?? '';
-        final qty = (m['quantity_loaded'] as num?)?.toInt() ?? 0;
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Flexible(
-              child: Text(name,
-                  style: const TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w600)),
-            ),
-            const SizedBox(width: 8),
-            Text(_n(qty),
-                style: const TextStyle(fontWeight: FontWeight.w700)),
-          ],
-        );
-      }),
-      const _DashedDivider(color: _dash),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(l10n.totalLoaded,
-              style: const TextStyle(
-                  fontSize: 14, fontWeight: FontWeight.w700)),
-          Text(_n(totalQty),
-              style: const TextStyle(
-                  fontSize: 14, fontWeight: FontWeight.w700)),
-        ],
-      ),
-    ];
-  }
-
-  // --- return / shift close ---
-
-  List<Widget> _returnBody() {
-    final d = returnData!;
-    final driverName = d['driver_name'] as String? ?? '';
-    final date = _fmtDate(d['closed_at'] as String?);
-    final items = d['items'] as List<dynamic>? ?? [];
-
-    int totalLoaded = 0, totalSold = 0, totalReturned = 0;
-    for (final item in items) {
-      final m = item as Map<String, dynamic>;
-      totalLoaded += (m['quantity_loaded'] as num?)?.toInt() ?? 0;
-      totalSold += (m['quantity_sold'] as num?)?.toInt() ?? 0;
-      totalReturned += (m['quantity_returned'] as num?)?.toInt() ?? 0;
-    }
-
-    Widget tableRow(String name, String a, String b, String c,
-        {bool bold = false}) {
-      final style = TextStyle(
-        fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
-        fontSize: bold ? 13 : 12,
-      );
-      final dimStyle = TextStyle(
-        color: bold ? _ink : _dim,
-        fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
-        fontSize: 12,
-      );
-      return Row(
-        children: [
-          Expanded(flex: 4, child: Text(name, style: style)),
-          Expanded(
-              flex: 2,
-              child: Text(a, textAlign: TextAlign.center, style: dimStyle)),
-          Expanded(
-              flex: 2,
-              child: Text(b, textAlign: TextAlign.center, style: dimStyle)),
-          Expanded(
-              flex: 2,
-              child: Text(c, textAlign: TextAlign.center, style: dimStyle)),
-        ],
-      );
-    }
-
-    return [
-      _header(l10n.shiftCloseReceipt),
-      const SizedBox(height: 4),
-      if (driverName.isNotEmpty) _kv(l10n.driver, driverName, bold: true),
-      if (date.isNotEmpty) _kv(l10n.orderDate, _n(date)),
-      const _DashedDivider(color: _dash),
-      tableRow(l10n.products, l10n.loaded, l10n.sold, l10n.returned,
-          bold: true),
-      const SizedBox(height: 2),
-      ...items.map((item) {
-        final m = item as Map<String, dynamic>;
-        return tableRow(
-          m['product_name'] as String? ?? '',
-          _n((m['quantity_loaded'] as num?)?.toInt() ?? 0),
-          _n((m['quantity_sold'] as num?)?.toInt() ?? 0),
-          _n((m['quantity_returned'] as num?)?.toInt() ?? 0),
-        );
-      }),
-      const _DashedDivider(color: _dash),
-      tableRow(l10n.total, _n(totalLoaded), _n(totalSold), _n(totalReturned),
-          bold: true),
-    ];
-  }
-}
-
-/// Thin dashed divider matching the thermal receipt look.
-class _DashedDivider extends StatelessWidget {
-  final Color color;
-
-  const _DashedDivider({required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsetsDirectional.symmetric(vertical: 8),
-      child: CustomPaint(
-        size: const Size(double.infinity, 1),
-        painter: _DashPainter(color),
-      ),
-    );
-  }
-}
-
-class _DashPainter extends CustomPainter {
-  final Color color;
-
-  _DashPainter(this.color);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1;
-    const dash = 4.0;
-    const gap = 3.0;
-    double x = 0;
-    while (x < size.width) {
-      canvas.drawLine(Offset(x, 0), Offset(x + dash, 0), paint);
-      x += dash + gap;
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashPainter oldDelegate) =>
-      oldDelegate.color != color;
 }
