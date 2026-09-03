@@ -160,7 +160,7 @@ class ReceiptPaper extends StatelessWidget {
 
   static String _orderRef(Map<String, dynamic> o) {
     final id = (o['id'] ?? '').toString();
-    return '#${ltr(id.substring(0, id.length < 8 ? id.length : 8).toUpperCase())}';
+    return ltr('#${id.substring(0, id.length < 8 ? id.length : 8).toUpperCase()}');
   }
 
   List<Widget> _orderBody() {

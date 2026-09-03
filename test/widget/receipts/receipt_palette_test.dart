@@ -108,7 +108,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(host(orderPaper()));
     expect(find.text('فاتورة تسليم'), findsOneWidget);
-    expect(find.text('#${ltr('3F9A2C1B')}'), findsOneWidget);
+    expect(find.text(ltr('#3F9A2C1B')), findsOneWidget);
     expect(find.text('مدفوع جزئياً'), findsOneWidget);
     expect(find.text('المتبقي'), findsOneWidget);
     expect(find.text('توقيع المستلم'), findsOneWidget);
@@ -117,6 +117,7 @@ void main() {
     expect(find.textContaining('للقطعة', findRichText: true), findsOneWidget);
     expect(find.textContaining('${ltr('+6')} ق', findRichText: true),
         findsOneWidget);
+    expect(find.text(ltr('−230'), findRichText: true), findsOneWidget);
   });
 
   testWidgets('cancelled order shows ملغى and no payment block', (tester) async {

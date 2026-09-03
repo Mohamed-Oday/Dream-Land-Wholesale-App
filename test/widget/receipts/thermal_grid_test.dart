@@ -87,7 +87,8 @@ void main() {
     for (final t in tester.widgetList<Text>(find.byType(Text))) {
       expect(t.style?.color, ThermalInk.black, reason: t.data);
     }
-    for (final r in tester.widgetList<RichText>(find.byType(RichText))) {
+    for (final r in tester.widgetList<RichText>(find.descendant(
+        of: find.byType(ThermalCell), matching: find.byType(RichText)))) {
       expect(r.text.style?.color, ThermalInk.black);
       // RichText does not inherit DefaultTextStyle, so every cell must carry
       // the tabular/lining figure features itself.

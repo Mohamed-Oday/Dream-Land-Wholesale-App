@@ -123,9 +123,11 @@ class PrintService {
   /// should already be [kPrintWidthDots]; anything else means the paper
   /// width and the capture ratio were changed independently.
   Future<List<int>> _pngToEscPos(Uint8List pngBytes) async {
-    // Decode + width check live OUTSIDE the try: an AssertionError here is a
-    // build-time bug (the capture is not 576 dots wide) and must fail loudly
-    // in debug rather than be swallowed into an empty byte list.
+    // Decode + width check live OUTSIDE the try below: an AssertionError here
+    // is a build-time bug (the capture is not 576 dots wide), and keeping it
+    // out of this method's try lets its own message reach the log verbatim
+    // (via printFromWidget's catch) instead of being flattened into an empty
+    // byte list.
     final codec = await ui.instantiateImageCodec(pngBytes);
     final frame = await codec.getNextFrame();
     final image = frame.image;
