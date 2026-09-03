@@ -147,11 +147,13 @@ Both lines are omitted when unset. No schema migration.
 
 Order receipt, top to bottom:
 
-1. Company name (34 dots, bold, centred) + `receipt.phone` line
+1. `receipt.phone` line when set (the company name was dropped after the first
+   physical print on 2026-09-03 at the owner's request)
 2. 3-dot rule
 3. Document type `فاتورة تسليم` (24 dots) and order number (40 dots, `#1847`)
 4. 2-dot rule
-5. Metadata block: date, store name (23 dots bold), address, driver
+5. Metadata block: date, store name (23 dots bold), address (the seller/driver
+   line was dropped 2026-09-03)
 6. **Boxed 4-column item table** — `الصنف` / `الكمية` / `السعر` / `الإجمالي`,
    fully ruled (§5.1)
 7. Subtotal, tax, discount (each conditional, as today) — rendered as footer rows
@@ -159,8 +161,9 @@ Order receipt, top to bottom:
 8. **Inverted total bar** — white on black, the single solid block
 9. Payment-status stamp (4-dot box): `مدفوع` / `مدفوع جزئياً` / `غير مدفوع`
 10. Paid and, when partial, a boxed `المتبقي`
-11. Package balance (`العبوات المتبقية لدى المتجر`)
-12. Two signature lines — recipient and driver
+11. Packages on this order (`عبوات هذا الطلب`): the sum of whole packages across
+    the order lines, not the store's running balance (changed 2026-09-03)
+12. ~~Two signature lines~~ — dropped 2026-09-03
 13. 3-dot rule, footer
 
 Cancelled orders keep the existing prominent `ملغى` treatment above the table.

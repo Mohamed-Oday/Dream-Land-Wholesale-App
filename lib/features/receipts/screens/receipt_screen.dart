@@ -9,7 +9,6 @@ import 'package:tawzii/core/ui/state_blocks.dart';
 import 'package:tawzii/core/ui/status_dot.dart';
 import 'package:tawzii/features/auth/providers/auth_provider.dart';
 import 'package:tawzii/features/orders/providers/order_provider.dart';
-import 'package:tawzii/features/packages/providers/package_provider.dart';
 import 'package:tawzii/features/printing/providers/printer_provider.dart';
 import 'package:tawzii/features/auth/screens/settings_screen.dart';
 import 'package:tawzii/features/products/providers/product_provider.dart';
@@ -74,7 +73,6 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
   bool _isPrinting = false;
   bool _isCancelling = false;
   bool _isMarkingPaid = false;
-  int? _packageBalance;
 
   /// Direct order data (when passed in, possibly mutated after cancel).
   Map<String, dynamic>? _directOrder;
@@ -83,34 +81,6 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
   void initState() {
     super.initState();
     _directOrder = widget.orderData;
-    if (widget.docType == ReceiptDocType.order && _directOrder != null) {
-      _loadPackageBalance(_directOrder!);
-    }
-  }
-
-  Future<void> _loadPackageBalance(Map<String, dynamic> order) async {
-    final storeId = order['store_id'] as String?;
-    if (storeId == null) return;
-    final repo = ref.read(packageRepositoryProvider);
-    if (repo == null) return;
-    try {
-      final balances = await repo.getBalancesByStore(storeId);
-      final currentBalance = balances.fold<int>(
-        0,
-        (sum, b) => sum + ((b['balance'] as num?)?.toInt() ?? 0),
-      );
-      // Packages given in this order = sum of all line quantities
-      final lines = order['order_lines'] as List<dynamic>? ?? [];
-      final packagesInOrder = lines.fold<int>(
-        0,
-        (sum, line) => sum + ((line['quantity'] as num?)?.toInt() ?? 0),
-      );
-      if (mounted) {
-        setState(() => _packageBalance = currentBalance - packagesInOrder);
-      }
-    } catch (e) {
-      debugPrint('Package balance fetch error: $e');
-    }
   }
 
   Future<void> _print() async {
@@ -313,14 +283,7 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
               ),
             ),
           ),
-          data: (order) {
-            if (_packageBalance == null) {
-              // Fire once per resolved order (idempotent enough for a preview).
-              WidgetsBinding.instance.addPostFrameCallback(
-                  (_) => _loadPackageBalance(order));
-            }
-            return _buildScaffold(context, order: order);
-          },
+          data: (order) => _buildScaffold(context, order: order),
         );
       case ReceiptDocType.load:
         return _buildScaffold(context);
@@ -381,7 +344,6 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
                     order: order,
                     loadData: widget.loadData,
                     returnData: widget.returnData,
-                    packageBalance: _packageBalance,
                     config: ref.watch(receiptConfigProvider).valueOrNull ??
                         ReceiptConfig.empty,
                     l10n: l10n,

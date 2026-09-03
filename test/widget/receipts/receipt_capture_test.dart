@@ -30,6 +30,12 @@ void main() {
     });
     expect(image!.width, 576);
 
+    // The paper must hug its content even when the host offers more height
+    // (here 4000 px): anything taller is printed as blank paper.
+    final paperHeight = tester.getSize(find.byType(ReceiptPaper)).height;
+    expect(paperHeight, lessThan(2000));
+    expect(image!.height, (paperHeight * 2).round());
+
     // The first solid rule must contain black after the 128 threshold.
     final paperRect = tester.getRect(find.byType(ReceiptPaper));
     final ruleRect = tester.getRect(find.descendant(

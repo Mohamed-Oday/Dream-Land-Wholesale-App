@@ -101,7 +101,7 @@ void main() {
     expect(tester.getSize(find.byType(ReceiptPaper)).width, 288);
   });
 
-  testWidgets('order paper shows the grid, stamp, due box and signatures',
+  testWidgets('order paper shows the grid, stamp, due box and package count',
       (tester) async {
     tester.view.physicalSize = const Size(600, 4000);
     tester.view.devicePixelRatio = 1.0;
@@ -111,8 +111,15 @@ void main() {
     expect(find.text(ltr('#3F9A2C1B')), findsOneWidget);
     expect(find.text('مدفوع جزئياً'), findsOneWidget);
     expect(find.text('المتبقي'), findsOneWidget);
-    expect(find.text('توقيع المستلم'), findsOneWidget);
-    expect(find.text('توقيع السائق'), findsOneWidget);
+    // Removed after the first physical print: company name, seller line,
+    // signature lines, running package balance.
+    expect(find.text(l10nAr.appTitle), findsNothing);
+    expect(find.text(l10nAr.driver), findsNothing);
+    expect(find.textContaining('توقيع'), findsNothing);
+    expect(find.textContaining('المتبقية'), findsNothing);
+    // Packages on this order: 6 + 4 + 0 + 3.
+    expect(find.text('عبوات هذا الطلب'), findsOneWidget);
+    expect(find.text('${ltr(13)} ${l10nAr.packageUnit}'), findsOneWidget);
     expect(find.textContaining('0770 12 34 56'), findsNWidgets(2)); // header + footer
     expect(find.textContaining('للقطعة', findRichText: true), findsOneWidget);
     expect(find.textContaining('${ltr('+6')} ق', findRichText: true),

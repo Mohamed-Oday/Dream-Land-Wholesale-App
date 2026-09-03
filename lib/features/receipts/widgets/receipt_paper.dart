@@ -26,7 +26,6 @@ class ReceiptPaper extends StatelessWidget {
   final Map<String, dynamic>? order;
   final Map<String, dynamic>? loadData;
   final Map<String, dynamic>? returnData;
-  final int? packageBalance;
 
   const ReceiptPaper({
     super.key,
@@ -36,7 +35,6 @@ class ReceiptPaper extends StatelessWidget {
     this.order,
     this.loadData,
     this.returnData,
-    this.packageBalance,
   });
 
   static String _fmtDate(String? iso) {
@@ -71,6 +69,9 @@ class ReceiptPaper extends StatelessWidget {
             ],
           ),
           child: Column(
+            // Hug the content: a max-sized column would fill whatever height
+            // the host allows, and the capture would print that as blank paper.
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: switch (docType) {
               ReceiptDocType.order => _orderBody(),
@@ -87,12 +88,6 @@ class ReceiptPaper extends StatelessWidget {
 
   List<Widget> _masthead(String docTitle, {String? reference}) {
     return [
-      Text(
-        l10n.appTitle,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-            fontSize: Dots.px(34), fontWeight: FontWeight.w700, height: 1.2),
-      ),
       if (config.phone != null)
         Text(
           'توزيع الجملة — ${ltr(config.phone!)}',
@@ -166,10 +161,8 @@ class ReceiptPaper extends StatelessWidget {
   List<Widget> _orderBody() {
     final o = order!;
     final store = o['stores'] as Map<String, dynamic>?;
-    final driver = o['users'] as Map<String, dynamic>?;
     final storeName = (store?['name'] ?? '').toString();
     final storeAddress = (store?['address'] ?? '').toString();
-    final driverName = (driver?['name'] ?? '').toString();
     final status = o['status'] as String? ?? 'created';
     final subtotal = ((o['subtotal'] as num?) ?? 0).toDouble();
     final taxAmount = ((o['tax_amount'] as num?) ?? 0).toDouble();
@@ -185,6 +178,8 @@ class ReceiptPaper extends StatelessWidget {
     final showDiscount = discount > 0 &&
         (discountStatus == 'approved' || discountStatus == 'pending');
     final cancelled = status == 'cancelled';
+    // Whole packages handed over on this order (loose pieces excluded).
+    final packagesInOrder = lines.fold<int>(0, (sum, l) => sum + l.packages);
 
     return [
       ..._masthead('فاتورة تسليم', reference: _orderRef(o)),
@@ -203,7 +198,6 @@ class ReceiptPaper extends StatelessWidget {
             valueSizeDots: 23, valueWeight: FontWeight.w700),
       if (storeAddress.isNotEmpty)
         _meta(l10n.address, storeAddress, valueWeight: FontWeight.w500),
-      if (driverName.isNotEmpty) _meta(l10n.driver, driverName),
       SizedBox(height: Dots.px(14)),
       ThermalGrid(
         columnDots: const [236, 84, 96, 120],
@@ -256,19 +250,11 @@ class ReceiptPaper extends StatelessWidget {
               value: _amt((total - paidAmount).clamp(0.0, total))),
         ],
       ],
-      if (packageBalance != null) ...[
+      if (packagesInOrder > 0) ...[
         const ThermalRule(kind: ThermalRuleKind.hair),
-        _meta('العبوات المتبقية لدى المتجر',
-            '${ltr(packageBalance!)} ${l10n.packageUnit}'),
+        _meta('عبوات هذا الطلب',
+            '${ltr(packagesInOrder)} ${l10n.packageUnit}'),
       ],
-      SizedBox(height: Dots.px(22)),
-      Row(
-        children: [
-          const Expanded(child: SignatureLine(label: 'توقيع المستلم')),
-          SizedBox(width: Dots.px(22)),
-          const Expanded(child: SignatureLine(label: 'توقيع السائق')),
-        ],
-      ),
       ..._footer(),
     ];
   }

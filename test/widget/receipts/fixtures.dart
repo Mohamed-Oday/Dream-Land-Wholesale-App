@@ -70,11 +70,9 @@ Widget host(Widget paper) => MaterialApp(
       ),
     );
 
-ReceiptPaper orderPaper({Map<String, dynamic>? order, int? packageBalance = 21}) =>
-    ReceiptPaper(
+ReceiptPaper orderPaper({Map<String, dynamic>? order}) => ReceiptPaper(
       docType: ReceiptDocType.order,
       l10n: l10nAr,
       config: sampleConfig,
       order: order ?? sampleOrder(),
-      packageBalance: packageBalance,
     );
