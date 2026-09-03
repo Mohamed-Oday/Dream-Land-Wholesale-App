@@ -89,6 +89,10 @@ void main() {
     }
     for (final r in tester.widgetList<RichText>(find.byType(RichText))) {
       expect(r.text.style?.color, ThermalInk.black);
+      // RichText does not inherit DefaultTextStyle, so every cell must carry
+      // the tabular/lining figure features itself.
+      expect(r.text.style?.fontFeatures,
+          contains(const FontFeature.tabularFigures()));
     }
   });
 }

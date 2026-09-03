@@ -3,6 +3,9 @@ import 'package:tawzii/core/ui/money_text.dart';
 /// Wraps [v] in U+2066 (LRI) … U+2069 (PDI) so a Latin number keeps its
 /// own direction inside Arabic text. Without it the `+`/`−` of a quantity
 /// or discount jumps to the wrong end of the run.
+///
+/// Pass the whole numeric token *including any leading sign* — a sign left
+/// outside the isolate still resolves against the surrounding RTL paragraph.
 String ltr(Object v) => '\u2066$v\u2069';
 
 /// Which kinds of quantity an order line carries.
@@ -71,7 +74,7 @@ class ReceiptLine {
       };
 
   String? get qtySub =>
-      mode == ReceiptLineMode.mixed ? '+${ltr(pieces)} ق' : null;
+      mode == ReceiptLineMode.mixed ? '${ltr('+$pieces')} ق' : null;
 
   String get priceMain => switch (mode) {
         ReceiptLineMode.piecesOnly => ltr(Money.format(piecePrice)),

@@ -115,7 +115,8 @@ void main() {
     expect(find.text('توقيع السائق'), findsOneWidget);
     expect(find.textContaining('0770 12 34 56'), findsNWidgets(2)); // header + footer
     expect(find.textContaining('للقطعة', findRichText: true), findsOneWidget);
-    expect(find.textContaining('+\u20666\u2069 ق', findRichText: true), findsOneWidget);
+    expect(find.textContaining('${ltr('+6')} ق', findRichText: true),
+        findsOneWidget);
   });
 
   testWidgets('cancelled order shows ملغى and no payment block', (tester) async {

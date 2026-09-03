@@ -84,7 +84,7 @@ void main() {
     test('mixed', () {
       final l = ReceiptLine.fromOrderLine(_line(quantity: 4, pieces: 6));
       expect(l.qtyMain, '${iso}4$pdi ع');
-      expect(l.qtySub, '+${iso}6$pdi ق');
+      expect(l.qtySub, '${ltr('+6')} ق');
       expect(l.priceMain, '${iso}480$pdi');
       expect(l.priceSub, '${iso}20$pdi/ق');
       expect(l.totalText, '${iso}2${fs}040$pdi');

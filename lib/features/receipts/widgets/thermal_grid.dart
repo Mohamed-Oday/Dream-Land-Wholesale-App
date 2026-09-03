@@ -53,6 +53,10 @@ class ThermalCell extends StatelessWidget {
                 fontWeight: mainWeight,
                 height: 1.25,
                 color: ThermalInk.black,
+                fontFeatures: const [
+                  FontFeature.tabularFigures(),
+                  FontFeature.liningFigures(),
+                ],
               ),
               children: main,
             ),
@@ -67,6 +71,10 @@ class ThermalCell extends StatelessWidget {
                   fontWeight: FontWeight.w400,
                   height: 1.3,
                   color: ThermalInk.black,
+                  fontFeatures: const [
+                    FontFeature.tabularFigures(),
+                    FontFeature.liningFigures(),
+                  ],
                 ),
                 children: sub,
               ),

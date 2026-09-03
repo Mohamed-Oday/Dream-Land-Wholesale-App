@@ -149,6 +149,7 @@ class ReceiptPaper extends StatelessWidget {
   /// `6 ع` / `+6 ق` / `10 ق` — number at cell size, unit letter at 17 dots.
   static List<InlineSpan> _qtySpans(String s) {
     final space = s.lastIndexOf(' ');
+    if (space < 0) return [TextSpan(text: s)];
     return [
       TextSpan(text: s.substring(0, space)),
       _unit(s.substring(space + 1)),
@@ -234,7 +235,8 @@ class ReceiptPaper extends StatelessWidget {
         footer: [
           (label: l10n.subtotal, value: _amt(subtotal)),
           if (taxAmount > 0) (label: l10n.tax, value: _amt(taxAmount)),
-          if (showDiscount) (label: l10n.discount, value: '−${_amt(discount)}'),
+          if (showDiscount)
+            (label: l10n.discount, value: ltr('−${Money.format(discount)}')),
         ],
       ),
       TotalBar(label: 'الإجمالي', value: '${_amt(total)} ${l10n.currencyUnit}'),

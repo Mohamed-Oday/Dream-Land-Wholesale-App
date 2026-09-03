@@ -123,15 +123,18 @@ class PrintService {
   /// should already be [kPrintWidthDots]; anything else means the paper
   /// width and the capture ratio were changed independently.
   Future<List<int>> _pngToEscPos(Uint8List pngBytes) async {
+    // Decode + width check live OUTSIDE the try: an AssertionError here is a
+    // build-time bug (the capture is not 576 dots wide) and must fail loudly
+    // in debug rather than be swallowed into an empty byte list.
+    final codec = await ui.instantiateImageCodec(pngBytes);
+    final frame = await codec.getNextFrame();
+    final image = frame.image;
+    assert(
+      image.width == kPrintWidthDots,
+      'Receipt capture is ${image.width} dots wide; expected $kPrintWidthDots. '
+      'ReceiptPaper.width × pixelRatio must equal $kPrintWidthDots.',
+    );
     try {
-      final codec = await ui.instantiateImageCodec(pngBytes);
-      final frame = await codec.getNextFrame();
-      final image = frame.image;
-      assert(
-        image.width == kPrintWidthDots,
-        'Receipt capture is ${image.width} dots wide; expected $kPrintWidthDots. '
-        'ReceiptPaper.width × pixelRatio must equal $kPrintWidthDots.',
-      );
       final byteData =
           await image.toByteData(format: ui.ImageByteFormat.rawRgba);
       if (byteData == null) return [];
