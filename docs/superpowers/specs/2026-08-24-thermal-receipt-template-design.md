@@ -107,6 +107,12 @@ The printed bitmap must be 576 dots wide with no resampling.
 - Replace the nearest-neighbour fallback with a **box-filter average** so an
   unexpected capture size degrades gracefully instead of shattering thin strokes.
 - Keep the `GS v 0` raster path; it is correct.
+- (2026-09-03, after the first prints fed long blank paper) Trailing rows with no
+  ink are trimmed before encoding, the raster is sent as bands of 128 rows, and
+  init + image + a 3-line feed go out in one `writeBytes` call because the
+  Android plugin prefixes every call with a line feed. The success message
+  reports the rows/mm sent so a printer-side feed can be told apart from an
+  over-tall bitmap.
 
 ### 4.3 Thermal primitives
 
