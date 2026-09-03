@@ -139,4 +139,41 @@ void main() {
         of: find.byType(ReceiptPaper), matching: find.byType(MediaQuery)).first);
     expect(mq.data.textScaler, TextScaler.noScaling);
   });
+
+  testWidgets('load manifest declares only black and white and totals the load',
+      (tester) async {
+    tester.view.physicalSize = const Size(600, 4000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(host(ReceiptPaper(
+      docType: ReceiptDocType.load,
+      l10n: l10nAr,
+      config: sampleConfig,
+      loadData: sampleLoad(),
+    )));
+    await expectOnlyInk(tester);
+    expect(find.text(l10nAr.loadReceipt), findsOneWidget);
+    expect(find.text(l10nAr.totalLoaded, findRichText: true), findsOneWidget);
+    expect(find.text('\u206664\u2069', findRichText: true), findsOneWidget); // 40 + 24
+  });
+
+  testWidgets('return document declares only black and white and totals columns',
+      (tester) async {
+    tester.view.physicalSize = const Size(600, 4000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(host(ReceiptPaper(
+      docType: ReceiptDocType.returns,
+      l10n: l10nAr,
+      config: sampleConfig,
+      returnData: sampleReturn(),
+    )));
+    await expectOnlyInk(tester);
+    expect(find.text(l10nAr.shiftCloseReceipt), findsOneWidget);
+    expect(find.text(l10nAr.loaded, findRichText: true), findsOneWidget);
+    expect(find.text(l10nAr.sold, findRichText: true), findsOneWidget);
+    expect(find.text(l10nAr.returned, findRichText: true), findsOneWidget);
+    expect(find.text('\u206657\u2069', findRichText: true), findsOneWidget); // sold 33 + 24
+    expect(find.text('\u20667\u2069', findRichText: true), findsNWidgets(2)); // row + total returned
+  });
 }

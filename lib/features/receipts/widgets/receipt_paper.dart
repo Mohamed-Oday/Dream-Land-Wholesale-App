@@ -271,11 +271,100 @@ class ReceiptPaper extends StatelessWidget {
     ];
   }
 
-  // --- load manifest (Task 7) ---
+  // --- load manifest ---
 
-  List<Widget> _loadBody() => const [];
+  List<Widget> _loadBody() {
+    final d = loadData!;
+    final driverName = d['driver_name'] as String? ?? '';
+    final loadedByName = d['loaded_by_name'] as String? ?? '';
+    final date = _fmtDate(d['opened_at'] as String?);
+    final items = (d['items'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+    final totalQty = items.fold<int>(
+        0, (sum, i) => sum + ((i['quantity_loaded'] as num?)?.toInt() ?? 0));
 
-  // --- return / shift close (Task 7) ---
+    return [
+      ..._masthead(l10n.loadReceipt),
+      if (driverName.isNotEmpty)
+        _meta(l10n.driver, driverName,
+            valueSizeDots: 23, valueWeight: FontWeight.w700),
+      if (loadedByName.isNotEmpty) _meta(l10n.loadedBy, loadedByName),
+      if (date.isNotEmpty) _meta(l10n.orderDate, ltr(date)),
+      SizedBox(height: Dots.px(14)),
+      ThermalGrid(
+        columnDots: const [416, 120],
+        headers: [l10n.products, 'الكمية'],
+        aligns: const [TextAlign.start, TextAlign.end],
+        rows: [
+          for (final m in items)
+            [
+              ThermalCell.text(m['product_name'] as String? ?? '',
+                  mainSizeDots: 23, mainWeight: FontWeight.w600),
+              ThermalCell.text(
+                  ltr((m['quantity_loaded'] as num?)?.toInt() ?? 0),
+                  align: TextAlign.end,
+                  mainWeight: FontWeight.w700),
+            ],
+        ],
+        footer: [(label: l10n.totalLoaded, value: ltr(totalQty))],
+      ),
+      ..._footer(),
+    ];
+  }
 
-  List<Widget> _returnBody() => const [];
+  // --- return / shift close ---
+
+  List<Widget> _returnBody() {
+    final d = returnData!;
+    final driverName = d['driver_name'] as String? ?? '';
+    final date = _fmtDate(d['closed_at'] as String?);
+    final items = (d['items'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+
+    int sum(String key) => items.fold<int>(
+        0, (s, m) => s + ((m[key] as num?)?.toInt() ?? 0));
+    final totalLoaded = sum('quantity_loaded');
+    final totalSold = sum('quantity_sold');
+    final totalReturned = sum('quantity_returned');
+
+    List<Widget> row(String name, int a, int b, int c, {bool bold = false}) {
+      final w = bold ? FontWeight.w700 : FontWeight.w400;
+      return [
+        ThermalCell.text(name,
+            mainSizeDots: bold ? 21 : 23,
+            mainWeight: bold ? FontWeight.w700 : FontWeight.w600),
+        ThermalCell.text(ltr(a), align: TextAlign.center, mainWeight: w),
+        ThermalCell.text(ltr(b), align: TextAlign.center, mainWeight: w),
+        ThermalCell.text(ltr(c), align: TextAlign.center, mainWeight: w),
+      ];
+    }
+
+    return [
+      ..._masthead(l10n.shiftCloseReceipt),
+      if (driverName.isNotEmpty)
+        _meta(l10n.driver, driverName,
+            valueSizeDots: 23, valueWeight: FontWeight.w700),
+      if (date.isNotEmpty) _meta(l10n.orderDate, ltr(date)),
+      SizedBox(height: Dots.px(14)),
+      ThermalGrid(
+        columnDots: const [236, 100, 100, 100],
+        headers: [l10n.products, l10n.loaded, l10n.sold, l10n.returned],
+        aligns: const [
+          TextAlign.start,
+          TextAlign.center,
+          TextAlign.center,
+          TextAlign.center,
+        ],
+        rows: [
+          for (final m in items)
+            row(
+              m['product_name'] as String? ?? '',
+              (m['quantity_loaded'] as num?)?.toInt() ?? 0,
+              (m['quantity_sold'] as num?)?.toInt() ?? 0,
+              (m['quantity_returned'] as num?)?.toInt() ?? 0,
+            ),
+          row(l10n.total, totalLoaded, totalSold, totalReturned, bold: true),
+        ],
+      ),
+      ..._footer(),
+    ];
+  }
 }
